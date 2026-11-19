@@ -10,6 +10,13 @@
 3. [`docs/eartomouth-handoff.md`](docs/eartomouth-handoff.md): EarToMouth v1~v5 기록, 거절된 디자인, 옮겨 쓸 대사·음성·복습 로직.
    - 옛 코드: `hacs2772/zero-reading-just-talking` 저장소 `claude/brave-johnson-ltwsvw` 브랜치 (`js/talks.js`, `js/speech.js`, `js/store.js`)
 
+## 정해진 기술·운영
+
+- 도메인 **oracyblock.com**
+- 서버: asmrBlock과 같은 구성 (Spring Boot + PostgreSQL + MyBatis, 웹은 React). 사용자의 집 PC + Cloudflare Tunnel, Docker(`docker compose`)로 묶어서 나중에 클라우드로 옮기기 쉽게
+- 웹 먼저(휴대폰에서 앱처럼 쓰는 PWA) → 인기가 생기면 앱(Expo)
+- 브릭 모양은 B(테두리)
+
 ## 사용자와 일하는 방식
 
 - 한국어, 쉬운 말로. 전문 용어는 줄여요.
