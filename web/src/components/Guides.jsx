@@ -1,5 +1,5 @@
 // 안내 팝업 두 가지: 처음 온 사람 안내(6장) · 게임 방법(3장)
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Brick from './Brick.jsx';
 import { Stack } from './ui.jsx';
 import { LEVEL_SCALE } from '../content/build.js';
@@ -155,6 +155,18 @@ export const GAME = [
 
 export function Guide({ slides, label, doneLabel, onDone, skipLabel = '건너뛰기' }) {
   const [i, setI] = useState(0);
+  const artRef = useRef(null);
+  const [scale, setScale] = useState(1);
+  useEffect(() => {
+    const fit = () => {
+      const el = artRef.current;
+      if (!el) return;
+      setScale(Math.min(1, el.clientWidth / 310, el.clientHeight / 250));
+    };
+    fit();
+    window.addEventListener('resize', fit);
+    return () => window.removeEventListener('resize', fit);
+  }, []);
   const s = slides[i];
   const last = i === slides.length - 1;
   return (
@@ -167,7 +179,9 @@ export function Guide({ slides, label, doneLabel, onDone, skipLabel = '건너뛰
           </span>
           <button className="link-btn" onClick={onDone}>{skipLabel}</button>
         </div>
-        <div className="guide-art" key={i}>{ART[s.art]}</div>
+        <div className="guide-art" ref={artRef}>
+          <div key={i} style={{ transform: `scale(${scale})`, transformOrigin: '50% 50%' }}>{ART[s.art]}</div>
+        </div>
         <h2 id="guide-title">{s.t}</h2>
         <p>{s.b}</p>
         <div className="dots" aria-hidden="true">

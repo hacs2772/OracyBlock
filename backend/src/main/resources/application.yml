@@ -1,0 +1,43 @@
+# OracyBlock 서버 설정. 환경마다 다른 값은 환경변수로 (docker-compose.yml + .env)
+spring:
+  application:
+    name: oracyblock
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/oracyblock}
+    username: ${DB_USERNAME:oracyblock}
+    password: ${DB_PASSWORD:oracyblock}
+  flyway:
+    locations: classpath:db/migration
+  jackson:
+    time-zone: Asia/Seoul
+
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+    default-statement-timeout: 30
+
+app:
+  jwt:
+    # 32자 이상 랜덤 문자열 (.env 의 JWT_SECRET). 비어 있으면 서버가 켜지지 않아요
+    secret: ${JWT_SECRET:}
+    # 로그인 유지 기간
+    validity: 30d
+  admin:
+    # 이 이메일·비밀번호로 관리자 계정을 만들거나 비밀번호를 맞춰요 (.env 의 ADMIN_EMAIL / ADMIN_PASSWORD)
+    email: ${ADMIN_EMAIL:}
+    password: ${ADMIN_PASSWORD:}
+    nickname: ${ADMIN_NICKNAME:운영자}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+server:
+  port: 8080
+  forward-headers-strategy: framework
+
+logging:
+  level:
+    com.oracyblock: INFO

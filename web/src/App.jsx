@@ -8,13 +8,11 @@ import Me from './pages/Me.jsx';
 import Auth from './pages/Auth.jsx';
 import Admin from './pages/Admin.jsx';
 import Legal from './pages/Legal.jsx';
-import { Tabs, Toaster } from './components/ui.jsx';
+import { Toaster } from './components/ui.jsx';
 import { Guide, INTRO } from './components/Guides.jsx';
 import { store, useStore } from './lib/store.js';
 import { quiet } from './lib/api.js';
 import { unlock } from './lib/speech.js';
-
-const TAB_PATHS = ['/', '/fix', '/tower', '/me'];
 
 export default function App() {
   const st = useStore();
@@ -44,7 +42,6 @@ export default function App() {
         <Route path="/privacy" element={<Legal kind="privacy" />} />
         <Route path="*" element={<Home />} />
       </Routes>
-      {TAB_PATHS.includes(pathname) && <Tabs />}
       {!st.seenIntro && pathname === '/' && (
         <Guide slides={INTRO} label="처음 오셨나요" doneLabel="시작하기" onDone={() => store.set({ seenIntro: true })} />
       )}

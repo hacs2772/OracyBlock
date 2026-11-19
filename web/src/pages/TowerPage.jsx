@@ -6,7 +6,7 @@ import { useStore } from '../lib/store.js';
 import { LEVEL_SCALE } from '../content/build.js';
 import { dayTone, WEEK_TONE, WEEK_NAME } from '../lib/progress.js';
 import Brick from '../components/Brick.jsx';
-import { Logo, Sheet } from '../components/ui.jsx';
+import { Logo, Sheet, Tabs } from '../components/ui.jsx';
 
 function Pyramid({ bricks }) {
   // 아래(오래된 것)부터 위로. 레벨이 높을수록 작은 브릭
@@ -99,6 +99,7 @@ export default function TowerPage() {
         </>
       )}
 
+      <Tabs />
       {info && (
         <Sheet title="브릭은 이렇게 쌓여요" onClose={() => setInfo(false)} labelId="tw-info">
           <p style={{ fontSize: 14, lineHeight: 1.6, marginTop: 8 }}>대화 하나를 끝낼 때마다 브릭이 1개 쌓여요. 하루에 최대 3개까지예요.</p>

@@ -1,0 +1,93 @@
+# =====================================================
+# OracyBlock - 내 PC를 서버로 쓰고 Cloudflare Tunnel로 https://oracyblock.com 에 연결
+#
+#   켜기: start.bat 더블클릭 (처음이면 .env 를 만들어 줘요)
+#   또는: docker compose --env-file .env up -d --build --wait
+#   끄기: stop.bat  (또는 docker compose --env-file .env down)
+#
+#   - 내 PC 확인용 주소: http://localhost:8090
+#   - 공유기 포트를 열지 않아요. tunnel(cloudflared)이 Cloudflare로 나가는 연결만 만들어요
+#   - ⚠ down -v 는 DB(가입자·기록)까지 지워요. backups 폴더의 백업으로만 되살릴 수 있어요
+# =====================================================
+name: oracyblock
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: oracyblock
+      POSTGRES_USER: oracyblock
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?.env 에 DB_PASSWORD 가 없어요}
+      TZ: Asia/Seoul
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U oracyblock -d oracyblock"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/oracyblock
+      DB_USERNAME: oracyblock
+      DB_PASSWORD: ${DB_PASSWORD:?.env 에 DB_PASSWORD 가 없어요}
+      JWT_SECRET: ${JWT_SECRET:?.env 에 JWT_SECRET 이 없어요}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:?.env 에 ADMIN_EMAIL 이 없어요}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?.env 에 ADMIN_PASSWORD 가 없어요}
+      ADMIN_NICKNAME: ${ADMIN_NICKNAME:-운영자}
+      JAVA_OPTS: -Xmx384m
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "http://localhost:8080/actuator/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 180s
+
+  web:
+    build: ./web
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8090:80"   # 내 PC에서만 확인용
+    depends_on:
+      - backend
+
+  # 자동 백업: 켜질 때 한 번 + 하루에 한 번 → backups 폴더 (14일치)
+  backup:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "/backup-loop.sh"]
+    environment:
+      PGHOST: db
+      PGUSER: oracyblock
+      PGDATABASE: oracyblock
+      PGPASSWORD: ${DB_PASSWORD:?.env 에 DB_PASSWORD 가 없어요}
+      BACKUP_KEEP_DAYS: 14
+      TZ: Asia/Seoul
+    volumes:
+      - ./scripts/backup-loop.sh:/backup-loop.sh:ro
+      - ./backups:/backups
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  # Cloudflare Tunnel: Zero Trust > Networks > Tunnels 에서 만든 터널의 토큰
+  # 터널의 Public Hostname: oracyblock.com (그리고 www.oracyblock.com) → http://web:80
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?.env 에 TUNNEL_TOKEN 이 없어요}
+    depends_on:
+      - web
+    profiles: ["public"]
+
+volumes:
+  pgdata:

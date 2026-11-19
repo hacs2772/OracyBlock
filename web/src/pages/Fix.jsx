@@ -4,7 +4,7 @@ import { talkById, wordChoices, judge } from '../content/build.js';
 import { api, quiet } from '../lib/api.js';
 import { parseBricks } from '../lib/progress.js';
 import { speak, unlock, sfx, listen, canListen, stopListening } from '../lib/speech.js';
-import { Logo, Stack, Play, Back, Mic, Ja, toast } from '../components/ui.jsx';
+import { Logo, Stack, Play, Back, Mic, Ja, toast, Tabs } from '../components/ui.jsx';
 import { BigWord } from './Talk.jsx';
 
 const MINI = { studs: 4, pitch: 9, h: 11, depth: 6, studH: 3 };
@@ -90,6 +90,7 @@ export default function Fix() {
           </div>
         </>
       )}
+      <Tabs />
     </div>
   );
 }

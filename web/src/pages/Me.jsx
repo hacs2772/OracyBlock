@@ -5,7 +5,7 @@ import { api, quiet } from '../lib/api.js';
 import { store, useStore } from '../lib/store.js';
 import { listen, canListen, MIC_ERRORS, speak, unlock, canSpeak, hasJaVoice } from '../lib/speech.js';
 import Brick from '../components/Brick.jsx';
-import { Logo, Chevron, Mic, Sheet, toast } from '../components/ui.jsx';
+import { Logo, Chevron, Mic, Sheet, toast, Tabs } from '../components/ui.jsx';
 import { Guide, INTRO, GAME } from '../components/Guides.jsx';
 
 function Switch({ on, label, onClick }) {
@@ -184,6 +184,7 @@ export default function Me() {
         </>
       )}
 
+      <Tabs />
       {guide === 'intro' && <Guide slides={INTRO} label="처음 온 사람 안내" doneLabel="닫기" skipLabel="닫기" onDone={() => setGuide(null)} />}
       {guide === 'game' && <Guide slides={GAME} label="게임 방법" doneLabel="알겠어요" skipLabel="닫기" onDone={() => setGuide(null)} />}
       {leave && (

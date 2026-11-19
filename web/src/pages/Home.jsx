@@ -7,7 +7,7 @@ import { store, useStore } from '../lib/store.js';
 import { countCorrect, tooHard, latestByTalk, parseBricks } from '../lib/progress.js';
 import { speak, unlock } from '../lib/speech.js';
 import Brick from '../components/Brick.jsx';
-import { Logo, Question, Sheet, Stack, Play } from '../components/ui.jsx';
+import { Logo, Question, Sheet, Stack, Play, Tabs } from '../components/ui.jsx';
 import { Guide, GAME } from '../components/Guides.jsx';
 
 const MINI = { studs: 4, pitch: 9, h: 11, depth: 6, studH: 3 };
@@ -168,6 +168,7 @@ export default function Home() {
           <p className="small muted" style={{ marginTop: 10 }}>레벨이 오를수록 말이 빨라지고 문장이 길어져요. 브릭은 얇아져요. 언제든 바꿀 수 있어요.</p>
         </Sheet>
       )}
+      <Tabs />
       {guide && <Guide slides={GAME} label="게임 방법" doneLabel="알겠어요" skipLabel="닫기" onDone={() => { setGuide(false); store.set({ seenGame: true }); }} />}
     </div>
   );
