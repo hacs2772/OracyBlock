@@ -6,7 +6,7 @@ import { speak, stopSpeaking, listen, stopListening, canListen, MIC_ERRORS, sfx,
 import { api, quiet } from '../lib/api.js';
 import { store, useStore } from '../lib/store.js';
 import Brick from '../components/Brick.jsx';
-import { Stack, Play, Close, Mic, Refresh, Ja, Sheet, Question } from '../components/ui.jsx';
+import { Stack, Play, Close, Mic, Ja, Sheet, Question } from '../components/ui.jsx';
 import { Guide, GAME } from '../components/Guides.jsx';
 import { countCorrect } from '../lib/progress.js';
 import { loadResume, saveResume, clearResume } from '../lib/resume.js';
@@ -149,7 +149,7 @@ export default function Talk() {
   const step = eff(talk?.steps[si]);
   const steps = talk?.steps || [];
   // 화면이 낮은 휴대폰(아이폰 SE 등)은 무대를 조금 낮게
-  const stageH = typeof window !== 'undefined' && window.innerHeight < 700 ? 128 : 200;
+  const stageH = typeof window !== 'undefined' && window.innerHeight < 700 ? 118 : 200;
   const small = stageH < 200;
   // 탑 높이는 실제로 지나갈 차례 수로 (가지는 가장 긴 쪽 하나만)
   const branchLen = {};
@@ -239,16 +239,6 @@ export default function Talk() {
     stats.current.fixes.push({ turnIdx: step.idx, kind: 'skip', prev: '' });
     setBricks((b) => [...b, { tone: 'mint', gone: true, key: b.length }]);
     setPh({ ...ph, wrong: ph.wrong + 1, shake: i, n: ph.n + 1, fb: '', solved: true, skipped: true });
-  };
-  const refreshMeaning = () => {
-    if (ph.solved) return;
-    if (ph.set === step.answerSet) {
-      sfx('thud');
-      if (ph.wrong + 1 >= 2) return skipMeaning(99);
-      setPh({ ...ph, wrong: ph.wrong + 1, shake: 99, n: ph.n + 1, fb: '이 4개 안에 있어요! 다시 들어 보세요.' });
-      return null;
-    }
-    setPh({ ...ph, set: ph.set ? 0 : 1, fb: '', shake: -1 });
   };
 
   // ---------- 내 차례: 하고 싶은 대답을 골라요 (말하기·글자 입력은 뺐어요, concept 11-5) ----------
@@ -462,7 +452,7 @@ export default function Talk() {
         </div>
       </div>
 
-      {!done && needTap && <p className="small" style={{ color: '#B9473A', fontWeight: 700, marginTop: -4 }}>소리가 안 나오면 말풍선의 재생 버튼을 눌러 들어 보세요.</p>}
+      {!done && needTap && <p className="small" style={{ color: '#B9473A', fontWeight: 700, marginTop: -4 }}>소리가 안 나면 말풍선의 재생 버튼을 눌러요.</p>}
       {resumeAsk && (
         <Sheet title="이어서 할까요?" onClose={restart} labelId="resume-title">
           <p style={{ fontSize: 14, lineHeight: 1.6, marginTop: 6 }}>지난번에 {partner}{josa(partner, '과', '와')} 하던 대화가 있어요. 브릭 {resumeAsk.bricks.length}개를 쌓았어요.</p>
@@ -474,7 +464,7 @@ export default function Talk() {
       )}
 
       {!done && step?.type === 'them' && (
-        <ThemPanel say={say} talkId={talk.id} step={step} ph={ph} setPh={setPh} partner={partner} rate={rate} pick={pickMeaning} refresh={refreshMeaning} next={advance} onHear={() => setNeedTap(false)} />
+        <ThemPanel say={say} talkId={talk.id} step={step} ph={ph} setPh={setPh} partner={partner} rate={rate} pick={pickMeaning} next={advance} onHear={() => setNeedTap(false)} />
       )}
 
       {!done && step?.type === 'me' && (
@@ -522,8 +512,8 @@ export default function Talk() {
   );
 }
 
-function ThemPanel({ say, talkId, step, ph, setPh, partner, rate, pick, refresh, next, onHear }) {
-  const opts = step.sets[ph.set || 0] || [];
+function ThemPanel({ say, talkId, step, ph, setPh, partner, rate, pick, next, onHear }) {
+  const opts = step.meanings || [];
   if (ph.solved) {
     return (
       <div className="result">
@@ -550,10 +540,9 @@ function ThemPanel({ say, talkId, step, ph, setPh, partner, rate, pick, refresh,
       {ph.fb && <p className="fb" aria-live="polite">{ph.fb}</p>}
       <div className={'opts' + (ph.shake === 99 ? ' shake-' + (ph.n % 2) : '')}>
         {opts.map((m, i) => (
-          <button key={(ph.set || 0) + m} className={'opt mint' + (ph.shake === i ? ' shake-' + (ph.n % 2) : '')} onClick={() => pick(m, i)}>{m}</button>
+          <button key={m} className={'opt mint' + (ph.shake === i ? ' shake-' + (ph.n % 2) : '')} onClick={() => pick(m, i)}>{m}</button>
         ))}
       </div>
-      <button className="refresh" onClick={refresh}><Refresh />{ph.set ? '앞 4개 다시 보기' : '여기엔 맞는 뜻이 없어요'}</button>
     </div>
   );
 }

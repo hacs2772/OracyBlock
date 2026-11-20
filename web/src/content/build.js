@@ -1,8 +1,8 @@
 // OracyBlock 게임에 맞게 대사(talks.js)를 다듬어요.
 // - 레벨과 장소
-// - 상대 말 뜻 맞히기: 4지선다 두 묶음 (정답은 한 묶음에만)
+// - 상대 말 뜻 맞히기: 5지선다 (뜻이 비슷한 말은 틀린 보기로 안 넣어요)
 // - 내 대답 판정: 딱 맞음 / 어긋남 / 살리는 말 / 튕김
-// - 골라서 대답하기: 4개 두 묶음
+// - 골라서 대답하기: 5개 이상 (맞는 대답 모두)
 import { TALKS, word, COGNATES, ASK_AGAIN } from './talks.js';
 
 export { COGNATES, ASK_AGAIN };
@@ -250,44 +250,65 @@ const isCasual = (ja) => !/(です|ます|でした|ました|ください|ま�
 // ---------- 대화 만들기 ----------
 
 const ALL_THEM = TALKS.flatMap((t) => t.turns.filter((x) => x.them).map((x) => ({ talk: t.id, line: x.them })));
-const ALL_ME = TALKS.flatMap((t) => t.turns.filter((x) => x.me).flatMap((x) => x.me.map((o) => ({ talk: t.id, o }))));
+// 내 대답마다 바로 앞 상대 말(q)도 같이: 비슷한 질문의 대답은 "상관없는 대답"으로 쓰지 않아요
+const ALL_ME = TALKS.flatMap((t) => t.turns.flatMap((x, j) => {
+  if (!x.me) return [];
+  const q = [...t.turns.slice(0, j)].reverse().find((y) => y.them)?.them;
+  return x.me.map((o) => ({ talk: t.id, o, q }));
+}));
 
+/**
+ * 뜻이 비슷한지: 한국어 뜻에 같은 말 줄기(앞 두 글자)가 있거나, 핵심 단어(일본어)가 겹치면 비슷하다고 봐요.
+ * 예: "어디 가요?"와 "어디까지 가세요?"는 비슷 → 서로 틀린 보기로 쓰지 않아요 (사용자 신고: 맞게 골랐는데 튕김)
+ */
+const STEM_SKIP = new Set(['그럼', '그래', '좋네', '아니', '이거', '여기', '저기', '그쪽', '정말', '진짜', '요즘', '조금', '오늘']);
+const stems = (ko) => new Set(String(ko || '').replace(/[?!.,~…()·]/g, ' ').split(/\s+/).filter((w) => w.length >= 2).map((w) => w.slice(0, 2)).filter((w) => !STEM_SKIP.has(w)));
+const kanaOf = (line) => new Set((line?.keys || []).map((k) => (k.key || k[0] || '').split('|')[0]));
+export function similar(a, b) {
+  if (!a || !b) return false;
+  const sa = stems(a.mean);
+  for (const w of stems(b.mean)) if (sa.has(w)) return true;
+  const ka = kanaOf(a);
+  for (const k of kanaOf(b)) if (ka.has(k) && !['から', 'まで', 'の', 'は', 'も'].includes(k)) return true;
+  return false;
+}
+
+/** 상대 말 뜻 맞히기: 보기 5개 (정답 1 + 뜻이 비슷하지 않은 말 4) */
 function meaningSets(talk, idx, line) {
   const rnd = seeded(talk.id + ':' + idx);
-  const same = shuffle(ALL_THEM.filter((x) => x.talk === talk.id && x.line !== line && x.line.mean !== line.mean), rnd);
-  const other = shuffle(ALL_THEM.filter((x) => x.talk !== talk.id && x.line.mean !== line.mean), rnd);
-  const seen = new Set([line.mean]);
+  const ok = (x) => x.line !== line && x.line.mean !== line.mean && !similar(line, x.line);
+  const same = shuffle(ALL_THEM.filter((x) => x.talk === talk.id && ok(x)), rnd);
+  const other = shuffle(ALL_THEM.filter((x) => x.talk !== talk.id && ok(x)), rnd);
   const pool = [];
-  for (const x of [...same.slice(0, 3), ...other]) {
-    if (pool.length >= 7) break;
-    if (seen.has(x.line.mean)) continue;
-    seen.add(x.line.mean);
-    pool.push(x.line.mean);
+  for (const x of [...same.slice(0, 2), ...other]) {
+    if (pool.length >= 4) break;
+    if (pool.some((p) => p.mean === x.line.mean || similar(p, x.line))) continue;
+    pool.push(x.line);
   }
-  const inFirst = rnd() < 0.55;
-  const a = inFirst ? shuffle([line.mean, ...pool.slice(0, 3)], rnd) : pool.slice(0, 4);
-  const b = inFirst ? pool.slice(3, 7) : shuffle([line.mean, ...pool.slice(4, 7)], rnd);
-  return { sets: [a, b], answerSet: inFirst ? 0 : 1 };
+  return { meanings: shuffle([line.mean, ...pool.map((p) => p.mean)], rnd) };
 }
 
 /**
- * 골라서 대답하기: 보기 4개를 한 번에. "답정너"가 아니게 **맞는 대답을 모두** 넣고 (하고 싶은 말을 골라요),
- * 어색한 대답(어긋남)과 상관없는 대답을 섞어요
+ * 골라서 대답하기: 보기 5개를 한 번에. "답정너"가 아니게 **맞는 대답을 모두** 넣고 (하고 싶은 말을 골라요),
+ * 어색한 대답(어긋남)과 상관없는 대답을 섞어요. 상관없는 대답은 비슷한 질문에 대한 대답에서 가져오지 않아요
  */
-function chooseSets(talk, idx, options, near) {
+function chooseSets(talk, idx, options, near, q) {
   const rnd = seeded('me:' + talk.id + ':' + idx);
   const ok = options.map((o, i) => ({ kind: 'ok', option: i, ja: o.natural.ja, ko: o.natural.ko, mean: o.natural.mean }));
   const nearOpts = near.filter((n) => n.say).map((n) => ({ kind: 'near', near: n, ja: n.say[0], ko: n.say[1], mean: n.say[2] }));
   const used = new Set([...ok, ...nearOpts].map((x) => x.ko));
+  const okKana = new Set(options.flatMap((o) => o.words.map((w) => w.key)));
   const offs = [];
   for (const x of shuffle(ALL_ME.filter((x) => x.talk !== talk.id), rnd)) {
     if (offs.length >= 4) break;
     if (used.has(x.o.natural.ko)) continue;
+    if (similar(q, x.q)) continue;
+    if (x.o.words.some((w) => okKana.has(w.key))) continue;
     used.add(x.o.natural.ko);
     offs.push({ kind: 'off', ja: x.o.natural.ja, ko: x.o.natural.ko, mean: x.o.natural.mean });
   }
-  const picked = [...ok, ...nearOpts.slice(0, Math.max(0, 3 - ok.length))];
-  return shuffle([...picked, ...offs].slice(0, Math.max(4, picked.length + 1)), rnd);
+  const picked = [...ok, ...nearOpts.slice(0, Math.max(0, 4 - ok.length))];
+  return shuffle([...picked, ...offs].slice(0, Math.max(5, picked.length + 1)), rnd);
 }
 
 function buildTalk(t) {
@@ -310,7 +331,7 @@ function buildTalk(t) {
       steps.push({
         type: 'me', idx, options, near, yes: yes != null, when: turn.when || null,
         hintWords: options.flatMap((o) => o.words.slice(0, 1)),
-        choose: chooseSets(t, idx, options, near),
+        choose: chooseSets(t, idx, options, near, [...t.turns.slice(0, idx)].reverse().find((y) => y.them)?.them),
       });
     }
   });
@@ -335,7 +356,7 @@ export function talkWords(talk) {
 const NOT_REVIEW = new Set(['から', 'まで', 'で', 'に', 'は', 'が', 'を', 'の', 'と', 'も', 'へ', 'ね', 'よ', 'か']);
 export const isReviewWord = (w) => !NOT_REVIEW.has(w.say);
 
-/** 복습용 단어 뜻 보기 (정답 + 다른 단어 뜻 3개) */
+/** 복습용 단어 뜻 보기 (정답 + 뜻이 비슷하지 않은 다른 단어 뜻 4개) */
 const ALL_WORDS = (() => {
   const map = new Map();
   for (const t of GAME_TALKS) for (const w of talkWords(t)) if (isReviewWord(w) && !map.has(w.mean)) map.set(w.mean, w);
@@ -343,7 +364,13 @@ const ALL_WORDS = (() => {
 })();
 export function wordChoices(w, salt = '') {
   const rnd = seeded('w:' + w.key + salt);
-  const others = shuffle(ALL_WORDS.filter((x) => x.mean !== w.mean && x.key !== w.key), rnd).slice(0, 3).map((x) => x.mean);
+  const picked = [];
+  for (const x of shuffle(ALL_WORDS.filter((x) => x.mean !== w.mean && x.key !== w.key), rnd)) {
+    if (picked.length >= 4) break;
+    if ([w, ...picked].some((p) => similar({ mean: p.mean }, { mean: x.mean }))) continue;
+    picked.push(x);
+  }
+  const others = picked.map((x) => x.mean);
   return shuffle([w.mean, ...others], rnd);
 }
 

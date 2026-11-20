@@ -126,7 +126,7 @@ function Remake({ group, onExit }) {
   };
 
   // 대화 화면과 같은 보기 (맞는 대답은 모두 들어 있어요)
-  const options = asMean ? step.sets[step.answerSet] : step.choose;
+  const options = asMean ? step.meanings : step.choose;
   const mic = async () => {
     if (ph.listening) return stopListening();
     setPh({ ...ph, listening: true, fb: '' });

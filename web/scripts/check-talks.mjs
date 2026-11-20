@@ -24,9 +24,9 @@ for (const t of GAME_TALKS) {
         if (!a.ja || !a.ko) errors.push(`${at} 다른 말투에 일본어·한글 발음이 비었어요`);
         for (const k of a.keys) if (!has(a.ko, k.ko)) errors.push(`${at} 다른 말투의 핵심 단어 "${k.ko}"가 "${a.ko}" 안에 없어요`);
       }
-      const set = s.sets[s.answerSet];
-      if (!set.includes(l.mean)) errors.push(`${at} 뜻 보기에 정답이 없어요`);
-      for (const g of s.sets) if (new Set(g).size !== g.length) errors.push(`${at} 뜻 보기에 같은 뜻이 두 번 있어요`);
+      if (!s.meanings.includes(l.mean)) errors.push(`${at} 뜻 보기에 정답이 없어요`);
+      if (s.meanings.length !== 5) errors.push(`${at} 뜻 보기가 5개가 아니에요 (${s.meanings.length})`);
+      if (new Set(s.meanings).size !== s.meanings.length) errors.push(`${at} 뜻 보기에 같은 뜻이 두 번 있어요`);
     } else {
       const seen = new Set();
       for (const o of s.options) {
@@ -40,6 +40,7 @@ for (const t of GAME_TALKS) {
       const okN = s.choose.filter((c) => c.kind === 'ok').length;
       if (okN !== s.options.length) errors.push(`${at} 보기 4개에 맞는 대답이 다 들어가지 않았어요`);
       if (!s.choose.some((c) => c.kind === 'off')) errors.push(`${at} 보기에 상관없는 대답이 없어요`);
+      if (s.choose.length < 5) errors.push(`${at} 대답 보기가 5개보다 적어요 (${s.choose.length})`);
     }
   }
 }
