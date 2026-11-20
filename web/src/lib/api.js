@@ -45,5 +45,5 @@ export async function quiet(path, opts) {
 }
 
 export function setLogin(res) {
-  store.set({ token: res.token, user: res.user, level: res.user.level || store.s.level });
+  store.set({ token: res.token, user: res.user, level: res.user.level || store.s.level, seenIntro: true });
 }

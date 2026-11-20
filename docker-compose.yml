@@ -53,6 +53,9 @@ services:
   web:
     build: ./web
     restart: unless-stopped
+    environment:
+      # 네이버 서치어드바이저 소유 확인 값 (docs/deploy.md "검색에 나오게 하기"). 비워 둬도 돼요
+      NAVER_SITE_VERIFICATION: ${NAVER_SITE_VERIFICATION:-}
     ports:
       - "127.0.0.1:8090:80"   # 내 PC에서만 확인용
     depends_on:

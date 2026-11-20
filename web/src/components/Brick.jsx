@@ -19,18 +19,18 @@ const f = (v) => Math.round(v * 10) / 10;
 const pts = (a) => a.map((q) => f(q[0]) + ',' + f(q[1])).join(' ');
 
 /** 브릭 그림의 바깥 크기 (쌓을 때 위치 계산에 씀) */
-export function brickBox({ studs = 4, pitch = 22, h = 26, depth = 12, studH = 6, sideStud = false }) {
-  const W = studs * pitch;
+export function brickBox({ studs = 4, w = 0, pitch = 22, h = 26, depth = 12, studH = 6, sideStud = false }) {
+  const W = w > 0 ? w : studs * pitch;
   return { w: W + depth + 10 + (sideStud ? 10 : 0), h: h + depth + studH + 10 + 3, lift: 5 + studH + depth + h };
 }
 
-export default function Brick({ tone = 'coral', studs = 4, pitch = 22, h = 26, depth = 12, studH = 6, ghost = false, sideStud = false, shine = false, missing = '', label = '', crack = false, className = '', style }) {
+export default function Brick({ tone = 'coral', studs = 4, w = 0, pitch = 22, h = 26, depth = 12, studH = 6, ghost = false, sideStud = false, shine = false, missing = '', label = '', crack = false, className = '', style }) {
   const raw = TONES[tone] || (/^#[0-9a-f]{6}$/i.test(tone) ? tone : TONES.coral);
   const n = Math.max(1, studs);
   const H = h;
   const T = depth;
   const sh = studH;
-  const W = n * pitch;
+  const W = w > 0 ? w : n * pitch;
   const p = W / n;
   const pad = 5;
   const ox = pad;

@@ -74,6 +74,29 @@ git checkout claude/oracyblock-mvp
 - 홈 화면에 추가하면 앱처럼 쓸 수 있어요 (사파리: 공유 → 홈 화면에 추가 / 크롬: 메뉴 → 홈 화면에 추가)
 - 불편한 점은 **내 정보 → 의견 보내기**로 (관리자 화면에서 바로 보여요)
 
+## 검색에 나오게 하기 (무료, 한 번만)
+
+주소창에 `oracyblock.com`을 치면 지금도 들어와요. `oracyblock`이나 "일본 여행 회화"로 **검색**해서 나오게 하려면 검색 엔진에 사이트를 알려 줘야 해요. 사이트 쪽 준비(검색 설명, 카톡 링크 카드 그림 `og-image.png`, `robots.txt`, `sitemap.xml`)는 다 돼 있어요.
+
+**구글 (Google Search Console)**
+1. https://search.google.com/search-console 접속 → 구글 계정으로 로그인
+2. **속성 추가** → 왼쪽 **도메인** 칸에 `oracyblock.com` → 계속
+3. 확인 방법에 Cloudflare가 보이면 **자동으로 확인**(Cloudflare 로그인 → 허용). 안 보이면 알려 주는 TXT 값을 Cloudflare → oracyblock.com → DNS → Records → Add record(Type `TXT`, Name `@`)에 넣고 확인
+4. 왼쪽 메뉴 **Sitemaps** → `https://oracyblock.com/sitemap.xml` 입력 → 제출
+
+**네이버 (서치어드바이저)**
+1. https://searchadvisor.naver.com 접속 → 네이버 로그인 → **웹마스터 도구**
+2. 사이트 등록에 `https://oracyblock.com` 입력
+3. 소유 확인 방법은 **HTML 태그**를 골라요. `<meta name="naver-site-verification" content="긴글자" />`에서 **content의 긴 글자만** 복사
+4. OracyBlock 폴더의 `.env`를 메모장으로 열고 맨 아래에 한 줄 추가 후 저장:
+   ```
+   NAVER_SITE_VERIFICATION=복사한긴글자
+   ```
+5. `start.bat` 다시 실행 (1~2분) → 네이버 화면에서 **소유확인** 누르기
+6. 사이트를 누르고 **요청 → 사이트맵 제출**에 `https://oracyblock.com/sitemap.xml`
+
+검색 결과에 나오기까지 며칠~2주쯤 걸려요.
+
 ## 업데이트 (새 버전을 깃에 올렸을 때)
 
 **start.bat**을 다시 더블클릭하면 돼요. 최신 코드를 받아서(git pull) 다시 만들어 켜요. 가입자와 기록은 그대로예요.

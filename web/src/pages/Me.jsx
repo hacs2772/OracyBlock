@@ -210,6 +210,7 @@ export default function Me() {
 
       <h2 className="set-h2">도움말</h2>
       <div className="set-card">
+        <Link className="go-row" to="/about">OracyBlock 소개 페이지<Chevron /></Link>
         <button className="go-row" onClick={() => setGuide('intro')}>처음 온 사람 안내 다시 보기<Chevron /></button>
         <button className="go-row" onClick={() => setGuide('game')}>게임 방법 다시 보기<Chevron /></button>
         <button className="go-row" onClick={() => setFb({ text: '', sending: false })}>의견 보내기<Chevron /></button>

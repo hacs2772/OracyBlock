@@ -21,7 +21,7 @@ export default function Home() {
   const nav = useNavigate();
   const [prog, setProg] = useState(null);
   const [lvOpen, setLvOpen] = useState(false);
-  const [guide, setGuide] = useState(!st.seenGame && st.seenIntro);
+  const [guide, setGuide] = useState(null); // { next: 대화 id } 이면 다 본 뒤 그 대화로
   const [fixes, setFixes] = useState([]);
   const [tower, setTower] = useState(null);
   const [spotSheet, setSpotSheet] = useState(null); // 고칠 곳이 있는 장소를 눌렀을 때
@@ -33,9 +33,6 @@ export default function Home() {
     quiet('/fixes').then((f) => f && setFixes(f));
     quiet('/tower').then(setTower);
   }, [st.user?.id]);
-  useEffect(() => {
-    if (st.seenIntro && !st.seenGame) setGuide(true);
-  }, [st.seenIntro, st.seenGame]);
 
   const plays = prog?.plays || [];
   const talks = talksAtLevel(level);
@@ -61,9 +58,11 @@ export default function Home() {
     nav('/talk/' + id);
   };
   // 대화 전에 복습할 단어가 있으면 먼저 몇 개 맞혀 봐요 (건너뛸 수 있음)
-  const start = async (id) => {
+  const start = async (id, skipGuide) => {
     unlock();
     setSpotSheet(null);
+    // 처음 "시작하기"를 누르면 게임 방법 3장을 먼저 (여행 판 오른쪽 위 ?로 다시 볼 수 있어요)
+    if (!skipGuide && !store.s.seenGame) return setGuide({ next: id });
     if (!preCount || !prog?.wordsDue) return go(id);
     const words = await quiet('/words');
     const today = new Date().toLocaleDateString('sv-SE');
@@ -84,7 +83,7 @@ export default function Home() {
   return (
     <div className="page has-tabs">
       <TopBar>
-        <button className="icon-btn" onClick={() => setGuide(true)} aria-label="게임 방법 보기"><Question /></button>
+        <button className="icon-btn" onClick={() => setGuide({ next: null })} aria-label="게임 방법 보기"><Question /></button>
       </TopBar>
       <TowerAlert tower={tower} speed={prog?.speed} />
       <div className="title-row">
@@ -224,7 +223,20 @@ export default function Home() {
           )}
         </Sheet>
       )}
-      {guide && <Guide slides={GAME} label="게임 방법" doneLabel="알겠어요" skipLabel="닫기" onDone={() => { setGuide(false); store.set({ seenGame: true }); }} />}
+      {guide && (
+        <Guide
+          slides={GAME}
+          label="게임 방법"
+          doneLabel={guide.next ? '대화 시작' : '알겠어요'}
+          skipLabel={guide.next ? '건너뛰기' : '닫기'}
+          onDone={() => {
+            const next = guide.next;
+            setGuide(null);
+            store.set({ seenGame: true });
+            if (next) start(next, true);
+          }}
+        />
+      )}
     </div>
   );
 }

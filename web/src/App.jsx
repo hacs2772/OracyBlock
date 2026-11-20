@@ -9,8 +9,8 @@ import Me from './pages/Me.jsx';
 import Auth from './pages/Auth.jsx';
 import Admin from './pages/Admin.jsx';
 import Legal from './pages/Legal.jsx';
+import Landing from './pages/Landing.jsx';
 import { Toaster } from './components/ui.jsx';
-import { Guide, INTRO } from './components/Guides.jsx';
 import { store, useStore } from './lib/store.js';
 import { quiet } from './lib/api.js';
 import { unlock } from './lib/speech.js';
@@ -18,6 +18,9 @@ import { unlock } from './lib/speech.js';
 export default function App() {
   const st = useStore();
   const { pathname } = useLocation();
+  // 처음 온 사람은 oracyblock.com에서 소개 페이지를 봐요. "무료로 시작하기"를 누르거나 로그인하면 그다음부터는 바로 여행 판
+  const firstVisit = !st.seenIntro && !st.user;
+  const isLanding = pathname === '/about' || (pathname === '/' && firstVisit);
 
   // 하루에 한 번 "왔어요" 남기기 (관리자 통계) + 로그인 정보 새로 받기
   useEffect(() => {
@@ -30,9 +33,10 @@ export default function App() {
   }, [pathname]);
 
   return (
-    <div className="app" onPointerDown={unlock}>
+    <div className={isLanding ? 'app-wide' : 'app'} onPointerDown={unlock}>
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={firstVisit ? <Landing /> : <Home />} />
+        <Route path="/about" element={<Landing />} />
         <Route path="/talk/:id" element={<Talk />} />
         <Route path="/fix" element={<Fix />} />
         <Route path="/review" element={<Review />} />
@@ -44,9 +48,6 @@ export default function App() {
         <Route path="/privacy" element={<Legal kind="privacy" />} />
         <Route path="*" element={<Home />} />
       </Routes>
-      {!st.seenIntro && pathname === '/' && (
-        <Guide slides={INTRO} label="처음 오셨나요" doneLabel="시작하기" onDone={() => store.set({ seenIntro: true })} />
-      )}
       <Toaster />
     </div>
   );
