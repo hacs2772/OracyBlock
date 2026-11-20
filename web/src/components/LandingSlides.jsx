@@ -1,6 +1,6 @@
 // 소개 페이지 팝업 두 가지 (concept 11-15)
-// - 대화해 보기: 게임 방법 3장 + 대화 자세히 5장 (예전 "직접 끼워 보기"·"단어 하나면 통해요")
-// - 내 탑과 순위: 4장 (예전 "매일 쌓는 내 탑")
+// - 사용 방법: 게임 방법 2장 + 대화 자세히 5장 (예전 "직접 끼워 보기"·"단어 하나면 통해요")
+// - 내 탑과 순위: 5장 (얇은 브릭 장 포함) (예전 "매일 쌓는 내 탑")
 // 그림은 진짜 브릭·얼굴 부품으로 그리고, 장이 바뀔 때마다 다시 움직여요 (Guide가 장마다 새로 그려요)
 import Brick from './Brick.jsx';
 import Face from './Face.jsx';
@@ -117,7 +117,8 @@ export const TALK_MORE = [
   { t: '어색하면 비뚤게 쌓여요', b: '통하긴 하지만 어색한 대답이면 비뚤게 얹혀요. 왜 어색한지, 무슨 단어로 바꾸면 되는지 알려 줘요.', art: ArtTilt },
   { t: '상관없는 말은 튕겨 나가요', b: '두 번 튕기면 답을 보여 주고 넘어가요. 빠진 자리는 고치기에서 다시 끼울 수 있어요.', art: ArtBounce },
 ];
-export const TALK_SLIDES = [...GAME, ...TALK_MORE];
+// 어려울수록 얇아지는 브릭(GAME[1])은 내 탑과 순위 쪽으로 옮겼어요
+export const TALK_SLIDES = [GAME[0], GAME[2], ...TALK_MORE];
 
 // ---------- 내 탑과 순위 ----------
 
@@ -194,7 +195,8 @@ function ArtRank() {
 const speedText = SPEED_KEYS.map((k) => `${SPEEDS[k].label} ${SPEEDS[k].bricks}개`).join(', ');
 export const TOWER_SLIDES = [
   { t: '대화 하나에 브릭 하나', b: '대화를 끝낼 때마다 내 탑에 브릭이 하나씩 쌓여요. 맞힌 단어는 복습 탑에 단어 브릭으로 따로 쌓여요.', art: ArtGrow },
-  { t: '하루에 몇 개 쌓을지 골라요', b: `${speedText}. 어려운 대화일수록 브릭이 얇아져서, 얇은 브릭이 높이 쌓일수록 고수예요.`, art: ArtSpeed },
+  { ...GAME[1] },
+  { t: '하루에 몇 개 쌓을지 골라요', b: `${speedText}. 내 생활에 맞게 고르고, 3일에 한 번 바꿀 수 있어요.`, art: ArtSpeed },
   { t: '쉬면 금이 가요', b: '빨리 쌓은 탑일수록 쉬는 날 빨리 흔들려요. 금이 가도 대화나 복습 하나면 다시 단단해져요.', art: ArtCrack },
   { t: '순위는 공부한 날 수로', b: '브릭 수가 아니라 얼마나 꾸준히 했는지를 겨뤄요.', art: ArtRank },
 ];

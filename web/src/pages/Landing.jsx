@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { GAME_TALKS } from '../content/build.js';
 import { unlock } from '../lib/speech.js';
-import { store } from '../lib/store.js';
+import { store, useStore } from '../lib/store.js';
 import { LogoMark, Tabs } from '../components/ui.jsx';
 import { openContact } from '../components/Contact.jsx';
 import { INTRO, Guide } from '../components/Guides.jsx';
@@ -124,6 +124,7 @@ const TOPICS = ['#자기소개', '#여행', '#음식·술', '#고향', '#일', '
 export default function Landing() {
   const nav = useNavigate();
   const [pop, setPop] = useState(null); // 'talk' | 'tower'
+  const st = useStore();
   const start = () => {
     unlock();
     store.set({ seenIntro: true });
@@ -139,11 +140,14 @@ export default function Landing() {
             <span className="logo-text" style={{ fontSize: 28 }}>Oracy<b>Block</b></span>
           </Link>
           <nav className="lp-nav" aria-label="소개 메뉴">
-            <Link className="lp-hide-sm" to="/" onClick={() => store.set({ seenIntro: true })}>학습</Link>
-            <button className="lp-hide-sm lp-navbtn" onClick={() => setPop('talk')}>대화해 보기</button>
-            <button className="lp-hide-sm lp-navbtn" onClick={() => setPop('tower')}>내 탑과 순위</button>
-            <Link to="/login">로그인</Link>
-            <button className="ob-btn sm coral lp-hide-sm" onClick={start}><span className="t">무료로 시작</span></button>
+            {st.user ? (
+              <button className="ob-btn sm coral lp-headbtn" onClick={start}><span className="t">학습하러 가기</span></button>
+            ) : (
+              <>
+                <Link className="ob-btn sm lp-headbtn" to="/login"><span className="t">로그인</span></Link>
+                <button className="ob-btn sm coral lp-headbtn" onClick={start}><span className="t">베타로 시작</span></button>
+              </>
+            )}
           </nav>
         </header>
 
@@ -156,8 +160,8 @@ export default function Landing() {
           <div className="lp-hero-bottom">
             <p className="lp-p" style={{ maxWidth: 520, fontSize: 17 }}>일본 여행에서 옆자리 사람이 말을 걸어올 때. 다 알아듣지 못해도 괜찮아요. 들리는 단어로 뜻을 맞히고, 하고 싶은 대답을 골라 쌓으면서 스몰토크를 이어 가요.</p>
             <div style={{ display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap', marginTop: 26 }}>
-              <button className="ob-btn coral" style={{ minWidth: 240 }} onClick={start}><span className="t">무료로 시작하기</span><span className="s">가입 없이 바로 대화해 보기</span></button>
-              <Link to="/login" style={{ fontSize: 15, fontWeight: 500, textUnderlineOffset: 3 }}>이미 계정이 있어요 · 로그인</Link>
+              <button className="ob-btn coral" style={{ minWidth: 240 }} onClick={start}><span className="t">{st.user ? '학습하러 가기' : '베타로 시작하기'}</span><span className="s">{st.user ? `${st.user.nickname || ''} 님, 이어서 해요` : '무료 · 가입 없이 바로'}</span></button>
+              {!st.user && <Link to="/login" style={{ fontSize: 15, fontWeight: 500, textUnderlineOffset: 3 }}>이미 계정이 있어요 · 로그인</Link>}
             </div>
             <p className="small muted" style={{ marginTop: 22, fontSize: 13, lineHeight: 1.6 }}>휴대폰 브라우저에서 oracyblock.com을 열고 홈 화면에 추가하면 앱처럼 쓸 수 있어요. 지금은 일본어부터, 영어와 중국어는 준비 중이에요.</p>
           </div>
@@ -169,11 +173,11 @@ export default function Landing() {
 
         <section className="lp-sec lp-more">
           <button className="lp-more-card" onClick={() => setPop('talk')}>
-            <span className="lp-more-t">대화는 이렇게 해요</span>
+            <span className="lp-more-t">사용 방법</span>
             <span className="lp-more-s">듣고 뜻 맞히기, 단어 하나로 대답하기, 비뚤게·튕기는 브릭</span>
           </button>
           <button className="lp-more-card" onClick={() => setPop('tower')}>
-            <span className="lp-more-t">매일 쌓는 내 탑과 순위</span>
+            <span className="lp-more-t">내 탑과 순위</span>
             <span className="lp-more-s">하루에 쌓는 브릭, 쉬면 생기는 금, 꾸준함 순위</span>
           </button>
         </section>
@@ -207,7 +211,7 @@ export default function Landing() {
         </footer>
       </div>
       <Tabs className="lp-tabs" />
-      {pop === 'talk' && <Guide slides={TALK_SLIDES} label="대화해 보기" doneLabel="직접 해 보기" skipLabel="닫기" onSkip={() => setPop(null)} onDone={() => { setPop(null); start(); }} />}
+      {pop === 'talk' && <Guide slides={TALK_SLIDES} label="사용 방법" doneLabel="직접 해 보기" skipLabel="닫기" onSkip={() => setPop(null)} onDone={() => { setPop(null); start(); }} />}
       {pop === 'tower' && <Guide slides={TOWER_SLIDES} label="내 탑과 순위" doneLabel="알겠어요" skipLabel="닫기" onDone={() => setPop(null)} />}
     </div>
   );
