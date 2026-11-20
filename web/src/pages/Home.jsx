@@ -1,6 +1,6 @@
-// 내 여행 판: 장소 고르기 · 레벨 · 게임 방법
+// 학습: 오늘 할 일 · 대화 고르기 · 레벨 · 게임 방법
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { talksAtLevel, talkById, READY_LEVELS, ALL_LEVELS, LEVEL_DESC, LEVEL_SCALE } from '../content/build.js';
 import { quiet } from '../lib/api.js';
 import { store, useStore } from '../lib/store.js';
@@ -57,6 +57,40 @@ export default function Home() {
     ? (level < maxReady ? `올바른 탑 3개 완성 · Lv${level + 1}를 추천해요` : '올바른 탑 3개 완성 · 다음 레벨은 준비 중이에요')
     : level < maxReady ? `올바른 탑 ${correct}/3 · ${3 - correct}개 더 쌓으면 Lv${level + 1} 추천` : `올바른 탑 ${correct}/3`;
 
+  // 오늘 할 일: 대화 → 단어 복습 → (있으면) 고치기
+  const cap = prog?.dayCap || sp.bricks || 1;
+  const fin = prog?.finishedToday || 0;
+  const due = prog?.wordsDue || 0;
+  const answered = prog?.answersToday || 0;
+  const nextLabel = next ? (resumable.has(next.id) ? '이어서' : '시작') : '';
+  const todos = [
+    {
+      key: 'talk',
+      done: fin >= cap,
+      title: fin >= cap ? '대화하기 끝' : `대화하기 · ${next?.place || ''}`,
+      desc: fin >= cap
+        ? `오늘 탑 브릭 ${cap}개를 다 쌓았어요. 더 해도 좋아요.`
+        : `상대 말을 듣고 대답을 골라요. 오늘 탑 브릭 ${fin}/${cap}`,
+      btn: fin >= cap ? '한 번 더' : nextLabel,
+      go: next ? () => start(next.id) : null,
+    },
+    {
+      key: 'review',
+      done: due === 0 && answered > 0,
+      none: due === 0 && answered === 0,
+      title: due > 0 ? `단어 복습 · ${due}개` : answered > 0 ? '단어 복습 끝' : '단어 복습',
+      desc: due > 0 ? '들어 보고 뜻을 골라요. 맞히면 복습 탑이 올라가요.' : answered > 0 ? '오늘 복습할 단어를 다 했어요.' : fin > 0 ? '오늘 만난 단어는 내일부터 복습해요.' : '오늘은 복습할 단어가 없어요. 대화하면 생겨요.',
+      btn: '복습',
+      go: due > 0 ? () => nav('/review') : null,
+    },
+  ];
+  if (openFixes > 0) {
+    todos.push({ key: 'fix', done: false, title: `고치기 · ${openFixes}곳`, desc: '놓친 단어와 비뚤어진 브릭을 다시 만들어요.', btn: '고치기', go: () => nav('/fix') });
+  }
+  const todoDone = todos.filter((t) => t.done).length;
+  const todoNow = todos.find((t) => !t.done && !t.none && t.go)?.key; // 지금 할 차례 = 버튼을 산호색으로
+  const todoAll = todos.filter((t) => !t.none).length;
+
   const go = (id) => {
     unlock();
     nav('/talk/' + id);
@@ -92,8 +126,31 @@ export default function Home() {
         <button className="icon-btn" onClick={() => setGuide({ next: null })} aria-label="게임 방법 보기"><Question /></button>
       </TopBar>
       <TowerAlert tower={tower} speed={prog?.speed} />
-      <div className="title-row">
-        <h1>학습</h1>
+      <h1 className="learn-h1">학습</h1>
+
+      <section className="card strong todo-card" aria-labelledby="todo-title">
+        <div className="todo-head">
+          <h2 id="todo-title">오늘 할 일</h2>
+          <span className="small muted">{todoDone}/{todoAll} 끝</span>
+        </div>
+        {todos.map((t) => (
+          <div key={t.key} className={'todo-row' + (t.done ? ' done' : '') + (t.none ? ' none' : '')}>
+            <TodoMark kind={t.key} done={t.done} none={t.none} />
+            <div className="todo-txt">
+              <b>{t.title}</b>
+              <span className="small">{t.desc}</span>
+            </div>
+            {t.go && (
+              <button className={'ob-btn sm todo-go' + (t.key === todoNow ? ' coral' : '')} onClick={t.go}>
+                <span className="t">{t.btn}</span>
+              </button>
+            )}
+          </div>
+        ))}
+      </section>
+
+      <div className="title-row" style={{ marginTop: 6 }}>
+        <h2 className="learn-h2">대화 고르기</h2>
         <span className="small muted">완성 {doneCount}곳 · 남은 곳 {talks.length - doneCount}곳</span>
       </div>
 
@@ -148,26 +205,6 @@ export default function Home() {
             );
           })}
         </div>
-      </div>
-
-      {next && (
-        <button className="ob-btn coral wide" style={{ minHeight: 62, marginTop: 12 }} onClick={() => start(next.id)}>
-          <span className="t">{next.place} {resumable.has(next.id) ? '이어서 하기' : latest.has(next.id) ? '다시 하기' : '시작하기'}</span>
-          <span className="s">Lv{level} · {next.partner}와 대화</span>
-        </button>
-      )}
-
-      <div className="home-cards">
-        <Link className="mini-card" to="/fix">
-          <span style={{ fontFamily: 'var(--display)', fontSize: 17 }}>고칠 곳 {openFixes}개</span>
-          <span className="small">구멍 난 돌기와 비뚤어진 브릭을 다시 만들어요</span>
-          {openFixes > 0 && <span className="small" style={{ color: '#B9473A', fontWeight: 700 }}>고치러 가기</span>}
-        </Link>
-        <Link className="mini-card" to="/review">
-          <span style={{ fontFamily: 'var(--display)', fontSize: 17 }}>복습할 단어 {prog?.wordsDue ?? 0}개</span>
-          <span className="small">맞히면 복습 탑에 단어 브릭이 쌓여요</span>
-          {(prog?.wordsDue || 0) > 0 && <span className="small" style={{ color: '#B9473A', fontWeight: 700 }}>복습하러 가기</span>}
-        </Link>
       </div>
 
       {lvOpen && (
@@ -255,5 +292,28 @@ export default function Home() {
         />
       )}
     </div>
+  );
+}
+
+/** 오늘 할 일 왼쪽 네모: 할 일마다 다른 그림, 끝나면 체크 */
+function TodoMark({ kind, done, none }) {
+  const fill = none ? '#F4E9D2' : done ? '#29B6A5' : kind === 'talk' ? '#FF7967' : kind === 'review' ? '#FFC857' : '#FFE1DB';
+  return (
+    <span className="todo-mark" style={{ background: fill }} aria-hidden="true">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#24324A" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        {done ? (
+          <path d="M5 12.5l4.5 4.5L19 7.5" />
+        ) : kind === 'talk' ? (
+          <path d="M4 6h16a1.5 1.5 0 0 1 1.5 1.5v8A1.5 1.5 0 0 1 20 17h-9l-4.5 3.5V17H4a1.5 1.5 0 0 1-1.5-1.5v-8A1.5 1.5 0 0 1 4 6z" />
+        ) : kind === 'review' ? (
+          <>
+            <rect x="3" y="12" width="18" height="8" rx="1.5" />
+            <path d="M7 12v-2.5h3V12M14 12v-2.5h3V12" />
+          </>
+        ) : (
+          <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.3-3.3a6 6 0 0 1-7.9 7.9l-6.4 6.4a2.1 2.1 0 0 1-3-3l6.4-6.4a6 6 0 0 1 7.9-7.9l-3.3 3.3z" />
+        )}
+      </svg>
+    </span>
   );
 }

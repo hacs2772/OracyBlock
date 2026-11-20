@@ -337,3 +337,19 @@ textarea.input { height: 120px; padding: 10px 12px; resize: vertical; line-heigh
 .tap-ring { position: relative; }
 .tap-ring::after { content: ''; position: absolute; inset: 2px; border-radius: 50%; border: 3px solid var(--coral); animation: tapRing 1.2s infinite ease-out; pointer-events: none; }
 @keyframes tapRing { 0% { transform: scale(0.8); opacity: 1; } 100% { transform: scale(1.5); opacity: 0; } }
+
+/* 학습: 오늘 할 일 */
+.learn-h1 { font-size: 28px; line-height: 1.1; }
+.learn-h2 { font-size: 21px; line-height: 1.15; }
+.todo-card { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px 12px; }
+.todo-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+.todo-head h2 { font-size: 21px; line-height: 1.15; }
+.todo-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1.5px dashed var(--line); }
+.todo-row:first-of-type { border-top: 0; }
+.todo-mark { display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; flex-shrink: 0; border: 2px solid var(--navy); border-radius: 9px; }
+.todo-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.todo-txt b { font-family: var(--display); font-weight: 400; font-size: 17px; line-height: 1.2; word-break: keep-all; }
+.todo-txt .small { color: var(--ink2); line-height: 1.4; word-break: keep-all; }
+.todo-row.done .todo-txt b { color: var(--mint-ink); }
+.todo-go.ob-btn.sm { margin-top: 6px; min-width: 64px; padding: 4px 10px; flex-shrink: 0; }
+.todo-row.none .todo-txt b { color: var(--faint); }
