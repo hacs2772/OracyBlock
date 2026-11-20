@@ -119,7 +119,7 @@ export default function TowerPage() {
       </div>
       <p className="small muted">오늘 {tower?.today ?? 0}/{sp.bricks}개 · 하루 최대 {sp.bricks}개 ({sp.label})</p>
       {t.cracks > 0 && (
-        <p className="note warn">{t.rest}일 쉬어서 브릭 {t.cracks}개에 금이 갔어요. {t.fallIn === 1 ? '내일' : `${t.fallIn}일 뒤에`} 떨어져요. 대화나 복습 하나만 하면 다시 단단해져요.</p>
+        <p className="note warn">{t.rest}일 쉬어서 브릭 {t.cracks}개에 금이 갔어요. {t.fallIn === 1 ? '오늘 밤' : t.fallIn === 2 ? '내일 밤' : `${t.fallIn - 1}일 뒤 밤`}까지 공부하지 않으면 떨어져요. 대화나 복습 하나만 하면 다시 단단해져요.</p>
       )}
       <div className="plate" style={{ boxShadow: 'none' }}>
         {t.stack.length ? <Pyramid stack={t.stack} cracks={t.cracks} /> : <p className="small" style={{ padding: '30px 0', textAlign: 'center' }}>대화를 하나 끝내면 첫 브릭이 쌓여요.</p>}
