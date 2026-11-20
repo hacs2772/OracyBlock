@@ -376,6 +376,34 @@ function meaningSets(talk, idx, line) {
  * 골라서 대답하기: 보기 5개를 한 번에. "답정너"가 아니게 **맞는 대답을 모두** 넣고 (하고 싶은 말을 골라요),
  * 어색한 대답(어긋남)과 상관없는 대답을 섞어요. 상관없는 대답은 비슷한 질문에 대한 대답에서 가져오지 않아요
  */
+/** 뜻의 말 줄기 (두 글자): "올게요" → "올게", "가족이랑" → "가족". 네·아뇨 같은 짧은 맞장구는 빼요 */
+const STEM_FREE = new Set(['아뇨', '아니', '그래', '그러', '정말', '진짜', '오늘', '그럼']);
+const meanStems = (mean) => words(mean).filter((w) => w.length >= 2).map((w) => w.slice(0, 2)).filter((w) => !STEM_FREE.has(w));
+/** 사람이 읽어 보고 "이것도 맞는 대답"이라 본 것: 틀린 보기로 쓰지 않아요 (뜻으로 적어요) */
+const NOT_WRONG = {
+  'plane:5': ['별로 안 봐요'], 'guesthouse:9': ['응, 꼭!'], 'izakaya:1': ['네, 부모님이랑요'], 'onsen:1': ['즐거웠어요'],
+  'shinkansen:1': ['그래도 돼? 부탁해!'], 'shinkansen:3': ['출장이에요', '둘 다예요'], 'park:1': ['조금 뜨거워요'], 'bar:9': ['최고였어요!'],
+  'farewell:5': ['감사합니다'], 'onsen2:1': ['네, 여행이에요'], 'onsen2:3': ['힘드시겠네요'],
+  'photo:9': ['정말 덥네요'], 'ramen:9': ['먹어 볼게요!'], 'gate:3': ['시부야가 좋았어요'], 'cafe:9': ['응, 잘 자!'],
+  'hairsalon:7': ['최고였어요!'], 'skilift:1': ['정말 예쁘다!'], 'skilift:7': ['가 볼게!'], 'baseball:3': ['네, 아주 좋아해요'],
+  'baseball:7': ['네, 아주 좋아해요'], 'osaka:1': ['맛있어요?'], 'osaka:7': ['먹어 볼게요!'], 'guesthouse3:5': ['가 보고 싶어!'],
+  'konbini:7': ['어, 진짜요?', '이거 뭐예요?'], 'cafe:5': ['이거 뭐예요?'], 'hairsalon:5': ['네, 여행이에요'], 'skilift:9': ['좋다!'],
+};
+/** 어디에 써도 대개 통하는 맞장구·인사: 틀린 보기로 쓰면 맞는 말을 틀렸다고 하게 돼요 */
+const ANY_OK = new Set([
+  '네, 맞아요', '맞아요', '그러네요', '감사합니다', '감사합니다!', '감사해요', '고마워요', '고마워요!', '고마워!', '꼭이요!', '응, 꼭!',
+  '아주 좋아요!', '좋아요!', '네, 좋아요', '또 만나요!', '또 봐요!', '안녕히 가세요!', '안녕히 주무세요', '좋아요, 건배!', '건배!', '건배해요!',
+]);
+
+/** 글자로 거의 같은 말 (한쪽이 다른 쪽을 품거나, 두 글자 묶음이 절반 넘게 겹침) */
+const plainKo = (ko) => String(ko || '').replace(/[\s,.!?~\-…ー]/g, '');
+function nearSame(a, b) {
+  const x = plainKo(a), y = plainKo(b);
+  if (!x || !y) return false;
+  if (x.includes(y) || y.includes(x)) return true;
+  return jac(bigrams(x), bigrams(y)) >= 0.45;
+}
+
 function chooseSets(talk, idx, options, near, q) {
   const rnd = seeded('me:' + talk.id + ':' + idx);
   const ok = options.map((o, i) => ({ kind: 'ok', option: i, ja: o.natural.ja, ko: o.natural.ko, mean: o.natural.mean }));
@@ -398,10 +426,19 @@ function chooseSets(talk, idx, options, near, q) {
     })
     .sort((p, r) => r.score - p.score);
   const offs = [];
+  // 틀린 보기가 정답(이나 다른 보기)과 거의 같은 말이면 안 돼요: "아리가또- 고자이마스" ↔ "다이죠-부데스, 아리가또- 고자이마스"
+  const shown = [...ok, ...nearOpts].map((y) => y.ko);
+  const tooClose = (ko) => shown.some((y) => nearSame(y, ko));
+  // 헷갈리는 건 "소리"여야지 "뜻"이면 안 돼요. 뜻에 정답과 같은 말이 들어 있으면 사실 맞는 대답일 수 있어서 빼요
+  // ("교토에 가요" 정답 옆에 "가마쿠라에 가요", "다음엔 가족이랑 올게요" 옆에 "다음엔 겨울에 올게요")
+  const okStems = new Set(options.flatMap((o) => meanStems(o.natural.mean)));
+  const banned = new Set(NOT_WRONG[talk.id + ':' + idx] || []);
+  const meansRight = (mean) => banned.has(mean) || ANY_OK.has(mean) || meanStems(mean).some((w) => okStems.has(w));
   for (let level = 0; level <= 3 && offs.length < 4; level++) {
     for (const { x, g } of cands) {
       if (offs.length >= 4) break;
-      if (!fits(g, level) || used.has(x.o.natural.ko)) continue;
+      if (!fits(g, level) || used.has(x.o.natural.ko) || tooClose(x.o.natural.ko) || meansRight(x.o.natural.mean)) continue;
+      shown.push(x.o.natural.ko);
       used.add(x.o.natural.ko);
       offs.push({ kind: 'off', ja: x.o.natural.ja, ko: x.o.natural.ko, mean: x.o.natural.mean });
     }
