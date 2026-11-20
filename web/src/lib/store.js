@@ -13,6 +13,7 @@ const DEFAULTS = {
   introDay: '', // 소개 탭을 마지막으로 본 날 (그날 처음 들어오면 소개 탭부터)
   seenGame: false,
   seenCheck: false, // 첫 대화 전 소리·마이크 확인을 했는지
+  seenHelp: {}, // 탭에 처음 들어올 때 설명 팝업을 봤는지 { learn, review, tower } (concept 11-20)
   settings: {
     speed: 'normal', // slow | normal | fast
     kana: true, // 한글 발음 보기

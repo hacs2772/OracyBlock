@@ -12,7 +12,8 @@ import { TopBar, Question, Stack, Tabs } from '../components/ui.jsx';
 import Face, { FACE_OF } from '../components/Face.jsx';
 import TowerAlert from '../components/TowerAlert.jsx';
 import { Guide } from '../components/Guides.jsx';
-import { TALK_SLIDES, TOWER_SLIDES } from '../components/LandingSlides.jsx';
+import { TALK_SLIDES, TOWER_SLIDES, REVIEW_SLIDES } from '../components/LandingSlides.jsx';
+import { HelpBricks } from './Landing.jsx';
 import { buildTower } from './TowerPage.jsx';
 import { josa } from './Talk.jsx';
 
@@ -97,14 +98,12 @@ export default function Home() {
         </div>
       </Link>
 
-      <div className="hm-help">
-        <button className="ob-btn sm" onClick={() => setPop('talk')}><span className="t">사용 방법</span></button>
-        <button className="ob-btn sm" onClick={() => setPop('tower')}><span className="t">내 탑과 순위</span></button>
-      </div>
+      <HelpBricks onOpen={setPop} />
 
       <Tabs />
       {overlays}
       {pop === 'talk' && <Guide slides={TALK_SLIDES} label="사용 방법" doneLabel="알겠어요" skipLabel="닫기" onDone={() => setPop(null)} />}
+      {pop === 'review' && <Guide slides={REVIEW_SLIDES} label="복습 방법" doneLabel="알겠어요" skipLabel="닫기" onDone={() => setPop(null)} />}
       {pop === 'tower' && <Guide slides={TOWER_SLIDES} label="내 탑과 순위" doneLabel="알겠어요" skipLabel="닫기" onDone={() => setPop(null)} />}
     </div>
   );

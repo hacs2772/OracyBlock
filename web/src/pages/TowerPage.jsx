@@ -4,13 +4,15 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { quiet } from '../lib/api.js';
-import { useStore } from '../lib/store.js';
+import { store, useStore } from '../lib/store.js';
 import { speedOf, speedByCap, restEffect, crackRule, SPEEDS, SPEED_KEYS, MAX_FALL } from '../lib/speed.js';
 import TowerAlert from '../components/TowerAlert.jsx';
 import { LEVEL_SCALE } from '../content/build.js';
 import { dayTone, WEEK_TONE, WEEK_NAME } from '../lib/progress.js';
 import Brick from '../components/Brick.jsx';
-import { TopBar, Sheet, Tabs } from '../components/ui.jsx';
+import { TopBar, Sheet, Tabs, Question } from '../components/ui.jsx';
+import { Guide } from '../components/Guides.jsx';
+import { TOWER_SLIDES } from '../components/LandingSlides.jsx';
 
 const dayNum = (s) => Math.round(new Date(s + 'T00:00:00Z').getTime() / 864e5);
 
@@ -82,6 +84,12 @@ function Pyramid({ stack, cracks }) {
 
 export default function TowerPage() {
   const st = useStore();
+  // 처음 들어오면 내 탑과 순위 팝업
+  const [help, setHelp] = useState(() => !st.seenHelp?.tower);
+  const closeHelp = () => {
+    setHelp(false);
+    store.set({ seenHelp: { ...(store.s.seenHelp || {}), tower: true } });
+  };
   const [tower, setTower] = useState(null);
   const [prog, setProg] = useState(null);
   const [scope, setScope] = useState('week');
@@ -103,7 +111,10 @@ export default function TowerPage() {
 
   return (
     <div className="page has-tabs">
-      <TopBar />
+      <TopBar>
+        <button className="icon-btn" onClick={() => setHelp(true)} aria-label="내 탑과 순위 보기"><Question /></button>
+      </TopBar>
+      {help && <Guide slides={TOWER_SLIDES} label="내 탑과 순위" doneLabel="알겠어요" skipLabel="닫기" onDone={closeHelp} />}
       <div className="card strong" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <Brick tone="coral" shine studs={3} pitch={11} h={15} depth={7} studH={3} />
         <div style={{ flex: 1, minWidth: 0 }}>

@@ -1,14 +1,16 @@
 // 복습 탭: 오늘 복습할 단어 + 복습 탑(맞힌 단어마다 단어가 적힌 브릭) + 내 단어
 import { useEffect, useState } from 'react';
 import { quiet } from '../lib/api.js';
-import { useStore } from '../lib/store.js';
+import { store, useStore } from '../lib/store.js';
 import { speedOf } from '../lib/speed.js';
 import { dayTone } from '../lib/progress.js';
 import { dailyCognate } from '../content/build.js';
 import { speak, unlock } from '../lib/speech.js';
 import Brick, { brickBox } from '../components/Brick.jsx';
 import WordQuiz, { WORD_BRICK } from '../components/WordQuiz.jsx';
-import { TopBar, Tabs, Play, Back, Sheet } from '../components/ui.jsx';
+import { TopBar, Tabs, Play, Back, Sheet, Question } from '../components/ui.jsx';
+import { Guide } from '../components/Guides.jsx';
+import { REVIEW_SLIDES } from '../components/LandingSlides.jsx';
 
 function WordTower({ bricks, total }) {
   const show = bricks.slice(-10);
@@ -35,6 +37,12 @@ function WordTower({ bricks, total }) {
 
 export default function Review() {
   const st = useStore();
+  // 처음 들어오면 복습 방법 팝업
+  const [help, setHelp] = useState(() => !st.seenHelp?.review);
+  const closeHelp = () => {
+    setHelp(false);
+    store.set({ seenHelp: { ...(store.s.seenHelp || {}), review: true } });
+  };
   const [words, setWords] = useState(null);
   const [tower, setTower] = useState({ bricks: [], total: 0 });
   const [prog, setProg] = useState(null);
@@ -78,7 +86,10 @@ export default function Review() {
 
   return (
     <div className="page has-tabs">
-      <TopBar />
+      <TopBar>
+        <button className="icon-btn" onClick={() => setHelp(true)} aria-label="복습 방법 보기"><Question /></button>
+      </TopBar>
+      {help && <Guide slides={REVIEW_SLIDES} label="복습 방법" doneLabel="알겠어요" skipLabel="닫기" onDone={closeHelp} />}
       <div className="title-row">
         <h1>복습</h1>
         <span className="small muted">맞힌 단어 {tower.total}개</span>

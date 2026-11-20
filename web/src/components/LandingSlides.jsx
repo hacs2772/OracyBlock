@@ -200,3 +200,92 @@ export const TOWER_SLIDES = [
   { t: '쉬면 금이 가요', b: '빨리 쌓은 탑일수록 쉬는 날 빨리 흔들려요. 금이 가도 대화나 복습 하나면 다시 단단해져요.', art: ArtCrack },
   { t: '순위는 공부한 날 수로', b: '브릭 수가 아니라 얼마나 꾸준히 했는지를 겨뤄요.', art: ArtRank },
 ];
+
+// ---------- 복습 방법 (복습 탭에 처음 들어올 때, 소개 웹 "복습 방법") ----------
+const W = { studs: 4, pitch: 22, h: 22, depth: 10, studH: 5 };
+
+function ArtCollect() {
+  const words = [['료꼬-', '#29B6A5'], ['비-루', '#FF7967'], ['캉코꾸', '#FFC857'], ['하지메떼', '#6BB8E8']];
+  return (
+    <div className="sl-art">
+      <div style={at(12, 18)}><Face kind="auntie" size={46} /></div>
+      <Bub left={66} top={14} width={150} d={0.1}><b>료꼬-데스까?</b></Bub>
+      {words.map(([w, c], i) => (
+        <div key={w} className="sl-drop" style={{ ...at(150 - i * 2, 196 - i * 22 - 26), ...delay(0.6 + i * 0.35) }}><Brick tone={c} label={w} {...W} /></div>
+      ))}
+      <span className="sl-say sl-fade" style={{ ...at(12, 120), ...delay(2.2) }}>대화 속 단어</span>
+    </div>
+  );
+}
+
+function ArtListen() {
+  const opts = ['여행', '맥주', '처음', '한국', '일'];
+  return (
+    <div className="sl-art">
+      <div className="sl-word sl-pop" style={{ ...at(20, 8), ...delay(0.1) }}>
+        <span className="sl-play" /> <b>료꼬-</b> <span className="sl-ja">りょこう</span>
+      </div>
+      <div className="sl-wave" style={at(196, 18)} aria-hidden="true">
+        {[8, 16, 24, 14, 20, 10].map((h, i) => <i key={i} style={{ height: h, ...delay(i * 0.08) }} />)}
+      </div>
+      {opts.map((o, i) => (
+        <div key={o} className={'sl-opt sl-fade' + (i === 0 ? ' pick' : '')} style={{ ...at(20 + (i % 2) * 140, 76 + Math.floor(i / 2) * 44), width: 130, ...delay(0.4 + i * 0.12) }}>{o}</div>
+      ))}
+      <span className="sl-say sl-fade" style={{ ...at(170, 200), ...delay(1.6), color: '#1B776C' }}>딸깍!</span>
+    </div>
+  );
+}
+
+function ArtWordTower() {
+  const list = [['료꼬-', '#29B6A5'], ['비-루', '#FF7967'], ['캉코꾸', '#FFC857'], ['하지메떼', '#6BB8E8'], ['오이시-', '#A792E0']];
+  return (
+    <div className="sl-art">
+      <div style={at(84, 222)}><Brick tone="plate" studs={6} pitch={22} h={10} depth={10} studH={5} /></div>
+      {list.map(([w, c], i) => (
+        <div key={w} className="sl-drop" style={{ ...at(104, 222 - (i + 1) * 22 - 18), ...delay(0.2 + i * 0.35) }}><Brick tone={c} label={w} {...W} /></div>
+      ))}
+      <span className="sl-say sl-fade" style={{ ...at(8, 20), ...delay(2.1) }}>복습 탑 5층</span>
+    </div>
+  );
+}
+
+function ArtAgain() {
+  const days = ['내일', '3일 뒤', '7일 뒤', '14일 뒤', '30일 뒤'];
+  return (
+    <div className="sl-art">
+      <div className="sl-word sl-pop" style={{ ...at(20, 10), ...delay(0.1) }}><b>캉코꾸</b> <span className="sl-ja">한국</span></div>
+      {days.map((d, i) => (
+        <div key={d} className="sl-day sl-fade" style={{ ...at(20 + i * 56, 120 - i * 14), ...delay(0.5 + i * 0.3) }}>
+          <span className="sl-day-dot" />
+          {d}
+        </div>
+      ))}
+      <div className="sl-note sl-fade" style={{ ...at(20, 190), ...delay(2.2) }}>맞힐수록 <b>더 나중에</b>, 틀리면 <b>내일</b> 다시</div>
+    </div>
+  );
+}
+
+function ArtShadow() {
+  return (
+    <div className="sl-art">
+      <div className="sl-mic sl-pulse" style={at(24, 30)} aria-hidden="true">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#24324A" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0" /><path d="M12 18v3" /></svg>
+      </div>
+      <span className="sl-say sl-fade" style={{ ...at(104, 46), ...delay(0.3) }}>"료꼬-"</span>
+      {[['원어민', '#29B6A5', 0.6], ['나', '#FF7967', 1.2]].map(([who, c, d], r) => (
+        <div key={who} className="sl-lane sl-fade" style={{ ...at(20, 122 + r * 52), ...delay(d) }}>
+          <b>{who}</b>
+          <span className="sl-wave">{[10, 18, 24, 14, 22, 12, 20, 9, 16].map((h, i) => <i key={i} style={{ height: h, background: c, ...delay(i * 0.07) }} />)}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export const REVIEW_SLIDES = [
+  { t: '대화에서 만난 단어가 모여요', b: '대화를 하면 꼭 들어야 할 단어가 복습 목록에 들어와요. 놓친 단어는 다음 날 바로 나와요.', art: ArtCollect },
+  { t: '듣고 뜻을 골라요', b: '단어를 들려주면 보기 5개 중에서 뜻을 골라요. 맞혀도 틀려도 단어를 크게 보여 주고 다시 들려줘요.', art: ArtListen },
+  { t: '맞히면 복습 탑이 올라가요', b: '맞힌 단어는 단어가 적힌 브릭으로 복습 탑에 쌓여요. 날마다 색이 달라요.', art: ArtWordTower },
+  { t: '잊을 때쯤 다시 들려줘요', b: '맞힐수록 더 나중에, 틀리면 내일 다시 나와요. 하루에 몇 개 할지는 쌓는 속도에 따라 달라요.', art: ArtAgain },
+  { t: '따라 말해 봐도 좋아요', b: '뜻을 고른 다음 마이크를 누르고 따라 말하면, 원어민 소리와 내 소리를 번갈아 들려줘요. 점수는 없어요.', art: ArtShadow },
+];

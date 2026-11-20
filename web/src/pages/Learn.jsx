@@ -9,6 +9,8 @@ import Brick from '../components/Brick.jsx';
 import { TopBar, Question, Sheet, Stack, Tabs } from '../components/ui.jsx';
 import { loadResume, resumeIds } from '../lib/resume.js';
 import { useStartTalk } from '../lib/useStartTalk.jsx';
+import { Guide } from '../components/Guides.jsx';
+import { TALK_SLIDES } from '../components/LandingSlides.jsx';
 
 const MINI = { studs: 4, pitch: 9, h: 11, depth: 6, studH: 3 };
 const LV_TONE = ['#29B6A5', '#FF7967', '#FFC857', '#6BB8E8', '#A792E0'];
@@ -35,7 +37,13 @@ export default function Learn() {
   const maxReady = Math.max(...READY_LEVELS);
   const resumable = new Set(resumeIds());
   const next = nextTalk(level, plays);
-  const { start: startTalk, showGuide, overlays } = useStartTalk(prog);
+  const { start: startTalk, overlays } = useStartTalk(prog);
+  // 처음 들어오면 사용 방법 팝업 (다 보면 대화 시작 전 게임 방법은 건너뛰어요)
+  const [help, setHelp] = useState(() => !st.seenHelp?.learn);
+  const closeHelp = () => {
+    setHelp(false);
+    store.set({ seenHelp: { ...(store.s.seenHelp || {}), learn: true }, seenGame: true });
+  };
   const fixCount = new Map();
   for (const g of fixes) fixCount.set(g.talkId, (fixCount.get(g.talkId) || 0) + g.items.length);
   const doneCount = talks.filter((t) => latest.has(t.id)).length;
@@ -62,7 +70,7 @@ export default function Learn() {
   return (
     <div className="page has-tabs">
       <TopBar>
-        <button className="icon-btn" onClick={showGuide} aria-label="게임 방법 보기"><Question /></button>
+        <button className="icon-btn" onClick={() => setHelp(true)} aria-label="사용 방법 보기"><Question /></button>
       </TopBar>
       <div className="title-row">
         <h1 className="learn-h1">학습</h1>
@@ -162,6 +170,7 @@ export default function Learn() {
         </Sheet>
       )}
       {overlays}
+      {help && <Guide slides={TALK_SLIDES} label="사용 방법" doneLabel="알겠어요" skipLabel="닫기" onDone={closeHelp} />}
     </div>
   );
 }

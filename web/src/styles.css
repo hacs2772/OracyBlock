@@ -21,6 +21,7 @@
   --yellow-bg: #fff3d6;
   --yellow-line: #e9c77e;
   --pink-bg: #ffe1db;
+  --sky-bg: #e4eef8;
   --display: 'Do Hyeon', sans-serif;
   --body: 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', system-ui, sans-serif;
 }
@@ -499,3 +500,18 @@ textarea.input { height: 120px; padding: 10px 12px; resize: vertical; line-heigh
 .adm-turns th { font-weight: 700; white-space: nowrap; }
 .adm-turns td:nth-child(n+3) { white-space: nowrap; text-align: right; }
 .adm-turns tr.hot td { background: var(--pink-bg); }
+.sl-word { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border: 2px solid var(--navy); border-radius: 12px; background: #fff; box-shadow: 0 3px 0 var(--navy); font-size: 22px; }
+.sl-play { display: inline-block; width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--navy); background: var(--mint); }
+.sl-day { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 54px; font-size: 12px; font-weight: 700; }
+.sl-day-dot { width: 18px; height: 18px; border-radius: 4px; border: 2px solid var(--navy); background: var(--yellow); }
+.sl-mic { display: flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 50%; border: 2px solid var(--navy); background: var(--coral); box-shadow: 0 4px 0 var(--navy); }
+.sl-lane { display: flex; align-items: center; gap: 8px; width: 270px; padding: 6px 10px; border: 2px solid var(--card-line); border-radius: 10px; background: #fff; }
+.sl-lane b { width: 42px; font-size: 12px; }
+/* 설명 팝업 여는 작은 브릭 버튼 세 개 (소개 웹 · 홈) */
+.hb-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 16px; max-width: 460px; }
+.hb-btn.ob-btn.sm { margin-top: 8px; min-height: 42px; padding: 4px 6px; }
+.hb-btn.ob-btn.sm .t { font-size: 15px; white-space: nowrap; }
+.hb-talk { background: var(--mint-bg); }
+.hb-review { background: var(--yellow-bg); }
+.hb-tower { background: var(--sky-bg); }
+@media (max-width: 360px) { .hb-btn.ob-btn.sm .t { font-size: 13px; } }

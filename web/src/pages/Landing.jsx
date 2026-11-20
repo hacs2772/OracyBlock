@@ -8,7 +8,7 @@ import { store, useStore } from '../lib/store.js';
 import { LogoMark, Tabs } from '../components/ui.jsx';
 import { openContact } from '../components/Contact.jsx';
 import { INTRO, Guide } from '../components/Guides.jsx';
-import { TALK_SLIDES, TOWER_SLIDES } from '../components/LandingSlides.jsx';
+import { TALK_SLIDES, TOWER_SLIDES, REVIEW_SLIDES } from '../components/LandingSlides.jsx';
 import Face from '../components/Face.jsx';
 import { Stack } from '../components/ui.jsx';
 
@@ -119,11 +119,22 @@ function IntroRow({ s, i }) {
   );
 }
 
+/** 설명 팝업 세 개를 여는 작은 브릭 버튼 (소개 웹 "베타로 시작하기" 아래 · 홈) */
+export function HelpBricks({ onOpen }) {
+  return (
+    <div className="hb-row" role="group" aria-label="설명 보기">
+      <button className="ob-btn sm hb-btn hb-talk" onClick={() => onOpen('talk')}><span className="t">사용 방법</span></button>
+      <button className="ob-btn sm hb-btn hb-review" onClick={() => onOpen('review')}><span className="t">복습 방법</span></button>
+      <button className="ob-btn sm hb-btn hb-tower" onClick={() => onOpen('tower')}><span className="t">내 탑과 순위</span></button>
+    </div>
+  );
+}
+
 const TOPICS = ['#자기소개', '#여행', '#음식·술', '#고향', '#일', '#가족', '#연애', '#취미', '#고민'];
 
 export default function Landing() {
   const nav = useNavigate();
-  const [pop, setPop] = useState(null); // 'talk' | 'tower'
+  const [pop, setPop] = useState(null); // 'talk' | 'review' | 'tower'
   const st = useStore();
   const start = () => {
     unlock();
@@ -163,23 +174,13 @@ export default function Landing() {
               <button className="ob-btn coral" style={{ minWidth: 240 }} onClick={start}><span className="t">{st.user ? '학습하러 가기' : '베타로 시작하기'}</span><span className="s">{st.user ? `${st.user.nickname || ''} 님, 이어서 해요` : '무료 · 가입 없이 바로'}</span></button>
               {!st.user && <Link to="/login" style={{ fontSize: 15, fontWeight: 500, textUnderlineOffset: 3 }}>이미 계정이 있어요 · 로그인</Link>}
             </div>
+            <HelpBricks onOpen={setPop} />
             <p className="small muted" style={{ marginTop: 22, fontSize: 13, lineHeight: 1.6 }}>휴대폰 브라우저에서 oracyblock.com을 열고 홈 화면에 추가하면 앱처럼 쓸 수 있어요. 지금은 일본어부터, 영어와 중국어는 준비 중이에요.</p>
           </div>
         </section>
 
         <section className="lp-sec lp-intro">
           {INTRO.map((x, i) => <IntroRow key={x.t} s={x} i={i} />)}
-        </section>
-
-        <section className="lp-sec lp-more">
-          <button className="lp-more-card" onClick={() => setPop('talk')}>
-            <span className="lp-more-t">사용 방법</span>
-            <span className="lp-more-s">듣고 뜻 맞히기, 단어 하나로 대답하기, 비뚤게·튕기는 브릭</span>
-          </button>
-          <button className="lp-more-card" onClick={() => setPop('tower')}>
-            <span className="lp-more-t">내 탑과 순위</span>
-            <span className="lp-more-s">하루에 쌓는 브릭, 쉬면 생기는 금, 꾸준함 순위</span>
-          </button>
         </section>
 
         <section className="lp-sec">
@@ -212,6 +213,7 @@ export default function Landing() {
       </div>
       <Tabs className="lp-tabs" />
       {pop === 'talk' && <Guide slides={TALK_SLIDES} label="사용 방법" doneLabel="직접 해 보기" skipLabel="닫기" onSkip={() => setPop(null)} onDone={() => { setPop(null); start(); }} />}
+      {pop === 'review' && <Guide slides={REVIEW_SLIDES} label="복습 방법" doneLabel="알겠어요" skipLabel="닫기" onDone={() => setPop(null)} />}
       {pop === 'tower' && <Guide slides={TOWER_SLIDES} label="내 탑과 순위" doneLabel="알겠어요" skipLabel="닫기" onDone={() => setPop(null)} />}
     </div>
   );
