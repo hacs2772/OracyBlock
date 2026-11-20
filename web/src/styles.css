@@ -480,3 +480,6 @@ textarea.input { height: 120px; padding: 10px 12px; resize: vertical; line-heigh
 .lp-more-card:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--navy); }
 .lp-more-t { font-family: var(--display); font-size: 24px; line-height: 1.2; }
 .lp-more-s { font-size: 14px; line-height: 1.5; color: var(--ink2); }
+/* 소개 웹 오른쪽 위 브릭 버튼 (로그인 · 베타로 시작 / 학습하러 가기) */
+.lp-headbtn.ob-btn.sm { margin-top: 8px; min-height: 40px; padding: 4px 14px; text-decoration: none; }
+@media (max-width: 420px) { .lp-head .logo-text { display: none; } }
