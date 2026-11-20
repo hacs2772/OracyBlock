@@ -83,7 +83,7 @@ export default function Talk() {
   const [mover, setMover] = useState(null); // 튕겨 나가는 브릭
   const [ph, setPh] = useState({}); // 이번 차례 상태
   const [done, setDone] = useState(false);
-  const stats = useRef({ bounces: 0, hints: 0, speakN: 0, writeN: 0, chooseN: 0, okN: 0, nearN: 0, rescueN: 0, missed: new Map(), fixes: [], answers: {} });
+  const stats = useRef({ bounces: 0, hints: 0, speakN: 0, writeN: 0, chooseN: 0, okN: 0, nearN: 0, rescueN: 0, missed: new Map(), fixes: [], answers: {}, variant: {}, tags: [], path: [] });
   const playId = useRef(null);
   const timers = useRef([]);
   const later = (ms, fn) => timers.current.push(setTimeout(fn, ms));
@@ -117,7 +117,7 @@ export default function Talk() {
     clearResume(talk.id);
     setResumeAsk(null);
     newPlay();
-    later(300, () => say(talk.steps[0].line.ja, rate));
+    later(300, () => say(eff(talk.steps[0]).line.ja, rate));
   };
 
   useEffect(() => {
@@ -130,12 +130,32 @@ export default function Talk() {
     };
   }, [talk, level]);
 
-  const step = talk?.steps[si];
+  // 변주: 상대 말마다 이번 판에 들려줄 말투를 하나 골라 기억해요 (0 = 기본, 1~ = alt)
+  const eff = (s) => {
+    if (!s || s.type !== 'them' || !s.alts?.length) return s;
+    const vmap = stats.current.variant || (stats.current.variant = {});
+    if (!(s.idx in vmap)) vmap[s.idx] = Math.floor(Math.random() * (s.alts.length + 1));
+    const v = vmap[s.idx];
+    if (!v) return s;
+    const a = s.alts[v - 1];
+    return { ...s, line: { ...s.line, ja: a.ja, ko: a.ko }, keys: a.keys, casual: !/(です|ます|でした|ました|ください|ません|ましょう|でしょうか)/.test(a.ja) };
+  };
+  // 가지: 고른 대답의 꼬리표(go)에 맞는 차례만 지나가요
+  const nextIdx = (from, tags = stats.current.tags || []) => {
+    const all = talk?.steps || [];
+    for (let j = from + 1; j < all.length; j++) if (!all[j].when || tags.includes(all[j].when)) return j;
+    return -1;
+  };
+  const step = eff(talk?.steps[si]);
   const steps = talk?.steps || [];
   // 화면이 낮은 휴대폰(아이폰 SE 등)은 무대를 조금 낮게
   const stageH = typeof window !== 'undefined' && window.innerHeight < 700 ? 128 : 200;
   const small = stageH < 200;
-  const size = sizeFor(level, steps.length + 1, stageH - 46);
+  // 탑 높이는 실제로 지나갈 차례 수로 (가지는 가장 긴 쪽 하나만)
+  const branchLen = {};
+  for (const x of steps) if (x.when) branchLen[x.when] = (branchLen[x.when] || 0) + 1;
+  const pathLen = steps.filter((x) => !x.when).length + Math.max(0, ...Object.values(branchLen));
+  const size = sizeFor(level, pathLen + 1, stageH - 46);
 
   // 차례가 바뀔 때마다 이 기기에 기억해 둬요 (나갔다 와도 이어 하기)
   useEffect(() => {
@@ -144,7 +164,7 @@ export default function Talk() {
     saveResume(talk.id, {
       playId: playId.current,
       si,
-      bricks: bricks.map((b) => ({ tone: b.tone, shine: b.shine, tilt: b.tilt, missing: b.missing, gone: b.gone })),
+      bricks: bricks.map((b) => ({ tone: b.tone, shine: b.shine, tilt: b.tilt, missing: b.missing, gone: b.gone, path: b.path })),
       stats: { ...s, missed: [...s.missed.values()] },
     });
   }, [si]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -153,6 +173,7 @@ export default function Talk() {
   useEffect(() => {
     if (!step || done || resumeAsk) return;
     setNeedTap(false);
+    if (!(stats.current.path || []).includes(si)) stats.current.path = [...(stats.current.path || []), si];
     // 새 차례: 대화창부터 보이게. 낮은 화면은 머리줄을 넘겨 대화창을 맨 위로 (보기 4개까지 한 화면에)
     later(30, () => {
       const el = document.querySelector('.tk-chat');
@@ -181,7 +202,7 @@ export default function Talk() {
   }
 
   const partner = talk.partner;
-  const prevThem = step?.type === 'me' ? steps[si - 1] : null;
+  const prevThem = step?.type === 'me' ? eff(steps[si - 1]) : null;
 
   const place = (brick) => {
     setBricks((b) => [...b, { ...brick, cls: brick.tilt ? 'b-tilt' : 'b-drop', key: b.length }]);
@@ -283,8 +304,22 @@ export default function Talk() {
       const last = bricks[bricks.length - 1];
       if (last?.tilt && !last.gone) stats.current.fixes.push({ turnIdx: step.idx, kind: 'tilt', prev: ph.result?.picked || '' });
     }
-    if (si + 1 >= steps.length) finish();
-    else setSi(si + 1);
+    advance();
+  };
+  // 다음 차례로. 가지에서 건너뛴 차례는 안 보이는 빈자리(path)로 채워서 브릭 번호 = 차례 번호를 지켜요 (고치기가 이 번호를 써요)
+  const advance = () => {
+    let tags = stats.current.tags || [];
+    if (step.type === 'me') {
+      const opt = ph.result?.option != null ? step.options[ph.result.option] : null;
+      const go = opt?.go || step.options[0]?.go;
+      if (go && !tags.includes(go)) tags = [...tags, go];
+      stats.current.tags = tags;
+    }
+    const nj = nextIdx(si, tags);
+    if (nj === -1) return finish();
+    if (nj > si + 1) setBricks((b) => [...b, ...Array.from({ length: nj - si - 1 }, (_, k) => ({ tone: 'mint', gone: true, path: true, key: 'p' + (si + 1 + k) }))]);
+    setSi(nj);
+    return null;
   };
 
   const finish = async () => {
@@ -295,11 +330,11 @@ export default function Talk() {
     setDone(true);
     clearResume(talk.id);
     const s = stats.current;
-    const words = talkWords(talk);
+    const words = pathWords();
     const body = {
-      crooked: finalBricks.some((b) => b.tilt || b.gone),
+      crooked: finalBricks.some((b) => b.tilt || (b.gone && !b.path)),
       bounces: s.bounces, hints: s.hints, speakN: s.speakN, writeN: s.writeN, chooseN: s.chooseN, okN: s.okN, nearN: s.nearN, rescueN: s.rescueN,
-      bricks: JSON.stringify(finalBricks.map((b) => ({ t: b.tone, s: b.shine ? 1 : 0, k: b.tilt ? 1 : 0, m: b.missing || '', ...(b.gone ? { g: 1 } : {}) }))),
+      bricks: JSON.stringify(finalBricks.map((b) => ({ t: b.tone, s: b.shine ? 1 : 0, k: b.tilt ? 1 : 0, m: b.missing || '', ...(b.gone ? { g: 1 } : {}), ...(b.path ? { p: 1 } : {}) }))),
       words: words.filter(isReviewWord).map((w) => ({ key: w.key, ko: w.ko, mean: w.mean, say: w.say, missed: s.missed.has(w.key) })),
       fixes: s.fixes,
     };
@@ -323,7 +358,18 @@ export default function Talk() {
   const shown = bricks.filter((b) => !b.gone).length + 1;
   const baseY = Math.max(stageH - 16, shown * size.h + size.studH + size.depth + 12);
 
-  const allWords = done ? talkWords(talk) : [];
+  // 이번 판에 지나간 차례의 단어만 (고른 말투·가지 기준)
+  function pathWords() {
+    const map = new Map();
+    for (const i of stats.current.path || []) {
+      const s0 = eff(steps[i]);
+      if (!s0) continue;
+      const list = s0.type === 'them' ? s0.keys : s0.options.flatMap((o) => o.words);
+      for (const w of list) if (!map.has(w.key)) map.set(w.key, w);
+    }
+    return map.size ? [...map.values()] : talkWords(talk);
+  }
+  const allWords = done ? pathWords() : [];
 
   // 위쪽 대화창: 상대(왼쪽 얼굴 + 말풍선) · 나(오른쪽). 가장 최근 두 마디만 (낮은 화면에서는 상대 말 차례에 내 지난 대답은 빼요)
   const face = talk.face || FACE_OF[talk.id];
@@ -331,7 +377,7 @@ export default function Talk() {
   if (!done && step && !resumeAsk) {
     const said = stats.current.answers || {};
     if (step.type === 'them') {
-      const prev = steps[si - 1];
+      const prev = steps[[...(stats.current.path || [])].filter((i) => i < si).pop() ?? -1];
       if (prev?.type === 'me' && prev.idx in said && !small) chat.push({ key: 'm' + prev.idx, side: 'me', text: said[prev.idx], skipped: said[prev.idx] === null });
       chat.push({ key: 't' + step.idx, side: 'them', line: step.line, casual: step.casual, guess: !ph.solved });
     } else if (prevThem) {
@@ -340,7 +386,7 @@ export default function Talk() {
       chat.push({ key: 'm' + step.idx, side: 'me', text: r?.kind === 'skip' ? null : r?.placed ? r.picked : null, skipped: r?.kind === 'skip' });
     }
   }
-  const correctNow = done && !bricks.some((b) => b.tilt || b.gone);
+  const correctNow = done && !bricks.some((b) => b.tilt || (b.gone && !b.path));
 
   return (
     <div className="page" style={{ gap: 10 }}>
@@ -418,11 +464,11 @@ export default function Talk() {
       )}
 
       {!done && step?.type === 'them' && (
-        <ThemPanel say={say} talkId={talk.id} step={step} ph={ph} setPh={setPh} partner={partner} rate={rate} pick={pickMeaning} refresh={refreshMeaning} next={() => setSi(si + 1)} onHear={() => setNeedTap(false)} />
+        <ThemPanel say={say} talkId={talk.id} step={step} ph={ph} setPh={setPh} partner={partner} rate={rate} pick={pickMeaning} refresh={refreshMeaning} next={advance} onHear={() => setNeedTap(false)} />
       )}
 
       {!done && step?.type === 'me' && (
-        <MePanel talkId={talk.id} step={step} ph={ph} partner={partner} pickAnswer={pickAnswer} goNext={goNext} isLast={si + 1 >= steps.length} nextIsThem={steps[si + 1]?.type === 'them'} />
+        <MePanel talkId={talk.id} step={step} ph={ph} partner={partner} pickAnswer={pickAnswer} goNext={goNext} isLast={nextIdx(si) === -1 && !step.options.some((o) => o.go)} nextIsThem={steps[nextIdx(si)]?.type === 'them' || step.options.some((o) => o.go)} />
       )}
 
       {done && (
@@ -430,7 +476,7 @@ export default function Talk() {
           <div style={{ textAlign: 'center' }}>
             <h1 style={{ fontSize: 30 }}>대화 하나 완성!</h1>
             <p className="muted" style={{ fontSize: 14, marginTop: 4 }}>
-              {partner}와 {steps.filter((x) => x.type === 'me').length}번 주고받았어요.{' '}
+              {partner}와 {(stats.current.path || []).filter((i) => steps[i]?.type === 'me').length}번 주고받았어요.{' '}
               {correctNow ? '비뚤어진 브릭 없는 올바른 탑이에요.' : '비뚤어지거나 빠진 곳은 고치기에서 다시 세울 수 있어요.'}
             </p>
           </div>

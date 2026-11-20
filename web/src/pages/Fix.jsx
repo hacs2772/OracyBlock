@@ -121,11 +121,8 @@ function Remake({ group, onExit }) {
     setPh({ fb: '', n: 0, shake: -1, solved: null, listening: false });
   };
 
-  const options = item.kind === 'hole' ? step.sets[step.answerSet] : (() => {
-    const all = step.choose.flat().filter((o, i, arr) => arr.findIndex((x) => x.ko === o.ko) === i);
-    const pick = [...all.filter((o) => o.kind === 'ok').slice(0, 1), ...all.filter((o) => o.kind !== 'ok')].slice(0, 4);
-    return pick.sort((x, y) => (x.ko < y.ko ? -1 : 1));
-  })();
+  // 대화 화면과 같은 보기 (맞는 대답은 모두 들어 있어요)
+  const options = item.kind === 'hole' ? step.sets[step.answerSet] : step.choose;
   const mic = async () => {
     if (ph.listening) return stopListening();
     setPh({ ...ph, listening: true, fb: '' });
@@ -139,10 +136,14 @@ function Remake({ group, onExit }) {
     }
   };
   const optWords = item.kind !== 'hole' ? step.options[0].words : step.keys;
-  const markLeft = 'calc(50% + ' + (BIG.pitch * 2 + 20) + 'px)';
+  // 브릭이 많으면 무대(높이 200)에 다 들어가게 얇게
+  const vis = bricks.filter((b) => !b.gone).length;
+  const h = Math.max(9, Math.min(BIG.h, Math.floor(168 / Math.max(1, vis))));
+  const SZ = h === BIG.h ? BIG : { studs: 4, pitch: Math.round(h * 0.9), h, depth: Math.round(h * 0.5), studH: Math.max(3, Math.round(h * 0.25)) };
+  const markLeft = 'calc(50% + ' + (SZ.pitch * 2 + 20) + 'px)';
   const baseY = 180;
   const below = bricks.slice(0, item.turnIdx).filter((b) => !b.gone).length; // 빠진 자리는 안 그려서 그 아래 브릭 수로
-  const ptrTop = baseY - below * BIG.h - BIG.h / 2 - 22;
+  const ptrTop = baseY - below * SZ.h - SZ.h / 2 - 22;
 
   return (
     <div className="page" style={{ gap: 10 }}>
@@ -152,8 +153,8 @@ function Remake({ group, onExit }) {
         <span style={{ width: 44, textAlign: 'center', fontSize: 13, fontWeight: 700 }}>{k + 1}/{items.length}</span>
       </div>
       <div className="stage plate" style={{ boxShadow: 'none', padding: 0, height: 200 }}>
-        <div style={{ position: 'absolute', left: '50%', top: 0, marginLeft: -(BIG.pitch * 2 + 14) }}>
-          <Stack bricks={bricks} size={BIG} x0={20} baseY={baseY} height={200} width={120} plate={6} />
+        <div style={{ position: 'absolute', left: '50%', top: 0, marginLeft: -(SZ.pitch * 2 + 14) }}>
+          <Stack bricks={bricks} size={SZ} x0={20} baseY={baseY} height={200} width={120} plate={6} />
         </div>
         <div className="ptr" style={{ left: markLeft, top: Math.max(4, ptrTop), color: ph.solved ? '#1B776C' : '#E0533F' }}>
           <svg width="22" height="14" viewBox="0 0 22 14" aria-hidden="true"><path d="M21 7H3M8 2L3 7l5 5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>

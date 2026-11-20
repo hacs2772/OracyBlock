@@ -29,7 +29,7 @@ export const LEVEL_RATE = { 1: 0.85, 2: 1, 3: 1.05, 4: 1.12, 5: 1.2 };
 
 /** 어긋남: 통하긴 하지만 외국인 티가 나는 대답. why = 왜 비뚤어졌는지, fix = 바꾸면 딱 맞는 단어 */
 const NEAR = {
-  'plane:5': [
+  'plane:11': [
     {
       words: [['はじめまして|初めまして', '하지메마시떼', '처음 뵙겠습니다']],
       why: '하지메마시떼는 "처음 뵙겠습니다"라는 인사예요. "처음이에요"는 하지메떼데스라고 해요.',
@@ -108,7 +108,7 @@ const NEAR = {
 
 /** 예/아니오 질문에 "하이(네)"만 해도 통하는 대답 (몇 번째 대답인지). 사용자 피드백: "료꼬-데스까?"에 "하이"가 튕겼음 */
 const YES = {
-  'plane:1': 0, 'plane:5': 0, 'izakaya:1': 0, 'izakaya:5': 1, 'shinkansen:1': 0, 'shinkansen:7': 1,
+  'plane:1': 0, 'plane:5': 0, 'plane:11': 0, 'izakaya:1': 0, 'izakaya:5': 1, 'shinkansen:1': 0, 'shinkansen:7': 1,
   'park:3': 0, 'park:7': 0, 'festival:5': 0, 'izakaya2:5': 0, 'guesthouse2:7': 0, 'guesthouse2:9': 0,
   'onsen2:1': 0, 'onsen2:5': 0, 'park2:1': 0,
 };
@@ -296,7 +296,8 @@ function buildTalk(t) {
     if (turn.them) {
       const line = turn.them;
       steps.push({
-        type: 'them', idx, line,
+        type: 'them', idx, line, when: turn.when || null,
+        alts: line.alt || [],
         casual: isCasual(line.ja),
         keys: line.keys,
         ...meaningSets(t, idx, line),
@@ -306,7 +307,7 @@ function buildTalk(t) {
       const yes = YES[t.id + ':' + idx];
       const options = yes == null ? turn.me : turn.me.map((o, i) => (i === yes ? { ...o, words: [...o.words, word(YES_WORD)] } : o));
       steps.push({
-        type: 'me', idx, options, near, yes: yes != null,
+        type: 'me', idx, options, near, yes: yes != null, when: turn.when || null,
         hintWords: options.flatMap((o) => o.words.slice(0, 1)),
         choose: chooseSets(t, idx, options, near),
       });
@@ -323,7 +324,7 @@ export const talksAtLevel = (lv) => GAME_TALKS.filter((t) => t.level === lv);
 export function talkWords(talk) {
   const map = new Map();
   for (const s of talk.steps) {
-    const list = s.type === 'them' ? s.keys : s.options.flatMap((o) => o.words);
+    const list = s.type === 'them' ? [...s.keys, ...s.alts.flatMap((a) => a.keys)] : s.options.flatMap((o) => o.words);
     for (const w of list) if (!map.has(w.key)) map.set(w.key, w);
   }
   return [...map.values()];

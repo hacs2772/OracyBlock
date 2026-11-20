@@ -20,6 +20,10 @@ for (const t of GAME_TALKS) {
       if (!l.ja || !l.ko || !l.mean) errors.push(`${at} 상대 말에 일본어·한글 발음·뜻 중 빈 것이 있어요`);
       if (!s.keys?.length) errors.push(`${at} 핵심 단어가 없어요`);
       for (const k of s.keys || []) if (!has(l.ko, k.ko)) errors.push(`${at} 핵심 단어 "${k.ko}"가 "${l.ko}" 안에 없어요`);
+      for (const a of s.alts || []) {
+        if (!a.ja || !a.ko) errors.push(`${at} 다른 말투에 일본어·한글 발음이 비었어요`);
+        for (const k of a.keys) if (!has(a.ko, k.ko)) errors.push(`${at} 다른 말투의 핵심 단어 "${k.ko}"가 "${a.ko}" 안에 없어요`);
+      }
       const set = s.sets[s.answerSet];
       if (!set.includes(l.mean)) errors.push(`${at} 뜻 보기에 정답이 없어요`);
       for (const g of s.sets) if (new Set(g).size !== g.length) errors.push(`${at} 뜻 보기에 같은 뜻이 두 번 있어요`);
@@ -38,6 +42,21 @@ for (const t of GAME_TALKS) {
       if (!s.choose.some((c) => c.kind === 'off')) errors.push(`${at} 보기에 상관없는 대답이 없어요`);
     }
   }
+}
+
+// 가지: when 꼬리표는 앞쪽 대답의 go로 만들어져야 하고, go는 어딘가에서 쓰여야 해요. 가지마다 상대 말 → 내 대답 차례가 맞아야 해요
+for (const t of GAME_TALKS) {
+  const made = new Set();
+  const used = new Set(t.steps.map((s) => s.when).filter(Boolean));
+  for (const s of t.steps) {
+    if (s.when && !made.has(s.when)) errors.push(`${t.id}:${s.idx} 꼬리표 "${s.when}"를 만드는 대답이 앞에 없어요`);
+    if (s.type === 'me') for (const o of s.options) if (o.go) made.add(o.go);
+    if (s.type === 'me') {
+      const prev = t.steps[s.idx - 1];
+      if (!prev || prev.type !== 'them' || prev.when !== s.when) errors.push(`${t.id}:${s.idx} 내 대답 앞에 같은 가지의 상대 말이 없어요`);
+    }
+  }
+  for (const g of made) if (!used.has(g)) warns.push(`${t.id} 꼬리표 "${g}"를 쓰는 차례가 없어요`);
 }
 
 // 같은 일본어 단어를 다른 한글 발음으로 적은 곳 (예: 韓国 캉코꾸 / 칸코쿠)
