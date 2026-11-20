@@ -13,6 +13,7 @@ const LEVEL_OF = {
   shinkansen: 2, bar: 2, festival: 2, farewell: 2,
   izakaya2: 3, guesthouse2: 3, onsen2: 3, bar2: 3, shinkansen2: 3, park2: 3,
   konbini: 1, photo: 1, ramen: 2, busstop: 2, hotel: 2, laundry: 3,
+  gate: 1, cafe: 1, hairsalon: 2, platform: 2,
 };
 export const READY_LEVELS = [1, 2, 3];
 export const ALL_LEVELS = [1, 2, 3, 4, 5];
