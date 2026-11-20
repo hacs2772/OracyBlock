@@ -7,15 +7,17 @@ import { TALKS, word, COGNATES, ASK_AGAIN } from './talks.js';
 
 export { COGNATES, ASK_AGAIN };
 
-/** 대화마다 레벨. 지금은 Lv1·Lv2만 준비돼 있어요. */
+/** 대화마다 레벨 (Lv1~5) */
 const LEVEL_OF = {
   plane: 1, izakaya: 1, onsen: 1, guesthouse: 1, park: 1, taxi: 1,
   shinkansen: 2, bar: 2, festival: 2, farewell: 2,
   izakaya2: 3, guesthouse2: 3, onsen2: 3, bar2: 3, shinkansen2: 3, park2: 3,
   konbini: 1, photo: 1, ramen: 2, busstop: 2, hotel: 2, laundry: 3,
   gate: 1, cafe: 1, hairsalon: 2, platform: 2,
+  izakaya3: 4, karaoke: 4, skilift: 4, baseball: 4,
+  osaka: 5, nomikai: 5, guesthouse3: 5,
 };
-export const READY_LEVELS = [1, 2, 3];
+export const READY_LEVELS = [1, 2, 3, 4, 5];
 export const ALL_LEVELS = [1, 2, 3, 4, 5];
 export const LEVEL_DESC = {
   1: '느린 말 · 짧은 질문 · 핵심 단어 1~2개',
@@ -265,8 +267,13 @@ const ALL_ME = TALKS.flatMap((t) => t.turns.flatMap((x, j) => {
 const STEM_SKIP = new Set(['그럼', '그래', '좋네', '아니', '이거', '여기', '저기', '그쪽', '정말', '진짜', '요즘', '조금', '오늘']);
 const stems = (ko) => new Set(String(ko || '').replace(/[?!.,~…()·]/g, ' ').split(/\s+/).filter((w) => w.length >= 2).map((w) => w.slice(0, 2)).filter((w) => !STEM_SKIP.has(w)));
 const kanaOf = (line) => new Set((line?.keys || []).map((k) => (k.key || k[0] || '').split('|')[0]));
+// 말 줄기 규칙으로 못 잡는 비슷한 뜻 (직접 적어 둬요)
+const ALSO_SIMILAR = [
+  ['다음엔 뭐 부를래?', '한 곡 더 가자! 뭐가 좋아?'],
+];
 export function similar(a, b) {
   if (!a || !b) return false;
+  if (ALSO_SIMILAR.some(([x, y]) => (a.mean === x && b.mean === y) || (a.mean === y && b.mean === x))) return true;
   const sa = stems(a.mean);
   for (const w of stems(b.mean)) if (sa.has(w)) return true;
   const ka = kanaOf(a);

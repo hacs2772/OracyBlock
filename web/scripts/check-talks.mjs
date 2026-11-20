@@ -5,12 +5,13 @@ import { GAME_TALKS, talkWords, isReviewWord } from '../src/content/build.js';
 const errors = [];
 const warns = [];
 const flat = (s) => String(s || '').replace(/[\s,.!?~\-、。「」]/g, '');
-// 일본어는 "~るんです"처럼 끝소리가 ㄴ으로 붙어요 (쯔꾸루 → 쯔꾸룬데스까). 마지막 글자에 ㄴ 받침이 붙은 것도 같은 단어로 봐요
-const withN = (w) => {
+// 일본어는 끝소리가 붙어서 줄어요: "~るんです"(쯔꾸루 → 쯔꾸룬데스까, ㄴ), "~って"(노미까이 → 노미까잇떼, ㅅ).
+// 마지막 글자에 ㄴ·ㅅ 받침이 붙은 것도 같은 단어로 봐요
+const withJong = (w, j) => {
   const c = w.charCodeAt(w.length - 1) - 0xac00;
-  return c >= 0 && c <= 11171 && c % 28 === 0 ? w.slice(0, -1) + String.fromCharCode(0xac00 + c + 4) : w;
+  return c >= 0 && c <= 11171 && c % 28 === 0 ? w.slice(0, -1) + String.fromCharCode(0xac00 + c + j) : w;
 };
-const has = (line, w) => flat(line).includes(flat(w)) || flat(line).includes(withN(flat(w)));
+const has = (line, w) => [0, 4, 19].some((j) => flat(line).includes(j ? withJong(flat(w), j) : flat(w)));
 
 for (const t of GAME_TALKS) {
   for (const s of t.steps) {
