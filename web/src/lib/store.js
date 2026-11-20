@@ -8,7 +8,8 @@ const DEFAULTS = {
   token: '',
   user: null, // { id, nickname, email, role, level }
   level: 1,
-  seenIntro: false,
+  seenIntro: false, // 소개 페이지에서 "무료로 시작하기"를 눌렀는지
+  seenTour: false, // 처음 온 사람 안내 6장을 봤는지
   seenGame: false,
   settings: {
     speed: 'normal', // slow | normal | fast

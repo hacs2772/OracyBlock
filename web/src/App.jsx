@@ -10,6 +10,7 @@ import Auth from './pages/Auth.jsx';
 import Admin from './pages/Admin.jsx';
 import Legal from './pages/Legal.jsx';
 import Landing from './pages/Landing.jsx';
+import { Guide, INTRO } from './components/Guides.jsx';
 import { Toaster } from './components/ui.jsx';
 import { store, useStore } from './lib/store.js';
 import { quiet } from './lib/api.js';
@@ -21,6 +22,8 @@ export default function App() {
   // 처음 온 사람은 oracyblock.com에서 소개 페이지를 봐요. "무료로 시작하기"를 누르거나 로그인하면 그다음부터는 바로 여행 판
   const firstVisit = !st.seenIntro && !st.user;
   const isLanding = pathname === '/about' || (pathname === '/' && firstVisit);
+  // 처음 온 사람 안내 6장(움직이는 그림)은 꼭 한 번 저절로 떠요 (소개 페이지나 여행 판 위에). 게임 방법 3장은 첫 대화를 시작할 때
+  const showTour = !st.seenTour && (pathname === '/' || pathname === '/about');
 
   // 하루에 한 번 "왔어요" 남기기 (관리자 통계) + 로그인 정보 새로 받기
   useEffect(() => {
@@ -48,6 +51,7 @@ export default function App() {
         <Route path="/privacy" element={<Legal kind="privacy" />} />
         <Route path="*" element={<Home />} />
       </Routes>
+      {showTour && <Guide slides={INTRO} label="처음 오셨나요" doneLabel={isLanding ? '알겠어요' : '시작하기'} onDone={() => store.set({ seenTour: true })} />}
       <Toaster />
     </div>
   );
