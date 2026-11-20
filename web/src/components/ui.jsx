@@ -16,7 +16,7 @@ export function LogoMark({ size = 34 }) {
 
 export function Logo() {
   return (
-    <Link to="/" className="logo" aria-label="OracyBlock 홈">
+    <Link to="/about" className="logo" aria-label="OracyBlock 소개 웹 (메인화면)">
       <LogoMark />
       <span className="logo-text">
         Oracy<b>Block</b>
