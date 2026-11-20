@@ -329,3 +329,11 @@ textarea.input { height: 120px; padding: 10px 12px; resize: vertical; line-heigh
 .contact-fab-t { display: none; font-size: 13px; font-weight: 700; }
 .contact-fab:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--navy); }
 @media (min-width: 900px) { .contact-fab { right: 24px; width: auto; padding: 0 14px 0 10px; } .contact-fab-t { display: inline; } .app-wide .contact-fab.above-tabs { bottom: 24px; } }
+
+/* 앱 안 브라우저 안내 띠 */
+.inapp { position: sticky; top: 0; z-index: 35; padding: 10px 16px 12px; background: var(--yellow-bg); border-bottom: 2px solid var(--yellow-line); font-size: 13px; line-height: 1.5; }
+.inapp-btns { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-top: 2px; }
+/* 소리가 안 나올 때 듣기 버튼을 눌러 달라고 반짝 */
+.tap-ring { position: relative; }
+.tap-ring::after { content: ''; position: absolute; inset: 2px; border-radius: 50%; border: 3px solid var(--coral); animation: tapRing 1.2s infinite ease-out; pointer-events: none; }
+@keyframes tapRing { 0% { transform: scale(0.8); opacity: 1; } 100% { transform: scale(1.5); opacity: 0; } }

@@ -13,6 +13,7 @@ import Landing from './pages/Landing.jsx';
 import { Guide, INTRO } from './components/Guides.jsx';
 import { Toaster } from './components/ui.jsx';
 import Contact from './components/Contact.jsx';
+import InAppBanner from './components/InAppBanner.jsx';
 import { store, useStore } from './lib/store.js';
 import { quiet } from './lib/api.js';
 import { unlock } from './lib/speech.js';
@@ -42,6 +43,7 @@ export default function App() {
 
   return (
     <div className={isLanding ? 'app-wide' : 'app'} onPointerDown={unlock}>
+      <InAppBanner />
       <Routes>
         <Route path="/" element={introToday ? <Navigate to="/about" replace /> : <Home />} />
         <Route path="/about" element={<Landing />} />

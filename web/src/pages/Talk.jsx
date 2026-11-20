@@ -6,8 +6,9 @@ import { speak, stopSpeaking, listen, stopListening, canListen, MIC_ERRORS, sfx,
 import { api, quiet } from '../lib/api.js';
 import { store, useStore } from '../lib/store.js';
 import Brick from '../components/Brick.jsx';
-import { Stack, Play, Close, Mic, Refresh, Ja } from '../components/ui.jsx';
+import { Stack, Play, Close, Mic, Refresh, Ja, Sheet } from '../components/ui.jsx';
 import { countCorrect } from '../lib/progress.js';
+import { loadResume, saveResume, clearResume } from '../lib/resume.js';
 
 const STAGE_TONE = { speak: 'coral', write: 'sky', choose: 'stone' };
 
@@ -66,12 +67,34 @@ export default function Talk() {
   const later = (ms, fn) => timers.current.push(setTimeout(fn, ms));
   const [levelUp, setLevelUp] = useState(null);
   const [capNote, setCapNote] = useState(null);
+  const [resumeAsk, setResumeAsk] = useState(() => loadResume(id)); // 중간에 나갔던 대화면 이어 할지 물어봐요
+  const [needTap, setNeedTap] = useState(false); // 아이폰처럼 소리가 저절로 안 나면 "눌러서 들어 보세요"
 
-  useEffect(() => {
-    if (!talk) return undefined;
+  const newPlay = () => {
+    playId.current = null;
     api('/plays', { method: 'POST', body: { talkId: talk.id, level } })
       .then((r) => { playId.current = r?.id || null; })
       .catch(() => {});
+  };
+  const resume = () => {
+    const r = resumeAsk;
+    playId.current = r.playId || null;
+    stats.current = { ...r.stats, missed: new Map((r.stats.missed || []).map((w) => [w.key, w])) };
+    setBricks(r.bricks.map((b, i) => ({ ...b, cls: '', key: i })));
+    setResumeAsk(null);
+    setSi(r.si);
+    if (!r.playId) newPlay();
+  };
+  const restart = () => {
+    clearResume(talk.id);
+    setResumeAsk(null);
+    newPlay();
+    later(300, () => speak(talk.steps[0].line.ja, rate));
+  };
+
+  useEffect(() => {
+    if (!talk) return undefined;
+    if (!resumeAsk) newPlay();
     return () => {
       timers.current.forEach(clearTimeout);
       stopSpeaking();
@@ -83,16 +106,34 @@ export default function Talk() {
   const steps = talk?.steps || [];
   const size = sizeFor(level, steps.length + 1);
 
+  // 차례가 바뀔 때마다 이 기기에 기억해 둬요 (나갔다 와도 이어 하기)
+  useEffect(() => {
+    if (!talk || done || resumeAsk || si === 0) return;
+    const s = stats.current;
+    saveResume(talk.id, {
+      playId: playId.current,
+      si,
+      bricks: bricks.map((b) => ({ tone: b.tone, shine: b.shine, tilt: b.tilt, missing: b.missing })),
+      stats: { ...s, missed: [...s.missed.values()] },
+    });
+  }, [si]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // 새 차례가 되면 상대 말을 들려줘요
   useEffect(() => {
-    if (!step || done) return;
+    if (!step || done || resumeAsk) return;
+    setNeedTap(false);
     if (step.type === 'them') {
       setPh({ set: 0, wrong: 0, hint: false, solved: false, fb: '', shake: -1, n: 0 });
       later(350, () => speak(step.line.ja, rate));
+      // 아이폰은 누르지 않으면 소리가 안 날 때가 있어요 → 듣기 버튼을 반짝
+      later(900, () => {
+        const sy = window.speechSynthesis;
+        if (sy && !sy.speaking && !sy.pending) setNeedTap(true);
+      });
     } else {
       setPh({ view: store.s.settings.quiet || !canListen ? 'write' : 'mic', hint: false, typed: '', set: 0, result: null, listening: false, fb: '', shake: -1, n: 0, micNote: !canListen ? MIC_ERRORS.unsupported : '' });
     }
-  }, [si, done]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [si, done, resumeAsk]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!talk) {
     return (
@@ -248,6 +289,7 @@ export default function Talk() {
     setBricks(finalBricks);
     sfx('snap', 0.3);
     setDone(true);
+    clearResume(talk.id);
     const s = stats.current;
     const words = talkWords(talk);
     const body = {
@@ -313,14 +355,24 @@ export default function Talk() {
             <Ja>{shownLine.ja}</Ja>
             {showMean && <div className="mean fade-up">{shownLine.mean}</div>}
           </div>
-          <button className="icon-btn" onClick={() => { unlock(); speak(shownLine.ja, rate); }} aria-label={`${partner} 말 다시 듣기`}>
+          <button className={'icon-btn' + (needTap ? ' tap-ring' : '')} onClick={() => { unlock(); setNeedTap(false); speak(shownLine.ja, rate); }} aria-label={`${partner} 말 듣기`}>
             <span className="play-dot"><Play /></span>
           </button>
         </div>
       )}
+      {!done && needTap && <p className="small" style={{ color: '#B9473A', fontWeight: 700, marginTop: -4 }}>소리가 안 나오면 말풍선의 재생 버튼을 눌러 들어 보세요.</p>}
+      {resumeAsk && (
+        <Sheet title="이어서 할까요?" onClose={restart} labelId="resume-title">
+          <p style={{ fontSize: 14, lineHeight: 1.6, marginTop: 6 }}>지난번에 {partner}와 하던 대화가 있어요. 브릭 {resumeAsk.bricks.length}개를 쌓았어요.</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 6 }}>
+            <button className="ob-btn coral" onClick={() => { unlock(); resume(); }}><span className="t">이어서 하기</span></button>
+            <button className="ob-btn" onClick={() => { unlock(); restart(); }}><span className="t">처음부터</span></button>
+          </div>
+        </Sheet>
+      )}
 
       {!done && step?.type === 'them' && (
-        <ThemPanel step={step} ph={ph} setPh={setPh} partner={partner} rate={rate} pick={pickMeaning} refresh={refreshMeaning} next={() => setSi(si + 1)} />
+        <ThemPanel step={step} ph={ph} setPh={setPh} partner={partner} rate={rate} pick={pickMeaning} refresh={refreshMeaning} next={() => setSi(si + 1)} onHear={() => setNeedTap(false)} />
       )}
 
       {!done && step?.type === 'me' && (
@@ -368,7 +420,7 @@ export default function Talk() {
   );
 }
 
-function ThemPanel({ step, ph, setPh, partner, rate, pick, refresh, next }) {
+function ThemPanel({ step, ph, setPh, partner, rate, pick, refresh, next, onHear }) {
   const opts = step.sets[ph.set || 0] || [];
   if (ph.solved) {
     return (
@@ -385,8 +437,8 @@ function ThemPanel({ step, ph, setPh, partner, rate, pick, refresh, next }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div className="bubble-tools">
-        <button className="pill" onClick={() => { unlock(); speak(step.line.ja, rate); }}><span className="play-dot sm"><Play size={10} /></span>듣기</button>
-        <button className="pill" onClick={() => { unlock(); speak(step.line.ja, rate * 0.7); }}><span className="play-dot sm"><Play size={10} /></span>느리게</button>
+        <button className="pill" onClick={() => { unlock(); onHear(); speak(step.line.ja, rate); }}><span className="play-dot sm"><Play size={10} /></span>듣기</button>
+        <button className="pill" onClick={() => { unlock(); onHear(); speak(step.line.ja, rate * 0.7); }}><span className="play-dot sm"><Play size={10} /></span>느리게</button>
         <button className={'pill' + (ph.hint ? ' on' : '')} onClick={() => setPh({ ...ph, hint: true })} aria-expanded={ph.hint}>힌트</button>
       </div>
       {ph.hint ? (

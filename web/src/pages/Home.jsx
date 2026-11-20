@@ -11,6 +11,8 @@ import Brick from '../components/Brick.jsx';
 import { TopBar, Question, Sheet, Stack, Tabs } from '../components/ui.jsx';
 import WordQuiz, { BigWordRow } from '../components/WordQuiz.jsx';
 import TowerAlert from '../components/TowerAlert.jsx';
+import SoundCheck from '../components/SoundCheck.jsx';
+import { loadResume, resumeIds } from '../lib/resume.js';
 import { Guide, GAME } from '../components/Guides.jsx';
 
 const MINI = { studs: 4, pitch: 9, h: 11, depth: 6, studH: 3 };
@@ -24,6 +26,7 @@ export default function Home() {
   const [guide, setGuide] = useState(null); // { next: 대화 id } 이면 다 본 뒤 그 대화로
   const [fixes, setFixes] = useState([]);
   const [tower, setTower] = useState(null);
+  const [check, setCheck] = useState(null); // 첫 대화 전 소리·마이크 확인 { next }
   const [spotSheet, setSpotSheet] = useState(null); // 고칠 곳이 있는 장소를 눌렀을 때
   const [pre, setPre] = useState(null); // 대화 전 단어 맞혀 보기 { talkId, words, done }
   const level = st.level;
@@ -40,7 +43,8 @@ export default function Home() {
   const correct = countCorrect(plays, level);
   const hard = tooHard(plays, level);
   const maxReady = Math.max(...READY_LEVELS);
-  const next = talks.find((t) => !latest.has(t.id)) || talks.find((t) => latest.get(t.id)?.crooked) || talks[0];
+  const resumable = new Set(resumeIds());
+  const next = talks.find((t) => resumable.has(t.id)) || talks.find((t) => !latest.has(t.id)) || talks.find((t) => latest.get(t.id)?.crooked) || talks[0];
   const fixCount = new Map();
   for (const g of fixes) fixCount.set(g.talkId, (fixCount.get(g.talkId) || 0) + g.items.length);
   const openFixes = fixes.reduce((n, g) => n + g.items.length, 0);
@@ -58,11 +62,13 @@ export default function Home() {
     nav('/talk/' + id);
   };
   // 대화 전에 복습할 단어가 있으면 먼저 몇 개 맞혀 봐요 (건너뛸 수 있음)
-  const start = async (id, skipGuide) => {
+  // 처음 "시작하기": 게임 방법 3장 → 소리·마이크 확인 → (복습할 단어가 있으면) 단어 맞혀 보기 → 대화
+  const start = async (id) => {
     unlock();
     setSpotSheet(null);
-    // 처음 "시작하기"를 누르면 게임 방법 3장을 먼저 (여행 판 오른쪽 위 ?로 다시 볼 수 있어요)
-    if (!skipGuide && !store.s.seenGame) return setGuide({ next: id });
+    if (!store.s.seenGame) return setGuide({ next: id });
+    if (!store.s.seenCheck) return setCheck({ next: id });
+    if (loadResume(id)) return go(id); // 하던 대화는 바로 이어서
     if (!preCount || !prog?.wordsDue) return go(id);
     const words = await quiet('/words');
     const today = new Date().toLocaleDateString('sv-SE');
@@ -126,10 +132,11 @@ export default function Home() {
         <div className="spots">
           {talks.map((t) => {
             const p = latest.get(t.id);
-            const bricks = p ? parseBricks(p.bricks) : [{ tone: 'mint', ghost: true }];
-            const now = next && t.id === next.id && !p;
-            const status = p ? (p.crooked ? '완성' : '완성 · 올바른 탑') : now ? '다음 차례' : '아직';
-            const color = p ? (p.crooked ? '#8A5A1A' : '#1B776C') : now ? '#B9473A' : '#4A566B';
+            const saved = resumable.has(t.id) ? loadResume(t.id) : null;
+            const bricks = saved ? [...saved.bricks, { tone: 'coral', ghost: true }] : p ? parseBricks(p.bricks) : [{ tone: 'mint', ghost: true }];
+            const now = next && t.id === next.id && (!p || resumable.has(t.id));
+            const status = resumable.has(t.id) ? '대화 중' : p ? (p.crooked ? '완성' : '완성 · 올바른 탑') : now ? '다음 차례' : '아직';
+            const color = saved ? '#B9473A' : p ? (p.crooked ? '#8A5A1A' : '#1B776C') : now ? '#B9473A' : '#4A566B';
             const show = bricks.slice(-8);
             return (
               <button key={t.id} className={'spot' + (now ? ' now' : '')} onClick={() => tapSpot(t.id)} aria-label={`${t.place}, ${status}${fixCount.get(t.id) ? `, 고칠 곳 ${fixCount.get(t.id)}개` : ''}`}>
@@ -145,7 +152,7 @@ export default function Home() {
 
       {next && (
         <button className="ob-btn coral wide" style={{ minHeight: 62, marginTop: 12 }} onClick={() => start(next.id)}>
-          <span className="t">{next.place} {latest.has(next.id) ? '다시 하기' : '시작하기'}</span>
+          <span className="t">{next.place} {resumable.has(next.id) ? '이어서 하기' : latest.has(next.id) ? '다시 하기' : '시작하기'}</span>
           <span className="s">Lv{level} · {next.partner}와 대화</span>
         </button>
       )}
@@ -202,7 +209,7 @@ export default function Home() {
         </Sheet>
       )}
       {pre && (
-        <Sheet title="대화 전에 단어 맞혀 보기" onClose={() => go(pre.talkId)} labelId="pre-title">
+        <Sheet title="대화 전에 단어 맞혀 보기" onClose={() => setPre(null)} labelId="pre-title">
           {!pre.done ? (
             <>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -223,6 +230,16 @@ export default function Home() {
           )}
         </Sheet>
       )}
+      {check && (
+        <SoundCheck
+          onDone={() => {
+            const next = check.next;
+            setCheck(null);
+            if (next) start(next);
+          }}
+          onClose={() => setCheck(null)}
+        />
+      )}
       {guide && (
         <Guide
           slides={GAME}
@@ -233,7 +250,7 @@ export default function Home() {
             const next = guide.next;
             setGuide(null);
             store.set({ seenGame: true });
-            if (next) start(next, true);
+            if (next) start(next);
           }}
         />
       )}

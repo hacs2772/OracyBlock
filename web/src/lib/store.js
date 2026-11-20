@@ -12,6 +12,7 @@ const DEFAULTS = {
   seenTour: false, // 처음 온 사람 안내 6장을 봤는지
   introDay: '', // 소개 탭을 마지막으로 본 날 (그날 처음 들어오면 소개 탭부터)
   seenGame: false,
+  seenCheck: false, // 첫 대화 전 소리·마이크 확인을 했는지
   settings: {
     speed: 'normal', // slow | normal | fast
     kana: true, // 한글 발음 보기

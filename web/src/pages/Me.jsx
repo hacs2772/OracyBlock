@@ -9,6 +9,7 @@ import { TopBar, Chevron, Mic, Sheet, toast, Tabs } from '../components/ui.jsx';
 import { SPEEDS, SPEED_KEYS, speedOf, crackRule } from '../lib/speed.js';
 import { Guide, INTRO, GAME } from '../components/Guides.jsx';
 import { openContact } from '../components/Contact.jsx';
+import SoundCheck from '../components/SoundCheck.jsx';
 
 function Switch({ on, label, onClick }) {
   return (
@@ -213,6 +214,7 @@ export default function Me() {
         <Link className="go-row" to="/about">OracyBlock 소개 페이지<Chevron /></Link>
         <button className="go-row" onClick={() => setGuide('intro')}>처음 온 사람 안내 다시 보기<Chevron /></button>
         <button className="go-row" onClick={() => setGuide('game')}>게임 방법 다시 보기<Chevron /></button>
+        <button className="go-row" onClick={() => setGuide('check')}>소리·마이크 다시 확인<Chevron /></button>
         <button className="go-row" onClick={openContact}>문의하기 · 의견 보내기<Chevron /></button>
         <Link className="go-row" to="/terms">이용약관<Chevron /></Link>
         <Link className="go-row" to="/privacy">개인정보 처리방침<Chevron /></Link>
@@ -227,6 +229,7 @@ export default function Me() {
 
       <Tabs />
       {guide === 'intro' && <Guide slides={INTRO} label="처음 온 사람 안내" doneLabel="닫기" skipLabel="닫기" onDone={() => setGuide(null)} />}
+      {guide === 'check' && <SoundCheck onDone={() => setGuide(null)} onClose={() => setGuide(null)} />}
       {guide === 'game' && <Guide slides={GAME} label="게임 방법" doneLabel="알겠어요" skipLabel="닫기" onDone={() => setGuide(null)} />}
       {leave && (
         <Sheet title="정말 탈퇴할까요?" onClose={() => setLeave(false)} labelId="leave-title">
