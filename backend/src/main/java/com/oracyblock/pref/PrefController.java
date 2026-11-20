@@ -17,7 +17,8 @@ import java.util.Map;
 @RequestMapping("/api/v1/pref")
 public class PrefController {
 
-    public static final Map<String, Integer> DAY_CAP = Map.of("slow", 1, "normal", 3, "fast", 5);
+    /** 하루 최대 브릭 (web/src/lib/speed.js 와 같게) */
+    public static final Map<String, Integer> DAY_CAP = Map.of("slow", 1, "normal", 2, "fast", 3);
     static final int COOLDOWN_DAYS = 3;
 
     @Mapper

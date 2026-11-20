@@ -11,7 +11,7 @@ public interface TowerMapper {
 
     /** 하루에 쌓는 속도만큼(그날 최대 브릭 수), 레벨이 높은 대화부터 */
     @Select("""
-        SELECT to_char(day, 'YYYY-MM-DD') AS day, level, talk_id AS "talkId" FROM (
+        SELECT to_char(day, 'YYYY-MM-DD') AS day, level, talk_id AS "talkId", cap FROM (
           SELECT day, level, talk_id, finished_at,
                  ROW_NUMBER() OVER (PARTITION BY day ORDER BY level DESC, finished_at) AS rn,
                  MAX(day_cap) OVER (PARTITION BY day) AS cap

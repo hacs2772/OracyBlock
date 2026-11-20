@@ -6,7 +6,7 @@ import { store, useStore } from '../lib/store.js';
 import { listen, canListen, MIC_ERRORS, speak, unlock, canSpeak, hasJaVoice } from '../lib/speech.js';
 import Brick from '../components/Brick.jsx';
 import { TopBar, Chevron, Mic, Sheet, toast, Tabs } from '../components/ui.jsx';
-import { SPEEDS, SPEED_KEYS, speedOf } from '../lib/speed.js';
+import { SPEEDS, SPEED_KEYS, speedOf, crackRule } from '../lib/speed.js';
 import { Guide, INTRO, GAME } from '../components/Guides.jsx';
 
 function Switch({ on, label, onClick }) {
@@ -137,7 +137,7 @@ export default function Me() {
 
       <h2 className="set-h2">쌓는 속도</h2>
       <div className="set-card" style={{ padding: '10px 12px' }}>
-        <p className="small muted" style={{ marginBottom: 8 }}>하루에 얼마나 쌓을지 골라요. 레벨(얼마나 어렵게)과는 따로예요. 3일에 한 번 바꿀 수 있어요.</p>
+        <p className="small muted" style={{ marginBottom: 8 }}>하루에 얼마나 쌓을지 골라요. 빨리 쌓을수록 쉬는 날에 빨리 흔들려요. 레벨(얼마나 어렵게)과는 따로예요. 3일에 한 번 바꿀 수 있어요.</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }} role="radiogroup" aria-label="쌓는 속도">
           {SPEED_KEYS.map((k) => {
             const o = SPEEDS[k];
@@ -146,7 +146,7 @@ export default function Me() {
             return (
               <button key={k} className={'speed-opt' + (on ? ' on' : '')} role="radio" aria-checked={on} disabled={locked} onClick={() => changeSpeed(k)}>
                 <span style={{ fontFamily: 'var(--display)', fontSize: 19, minWidth: 64 }}>{o.label}</span>
-                <span className="small" style={{ flex: 1 }}>하루 브릭 {o.bricks}개 · 복습 단어 {o.review}개<br /><span className="muted">{o.time}</span></span>
+                <span className="small" style={{ flex: 1 }}>하루 브릭 {o.bricks}개 · 복습 단어 {o.review}개<br /><span className="muted">{crackRule(o)}</span></span>
                 {on && <span className="chip dark">지금</span>}
               </button>
             );

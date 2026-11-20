@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api, quiet, setLogin } from '../lib/api.js';
-import { SPEEDS, SPEED_KEYS } from '../lib/speed.js';
+import { SPEEDS, SPEED_KEYS, crackRule } from '../lib/speed.js';
 import Brick from '../components/Brick.jsx';
 import { Close, toast } from '../components/ui.jsx';
 
@@ -89,11 +89,11 @@ export default function Auth() {
               {SPEED_KEYS.map((k) => (
                 <button type="button" key={k} className={'speed-opt' + (f.speed === k ? ' on' : '')} aria-pressed={f.speed === k} onClick={() => setF({ ...f, speed: k })}>
                   <span style={{ fontFamily: 'var(--display)', fontSize: 18, minWidth: 64 }}>{SPEEDS[k].label}</span>
-                  <span className="small" style={{ flex: 1 }}>하루 브릭 {SPEEDS[k].bricks}개 · 복습 {SPEEDS[k].review}개 · {SPEEDS[k].time}</span>
+                  <span className="small" style={{ flex: 1 }}>하루 브릭 {SPEEDS[k].bricks}개 · 복습 {SPEEDS[k].review}개<br /><span className="muted">{crackRule(SPEEDS[k])}</span></span>
                 </button>
               ))}
             </div>
-            <p className="help">나중에 내 정보에서 바꿀 수 있어요 (3일에 한 번).</p>
+            <p className="help">빨리 쌓을수록 쉬는 날에 빨리 흔들려요. 대화나 복습 하나면 금은 사라져요. 나중에 내 정보에서 바꿀 수 있어요 (3일에 한 번).</p>
           </fieldset>
         )}
         {join && (
