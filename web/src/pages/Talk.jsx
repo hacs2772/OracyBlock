@@ -1,7 +1,7 @@
 // 대화 화면: 상대 말 뜻 맞히기 → 내 차례(말하기 → 쓰기 → 고르기) → 대화 끝
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { talkById, judge, talkWords, LEVEL_SCALE, LEVEL_RATE, RESCUE_LINES, ASK_AGAIN } from '../content/build.js';
+import { talkById, judge, talkWords, LEVEL_SCALE, LEVEL_RATE, RESCUE_LINES, ASK_AGAIN, READY_LEVELS } from '../content/build.js';
 import { speak, stopSpeaking, listen, stopListening, canListen, MIC_ERRORS, sfx, unlock } from '../lib/speech.js';
 import { api, quiet } from '../lib/api.js';
 import { store, useStore } from '../lib/store.js';
@@ -264,7 +264,7 @@ export default function Talk() {
         if (prog.finishedToday > prog.dayCap) setCapNote({ cap: prog.dayCap, fast: prog.speed === 'fast' });
         const lv = store.s.level;
         const c = countCorrect(prog.plays, lv);
-        if (!body.crooked && level === lv && c >= 3 && lv < 2) setLevelUp(lv + 1);
+        if (!body.crooked && level === lv && c >= 3 && lv < Math.max(...READY_LEVELS)) setLevelUp(lv + 1);
       }
     }
   };

@@ -144,7 +144,7 @@ const WAYS = [
   { name: '골라서 대답', desc: '한글 발음 보기 중에서 골라요. 칙칙한 돌 브릭이 쌓여요.', tone: 'stone' },
   { name: '힌트를 쓰면', desc: '맞혀도 살짝 비뚤게 쌓여요. 다음엔 힌트 없이 해 봐요.', tone: 'coral', shine: true, tilt: true },
 ];
-const TOPICS = ['#자기소개', '#여행', '#음식·술', '#고향', '#날씨', '#작별 인사'];
+const TOPICS = ['#자기소개', '#여행', '#음식·술', '#고향', '#일', '#가족', '#연애', '#취미', '#고민'];
 const RANKS = [['토모', 6], ['곰', 5], ['나', 4, true], ['스시', 3], ['민트', 2]];
 
 export default function Landing() {
@@ -277,7 +277,7 @@ export default function Landing() {
           <h2 className="lp-h2">옆자리에서 시작하는 이야기</h2>
           <p className="lp-p">메뉴판은 사진 번역 앱이나 AI에 맡기고, 우리는 옆에 앉은 사람과의 대화를 연습해요. 글자를 외우거나 읽는 시험은 없어요. 상대 말은 한글 발음으로 보여 드려요.</p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px 12px', marginTop: 24 }}>
-            {GAME_TALKS.map((t, i) => <span key={t.id} className="lp-chip" style={{ background: ['#29B6A5', '#FF7967', '#FFC857', '#FFFFFF'][i % 4] }}>{t.place}</span>)}
+            {[...new Set(GAME_TALKS.map((t) => t.place))].map((place, i) => <span key={place} className="lp-chip" style={{ background: ['#29B6A5', '#FF7967', '#FFC857', '#FFFFFF'][i % 4] }}>{place}</span>)}
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 18 }}>
             {TOPICS.map((t) => <span key={t} className="lp-tag">{t}</span>)}
