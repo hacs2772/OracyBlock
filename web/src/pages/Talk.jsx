@@ -83,7 +83,7 @@ export default function Talk() {
   const [mover, setMover] = useState(null); // 튕겨 나가는 브릭
   const [ph, setPh] = useState({}); // 이번 차례 상태
   const [done, setDone] = useState(false);
-  const stats = useRef({ bounces: 0, hints: 0, speakN: 0, writeN: 0, chooseN: 0, okN: 0, nearN: 0, rescueN: 0, missed: new Map(), fixes: [], answers: {}, variant: {}, tags: [], path: [] });
+  const stats = useRef({ bounces: 0, hints: 0, speakN: 0, writeN: 0, chooseN: 0, okN: 0, nearN: 0, rescueN: 0, missed: new Map(), fixes: [], answers: {}, variant: {}, tags: [], path: [], turns: {} });
   const playId = useRef(null);
   const timers = useRef([]);
   const later = (ms, fn) => timers.current.push(setTimeout(fn, ms));
@@ -204,6 +204,10 @@ export default function Talk() {
   const partner = talk.partner;
   const prevThem = step?.type === 'me' ? eff(steps[si - 1]) : null;
 
+  // 차례별 기록 (관리자 화면 "어려운 차례"): w 튕긴 횟수 · s 두 번 튕겨 넘어감 · h 힌트 · n 어색한 대답
+  const mark = (idx, v) => {
+    stats.current.turns = { ...(stats.current.turns || {}), [idx]: { w: 0, s: 0, h: 0, n: 0, ...v } };
+  };
   const place = (brick) => {
     setBricks((b) => [...b, { ...brick, cls: brick.tilt ? 'b-tilt' : 'b-drop', key: b.length }]);
     sfx(brick.tilt ? 'tilt' : 'snap', 0.3);
@@ -223,6 +227,7 @@ export default function Talk() {
       if (missed) step.keys.forEach((w) => stats.current.missed.set(w.key, w));
       if (missed) stats.current.fixes.push({ turnIdx: step.idx, kind: 'hole', prev: '' });
       if (ph.hint) stats.current.hints++;
+      mark(step.idx, { w: ph.wrong, h: ph.hint ? 1 : 0 });
       place({ tone: 'mint', tilt: ph.hint, missing: missed ? '1' : '' });
       setPh({ ...ph, solved: true, fb: '' });
     } else {
@@ -237,6 +242,7 @@ export default function Talk() {
   const skipMeaning = (i) => {
     step.keys.forEach((w) => stats.current.missed.set(w.key, w));
     stats.current.fixes.push({ turnIdx: step.idx, kind: 'skip', prev: '' });
+    mark(step.idx, { w: ph.wrong + 1, s: 1, h: ph.hint ? 1 : 0 });
     setBricks((b) => [...b, { tone: 'mint', gone: true, key: b.length }]);
     setPh({ ...ph, wrong: ph.wrong + 1, shake: i, n: ph.n + 1, fb: '', solved: true, skipped: true });
   };
@@ -256,6 +262,7 @@ export default function Talk() {
       }
       stats.current.chooseN++;
       stats.current.okN++;
+      mark(step.idx, { w: ph.wrong || 0 });
       place({ tone: 'coral', shine: true });
       setPh({ ...ph, result: { kind: 'ok', option: o.option, picked: o.ko, placed: true }, fb: '' });
       return;
@@ -268,6 +275,7 @@ export default function Talk() {
       }
       stats.current.chooseN++;
       stats.current.nearN++;
+      mark(step.idx, { w: ph.wrong || 0, n: 1 });
       place({ tone: 'coral', shine: true, tilt: true });
       setPh({ ...ph, result: { kind: 'near', near: o.near, picked: o.ko, placed: true }, fb: '' });
       return;
@@ -284,6 +292,7 @@ export default function Talk() {
       stats.current.chooseN++;
       step.options.forEach((op) => op.words.slice(0, 1).forEach((w) => stats.current.missed.set(w.key, w)));
       stats.current.fixes.push({ turnIdx: step.idx, kind: 'skip', prev: o.ko });
+      mark(step.idx, { w: wrong, s: 1 });
       setBricks((b) => [...b, { tone: 'coral', gone: true, key: b.length }]);
       setPh({ ...ph, wrong, shake: i, n: ph.n + 1, fb: '', result: { kind: 'skip', picked: o.ko, placed: true } });
       return;
@@ -337,6 +346,7 @@ export default function Talk() {
       bricks: JSON.stringify(finalBricks.map((b) => ({ t: b.tone, s: b.shine ? 1 : 0, k: b.tilt ? 1 : 0, m: b.missing || '', ...(b.gone ? { g: 1 } : {}), ...(b.path ? { p: 1 } : {}) }))),
       words: words.filter(isReviewWord).map((w) => ({ key: w.key, ko: w.ko, mean: w.mean, say: w.say, missed: s.missed.has(w.key) })),
       fixes: s.fixes,
+      turns: Object.entries(s.turns || {}).map(([i, v]) => ({ i: Number(i), w: v.w || 0, s: v.s || 0, h: v.h || 0, n: v.n || 0 })),
     };
     if (playId.current) {
       await quiet(`/plays/${playId.current}/finish`, { method: 'POST', body });

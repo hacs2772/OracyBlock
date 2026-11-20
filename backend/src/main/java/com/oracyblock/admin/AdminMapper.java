@@ -81,6 +81,21 @@ public interface AdminMapper {
         """)
     List<Map<String, Object>> talks();
 
+    /** 어려운 차례: 대사마다 몇 번 했고, 평균 몇 번 튕기고, 몇 %가 두 번 튕겨 넘어갔는지 (관리자 기기 뺌) */
+    @Select("""
+        SELECT ts.talk_id AS "talkId", ts.turn_idx AS "turnIdx", COUNT(*) AS n,
+          ROUND(AVG(ts.wrong), 2) AS "avgWrong",
+          ROUND(100.0 * COUNT(*) FILTER (WHERE ts.skipped) / COUNT(*)) AS "skipPct",
+          ROUND(100.0 * COUNT(*) FILTER (WHERE ts.hint) / COUNT(*)) AS "hintPct",
+          ROUND(100.0 * COUNT(*) FILTER (WHERE ts.near) / COUNT(*)) AS "nearPct"
+        FROM turn_stat ts JOIN s_play p ON p.id = ts.play_id
+        GROUP BY ts.talk_id, ts.turn_idx
+        HAVING COUNT(*) >= #{min}
+        ORDER BY COUNT(*) FILTER (WHERE ts.skipped) * 1.0 / COUNT(*) DESC, AVG(ts.wrong) DESC, COUNT(*) DESC
+        LIMIT 40
+        """)
+    List<Map<String, Object>> hardTurns(@Param("min") int min);
+
     @Select("""
         SELECT f.id, f.message, f.page, f.contact, f.is_done AS done, u.nickname, u.email,
           to_char(f.created_at AT TIME ZONE 'Asia/Seoul', 'YYYY-MM-DD"T"HH24:MI:SS"+09:00"') AS "createdAt"

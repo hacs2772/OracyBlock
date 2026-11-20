@@ -493,3 +493,9 @@ textarea.input { height: 120px; padding: 10px 12px; resize: vertical; line-heigh
 .hm-tower-t { font-family: var(--display); font-size: 19px; }
 .hm-help { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .hm-help .ob-btn.sm { margin-top: 6px; }
+/* 관리자: 어려운 차례 */
+.adm-turns { width: 100%; border-collapse: collapse; font-size: 12px; }
+.adm-turns th, .adm-turns td { padding: 6px 4px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+.adm-turns th { font-weight: 700; white-space: nowrap; }
+.adm-turns td:nth-child(n+3) { white-space: nowrap; text-align: right; }
+.adm-turns tr.hot td { background: var(--pink-bg); }

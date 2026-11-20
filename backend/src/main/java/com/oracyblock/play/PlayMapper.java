@@ -13,7 +13,7 @@ public interface PlayMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     void insert(NewPlay p);
 
-    @Select("SELECT owner, finished_at IS NOT NULL AS finished FROM play WHERE id = #{id}")
+    @Select("SELECT owner, talk_id AS \"talkId\", finished_at IS NOT NULL AS finished FROM play WHERE id = #{id}")
     Map<String, Object> ownerOf(@Param("id") long id);
 
     @Update("""
@@ -29,6 +29,10 @@ public interface PlayMapper {
 
     @Select("SELECT COUNT(*) FROM word_answer WHERE owner = #{owner} AND day = #{today}")
     int answersOn(@Param("owner") String owner, @Param("today") LocalDate today);
+
+    @Insert("INSERT INTO turn_stat (play_id, talk_id, turn_idx, wrong, skipped, hint, near) VALUES (#{playId}, #{talkId}, #{turnIdx}, #{wrong}, #{skipped}, #{hint}, #{near})")
+    void insertTurn(@Param("playId") long playId, @Param("talkId") String talkId, @Param("turnIdx") int turnIdx,
+                    @Param("wrong") int wrong, @Param("skipped") boolean skipped, @Param("hint") boolean hint, @Param("near") boolean near);
 
     @Insert("INSERT INTO fix_item (owner, play_id, turn_idx, kind, prev) VALUES (#{owner}, #{playId}, #{turnIdx}, #{kind}, #{prev})")
     void insertFix(@Param("owner") String owner, @Param("playId") long playId, @Param("turnIdx") int turnIdx,

@@ -36,8 +36,13 @@ public class PlayController {
     public record FixIn(int turnIdx, String kind, String prev) {
     }
 
+    /** 차례별 기록: i = 차례 번호, w = 튕긴 횟수, s = 두 번 튕겨 넘어감, h = 힌트, n = 어색한 대답 */
+    public record TurnIn(int i, int w, int s, int h, int n) {
+    }
+
     public record FinishRequest(boolean crooked, int bounces, int hints, int speakN, int writeN, int chooseN,
-                                int okN, int nearN, int rescueN, String bricks, List<WordIn> words, List<FixIn> fixes) {
+                                int okN, int nearN, int rescueN, String bricks, List<WordIn> words, List<FixIn> fixes,
+                                List<TurnIn> turns) {
     }
 
     @PostMapping("/plays")
@@ -66,6 +71,11 @@ public class PlayController {
             body.fixes().stream().limit(40)
                     .filter(f -> "hole".equals(f.kind()) || "tilt".equals(f.kind()) || "skip".equals(f.kind()))
                     .forEach(f -> plays.insertFix(owner, id, Math.max(0, Math.min(60, f.turnIdx())), f.kind(), cut(f.prev(), 200)));
+        }
+        if (body.turns() != null) {
+            String talkId = String.valueOf(row.get("talkId"));
+            body.turns().stream().limit(60).filter(t -> t.i() >= 0 && t.i() <= 60)
+                    .forEach(t -> plays.insertTurn(id, talkId, t.i(), Math.max(0, Math.min(9, t.w())), t.s() > 0, t.h() > 0, t.n() > 0));
         }
         if (body.words() != null) {
             for (WordIn w : body.words().stream().limit(60).toList()) {

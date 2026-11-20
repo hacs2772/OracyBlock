@@ -42,6 +42,12 @@ public class AdminController {
         return m;
     }
 
+    /** 어려운 차례 (min = 최소 몇 번 한 대사부터) */
+    @GetMapping("/turns")
+    public List<Map<String, Object>> turns(@RequestParam(defaultValue = "1") int min) {
+        return admin.hardTurns(Math.max(1, Math.min(50, min)));
+    }
+
     @GetMapping("/users")
     public List<Map<String, Object>> users() {
         return users.recent();

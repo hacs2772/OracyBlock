@@ -26,6 +26,7 @@ export default function Admin() {
   const [fb, setFb] = useState([]);
   const [onlyOpen, setOnlyOpen] = useState(false);
   const [reps, setReps] = useState([]);
+  const [turns, setTurns] = useState([]);
   const repDone = (x) => {
     setReps((list) => list.filter((y) => !(y.talkId === x.talkId && y.turnIdx === x.turnIdx)));
     api('/admin/line-reports/done', { method: 'PUT', body: { talkId: x.talkId, turnIdx: x.turnIdx } }).catch((e) => setErr(e.message));
@@ -37,8 +38,8 @@ export default function Admin() {
   const [err, setErr] = useState('');
   const load = () => {
     setErr('');
-    Promise.all([api('/admin/stats'), api('/admin/users'), api('/admin/feedback'), api('/admin/line-reports')])
-      .then(([a, b, c, r]) => { setD(a); setUsers(b); setFb(c); setReps(r); })
+    Promise.all([api('/admin/stats'), api('/admin/users'), api('/admin/feedback'), api('/admin/line-reports'), api('/admin/turns')])
+      .then(([a, b, c, r, tt]) => { setD(a); setUsers(b); setFb(c); setReps(r); setTurns(tt); })
       .catch((e) => setErr(e.status === 403 || e.status === 401 ? '관리자 계정으로 로그인해야 볼 수 있어요.' : e.message));
   };
   useEffect(load, [st.user?.id]);
@@ -152,6 +153,37 @@ export default function Admin() {
             ))}
           </tbody>
         </table>
+      </div>
+
+      <div id="turns">
+        <h2 style={{ fontSize: 20 }}>어려운 차례 ({turns.length})</h2>
+        <p className="small muted">대사마다 몇 번 했는지, 평균 몇 번 튕겼는지, 두 번 튕겨 넘어간 비율이에요. 넘어감이 높은 대사부터 보여요. 대사가 어렵거나 보기가 헷갈리는 곳이에요.</p>
+      </div>
+      <div className="card" style={{ padding: '4px 10px', overflowX: 'auto' }}>
+        {turns.length === 0 && <p className="small" style={{ padding: '10px 0' }}>아직 기록이 없어요. 대화를 끝내면 쌓여요.</p>}
+        {turns.length > 0 && (
+          <table className="adm-turns">
+            <thead><tr><th>장소 · 차례</th><th>대사</th><th>횟수</th><th>평균 튕김</th><th>넘어감</th><th>힌트</th><th>어색</th></tr></thead>
+            <tbody>
+              {turns.map((x) => {
+                const t = talkById(x.talkId);
+                const s = t?.steps[x.turnIdx];
+                const line = s ? (s.type === 'them' ? s.line.ko + ' (' + s.line.mean + ')' : '내 차례: ' + s.options.map((o) => o.natural.ko).join(' · ')) : '';
+                return (
+                  <tr key={x.talkId + ':' + x.turnIdx} className={Number(x.skipPct) >= 30 ? 'hot' : ''}>
+                    <td>{t?.place || x.talkId} · {x.turnIdx + 1}</td>
+                    <td>{line}</td>
+                    <td>{x.n}</td>
+                    <td>{x.avgWrong}</td>
+                    <td>{x.skipPct}%</td>
+                    <td>{x.hintPct}%</td>
+                    <td>{x.nearPct}%</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
       </div>
 
       <div id="reports">
