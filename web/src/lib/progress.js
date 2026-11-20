@@ -1,7 +1,7 @@
 // 서버에서 받은 대화 기록으로 여행 판·레벨 추천을 계산해요
 export const parseBricks = (s) => {
   try {
-    return (JSON.parse(s || '[]') || []).map((b) => ({ tone: b.t, shine: !!b.s, tilt: !!b.k, missing: b.m || '' }));
+    return (JSON.parse(s || '[]') || []).map((b) => ({ tone: b.t, shine: !!b.s, tilt: !!b.k, missing: b.m || '', gone: !!b.g }));
   } catch {
     return [];
   }

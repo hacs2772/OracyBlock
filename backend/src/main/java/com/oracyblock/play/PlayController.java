@@ -64,7 +64,7 @@ public class PlayController {
         plays.finish(id, today, PrefController.DAY_CAP.get(PrefController.speedOf(prefs, owner)), body);
         if (body.fixes() != null) {
             body.fixes().stream().limit(40)
-                    .filter(f -> "hole".equals(f.kind()) || "tilt".equals(f.kind()))
+                    .filter(f -> "hole".equals(f.kind()) || "tilt".equals(f.kind()) || "skip".equals(f.kind()))
                     .forEach(f -> plays.insertFix(owner, id, Math.max(0, Math.min(60, f.turnIdx())), f.kind(), cut(f.prev(), 200)));
         }
         if (body.words() != null) {

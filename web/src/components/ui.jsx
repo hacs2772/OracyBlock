@@ -184,7 +184,7 @@ export function Stack({ bricks, size, x0 = 20, baseY, height, plate = 0, width =
           <Brick tone="plate" studs={plate} pitch={size.pitch} h={Math.max(5, Math.round(size.h * 0.45))} depth={size.depth} studH={size.studH} />
         </div>
       )}
-      {bricks.map((b, i) => {
+      {bricks.filter((b) => !b.gone).map((b, i) => {
         const tilt = b.tilt ? { transform: 'translate(4px,-2px) rotate(5deg)', transformOrigin: '50% 90%' } : null;
         return (
           <div key={b.key ?? i} className={b.cls || ''} style={{ position: 'absolute', left: x0 - 5, top: baseY - i * size.h - box.lift, ...tilt }}>

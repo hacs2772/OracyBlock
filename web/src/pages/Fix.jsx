@@ -1,4 +1,4 @@
-// 고치기 (여행 판에서 들어와요): 구멍 난 돌기·비뚤어진 브릭이 있는 대화를 다시 만들기
+// 고치기 (학습에서 들어와요): 구멍 난 돌기·비뚤어진 브릭·빠진 대답이 있는 대화를 다시 만들기
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { talkById, judge } from '../content/build.js';
@@ -38,13 +38,14 @@ export default function Fix() {
         <div className="ttl">고치기</div>
         <span style={{ width: 44 }} />
       </div>
-      <p className="small muted">고칠 곳 {openCount}개 · 구멍 난 돌기 = 놓친 단어, 비뚤어진 브릭 = 어긋난 대답. 고쳐도 레벨 추천에 쓰는 올바른 탑으로는 세지 않아요.</p>
+      <p className="small muted">고칠 곳 {openCount}개 · 구멍 난 돌기 = 놓친 단어, 비뚤어진 브릭 = 어긋난 대답, 빠진 대답 = 두 번 튕긴 차례. 고쳐도 레벨 추천에 쓰는 올바른 탑으로는 세지 않아요.</p>
       {groups && list.length === 0 && <p className="card small">고칠 곳이 없어요. 탑이 단단해요!</p>}
       {list.map((g) => {
         const t = talkById(g.talkId);
         if (!t) return null;
         const holes = g.items.filter((x) => x.kind === 'hole').length;
-        const tilts = g.items.length - holes;
+        const skips = g.items.filter((x) => x.kind === 'skip').length;
+        const tilts = g.items.length - holes - skips;
         const bricks = parseBricks(g.bricks).slice(-9);
         return (
           <div className="card fix-card" key={g.playId}>
@@ -55,6 +56,7 @@ export default function Fix() {
               <span style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
                 {holes > 0 && <span className="chip">놓친 단어 {holes}</span>}
                 {tilts > 0 && <span className="chip">비뚤어진 브릭 {tilts}</span>}
+                {skips > 0 && <span className="chip">빠진 대답 {skips}</span>}
               </span>
               <button className="ob-btn sm coral" onClick={() => { unlock(); setMode({ group: g }); }}><span className="t">다시 만들기</span></button>
             </div>
@@ -96,13 +98,14 @@ function Remake({ group, onExit }) {
     const nb = bricks.map((b, i) => {
       if (i !== item.turnIdx) return b;
       if (item.kind === 'hole') return { ...b, missing: '', cls: 'b-pop' };
+      if (item.kind === 'skip') return { tone: 'coral', shine: true, cls: 'b-drop' };
       return { ...b, tilt: false, cls: 'b-stand' };
     });
     setBricks(nb);
     sfx('snap');
     setPh({ ...ph, solved: how, fb: '', listening: false });
     try {
-      await api(`/fixes/${item.id}`, { method: 'POST', body: { how, bricks: JSON.stringify(nb.map((b) => ({ t: b.tone, s: b.shine ? 1 : 0, k: b.tilt ? 1 : 0, m: b.missing || '' }))) } });
+      await api(`/fixes/${item.id}`, { method: 'POST', body: { how, bricks: JSON.stringify(nb.map((b) => ({ t: b.tone, s: b.shine ? 1 : 0, k: b.tilt ? 1 : 0, m: b.missing || '', ...(b.gone ? { g: 1 } : {}) }))) } });
     } catch (e) {
       toast(e.message);
     }
@@ -135,10 +138,11 @@ function Remake({ group, onExit }) {
       miss(-1, '소리가 안 들렸어요. 골라서 대답해도 돼요.');
     }
   };
-  const optWords = item.kind === 'tilt' ? step.options[0].words : step.keys;
+  const optWords = item.kind !== 'hole' ? step.options[0].words : step.keys;
   const markLeft = 'calc(50% + ' + (BIG.pitch * 2 + 20) + 'px)';
   const baseY = 180;
-  const ptrTop = baseY - item.turnIdx * BIG.h - BIG.h / 2 - 22;
+  const below = bricks.slice(0, item.turnIdx).filter((b) => !b.gone).length; // 빠진 자리는 안 그려서 그 아래 브릭 수로
+  const ptrTop = baseY - below * BIG.h - BIG.h / 2 - 22;
 
   return (
     <div className="page" style={{ gap: 10 }}>
@@ -153,7 +157,7 @@ function Remake({ group, onExit }) {
         </div>
         <div className="ptr" style={{ left: markLeft, top: Math.max(4, ptrTop), color: ph.solved ? '#1B776C' : '#E0533F' }}>
           <svg width="22" height="14" viewBox="0 0 22 14" aria-hidden="true"><path d="M21 7H3M8 2L3 7l5 5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-          <span>{ph.solved ? (item.kind === 'hole' ? '채워졌어요' : '바로 섰어요') : item.kind === 'hole' ? '놓친 단어' : '어긋난 대답'}</span>
+          <span>{ph.solved ? { hole: '채워졌어요', tilt: '바로 섰어요', skip: '끼워졌어요' }[item.kind] : { hole: '놓친 단어', tilt: '어긋난 대답', skip: '빠진 대답' }[item.kind]}</span>
         </div>
       </div>
       <div className="bubble">
@@ -161,17 +165,17 @@ function Remake({ group, onExit }) {
           <div className="small muted">{talk.partner}</div>
           <div className="ko">{them.line.ko}{them.casual && <span className="tag-casual">반말</span>}</div>
           <Ja>{them.line.ja}</Ja>
-          {(item.kind === 'tilt' || ph.solved) && <div className="mean">{them.line.mean}</div>}
+          {(item.kind !== 'hole' || ph.solved) && <div className="mean">{them.line.mean}</div>}
         </div>
         <button className="icon-btn" onClick={() => speak(them.line.ja, 0.9)} aria-label="다시 듣기"><span className="play-dot"><Play /></span></button>
       </div>
-      {item.kind === 'tilt' && item.prev && <p className="small muted">지난번 내 대답: <b style={{ color: '#24324A' }}>{item.prev}</b></p>}
+      {item.kind !== 'hole' && item.prev && <p className="small muted">{item.kind === 'skip' ? '지난번에 튕긴 대답' : '지난번 내 대답'}: <b style={{ color: '#24324A' }}>{item.prev}</b></p>}
 
       {!ph.solved && (
         <>
-          <h2 style={{ fontSize: 21 }}>{item.kind === 'hole' ? '무슨 뜻일까요?' : '이번엔 딱 맞게 대답해 볼까요?'}</h2>
+          <h2 style={{ fontSize: 21 }}>{item.kind === 'hole' ? '무슨 뜻일까요?' : item.kind === 'skip' ? '이번엔 맞는 대답을 골라 볼까요?' : '이번엔 딱 맞게 대답해 볼까요?'}</h2>
           {ph.fb && <p className="fb">{ph.fb}</p>}
-          {item.kind === 'tilt' && <p className="small muted">이번엔 딱 맞는 대답을 골라 보세요.</p>}
+          
           <div className="opts">
             {options.map((o, i) => {
               const text = item.kind === 'hole' ? o : o.ko;
@@ -187,7 +191,7 @@ function Remake({ group, onExit }) {
                   >
                     {text}
                   </button>
-                  {item.kind === 'tilt' && <button className="icon-btn" onClick={() => speak(o.ja, 0.9)} aria-label={`${o.ko} 들어 보기`}><span className="play-dot sm"><Play size={10} /></span></button>}
+                  {item.kind !== 'hole' && <button className="icon-btn" onClick={() => speak(o.ja, 0.9)} aria-label={`${o.ko} 들어 보기`}><span className="play-dot sm"><Play size={10} /></span></button>}
                 </div>
               );
             })}
@@ -196,7 +200,7 @@ function Remake({ group, onExit }) {
       )}
       {ph.solved && (
         <div className="result">
-          <h3>{item.kind === 'hole' ? '딸깍! 돌기가 채워졌어요' : '스르륵, 바로 섰어요'}</h3>
+          <h3>{{ hole: '딸깍! 돌기가 채워졌어요', tilt: '스르륵, 바로 섰어요', skip: '딸깍! 빠진 자리에 끼웠어요' }[item.kind]}</h3>
           <p className="small muted">이 단어는 며칠 뒤에 한 번 더 들려 드려요.</p>
           {optWords.slice(0, 2).map((w) => <BigWord key={w.key} w={w} />)}
           <button className="ob-btn coral" onClick={next}><span className="t">{k + 1 < items.length ? '다음 고칠 곳' : '다 고쳤어요'}</span></button>

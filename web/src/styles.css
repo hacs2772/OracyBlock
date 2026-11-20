@@ -353,3 +353,4 @@ textarea.input { height: 120px; padding: 10px 12px; resize: vertical; line-heigh
 .todo-row.done .todo-txt b { color: var(--mint-ink); }
 .todo-go.ob-btn.sm { margin-top: 6px; min-width: 64px; padding: 4px 10px; flex-shrink: 0; }
 .todo-row.none .todo-txt b { color: var(--faint); }
+.skip-ans { display: flex; align-items: center; gap: 4px; padding: 6px 4px 6px 10px; border-radius: 10px; background: var(--plate); }
