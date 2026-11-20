@@ -1,4 +1,4 @@
-// 고치기 (학습에서 들어와요): 구멍 난 돌기·비뚤어진 브릭·빠진 대답이 있는 대화를 다시 만들기
+// 고치기 (홈의 한 줄·학습의 장소 칸에서 들어와요): 구멍 난 돌기·비뚤어진 브릭·빠진 대답이 있는 대화를 다시 만들기
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { talkById, judge } from '../content/build.js';
@@ -34,7 +34,7 @@ export default function Fix() {
   return (
     <div className="page">
       <div className="talk-top">
-        <Link className="icon-btn" to="/" aria-label="학습으로"><Back /></Link>
+        <Link className="icon-btn" to="/learn" aria-label="학습으로"><Back /></Link>
         <div className="ttl">고치기</div>
         <span style={{ width: 44 }} />
       </div>

@@ -174,9 +174,9 @@ export default function Talk() {
     if (!step || done || resumeAsk) return;
     setNeedTap(false);
     if (!(stats.current.path || []).includes(si)) stats.current.path = [...(stats.current.path || []), si];
-    // 새 차례: 대화창부터 보이게. 낮은 화면은 머리줄을 넘겨 대화창을 맨 위로 (보기 4개까지 한 화면에)
+    // 새 차례: 맨 위(탑)부터 보이게. 낮은 화면은 머리줄을 넘겨 탑을 맨 위로 (탑 → 말풍선 → 문제 → 보기 5개가 한 화면에)
     later(30, () => {
-      const el = document.querySelector('.tk-chat');
+      const el = document.querySelector('.stage');
       window.scrollTo(0, small && el ? Math.max(0, el.getBoundingClientRect().top + window.scrollY - 6) : 0);
     });
     if (step.type === 'them') {
@@ -196,7 +196,7 @@ export default function Talk() {
     return (
       <div className="page">
         <p>대화를 찾지 못했어요.</p>
-        <Link to="/" className="ob-btn"><span className="t">학습으로</span></Link>
+        <Link to="/learn" className="ob-btn"><span className="t">학습으로</span></Link>
       </div>
     );
   }
@@ -391,7 +391,7 @@ export default function Talk() {
   return (
     <div className="page" style={{ gap: 10 }}>
       <div className="talk-top">
-        <Link className="icon-btn" to="/" aria-label="학습으로 나가기"><Close /></Link>
+        <Link className="icon-btn" to="/" aria-label="나가기"><Close /></Link>
         <div className="ttl">
           {talk.place}
           <div className="small muted" style={{ fontFamily: 'var(--body)' }}>{talk.partnerDesc} · Lv{level}</div>
@@ -399,6 +399,23 @@ export default function Talk() {
         <button className="icon-btn" onClick={() => setHelp(true)} aria-label="게임 방법 보기"><Question /></button>
       </div>
       {help && <Guide slides={GAME} label="게임 방법" doneLabel="알겠어요" skipLabel="닫기" onDone={() => setHelp(false)} />}
+
+      <div className="stage plate" style={{ boxShadow: 'none', padding: 0, height: stageH }}>
+        {!done && step?.type === 'them' && !ph.solved && (
+          <div className="tk-tools">
+            <button className="pill" onClick={() => { unlock(); setNeedTap(false); say(step.line.ja, rate * 0.7); }}><span className="play-dot sm"><Play size={10} /></span>느리게</button>
+            <button className={'pill' + (ph.hint ? ' on' : '')} onClick={() => setPh({ ...ph, hint: true })} aria-expanded={ph.hint} aria-label="힌트 보기 (쓰면 브릭이 살짝 비뚤게 쌓여요)">힌트</button>
+          </div>
+        )}
+        <div style={{ position: 'absolute', left: '50%', top: 0, marginLeft: -(size.pitch * 2 + 14) }}>
+          <Stack bricks={stackList} size={size} x0={20} baseY={baseY} height={stageH} width={200} plate={6} label={`대화 탑, 브릭 ${bricks.filter((b) => !b.gone).length}개`} />
+          {mover && (
+            <div key={mover.n} className="b-fly" style={{ position: 'absolute', left: 15, top: baseY - bricks.filter((b) => !b.gone).length * size.h - (5 + size.studH + size.depth + size.h) }}>
+              <Brick tone={mover.tone} shine={mover.shine} {...size} />
+            </div>
+          )}
+        </div>
+      </div>
 
       {!done && chat.length > 0 && (
         <div className="tk-chat" aria-live="polite">
@@ -434,23 +451,6 @@ export default function Talk() {
           )))}
         </div>
       )}
-
-      <div className="stage plate" style={{ boxShadow: 'none', padding: 0, height: stageH }}>
-        {!done && step?.type === 'them' && !ph.solved && (
-          <div className="tk-tools">
-            <button className="pill" onClick={() => { unlock(); setNeedTap(false); say(step.line.ja, rate * 0.7); }}><span className="play-dot sm"><Play size={10} /></span>느리게</button>
-            <button className={'pill' + (ph.hint ? ' on' : '')} onClick={() => setPh({ ...ph, hint: true })} aria-expanded={ph.hint} aria-label="힌트 보기 (쓰면 브릭이 살짝 비뚤게 쌓여요)">힌트</button>
-          </div>
-        )}
-        <div style={{ position: 'absolute', left: '50%', top: 0, marginLeft: -(size.pitch * 2 + 14) }}>
-          <Stack bricks={stackList} size={size} x0={20} baseY={baseY} height={stageH} width={200} plate={6} label={`대화 탑, 브릭 ${bricks.filter((b) => !b.gone).length}개`} />
-          {mover && (
-            <div key={mover.n} className="b-fly" style={{ position: 'absolute', left: 15, top: baseY - bricks.filter((b) => !b.gone).length * size.h - (5 + size.studH + size.depth + size.h) }}>
-              <Brick tone={mover.tone} shine={mover.shine} {...size} />
-            </div>
-          )}
-        </div>
-      </div>
 
       {!done && needTap && <p className="small" style={{ color: '#B9473A', fontWeight: 700, marginTop: -4 }}>소리가 안 나면 말풍선의 재생 버튼을 눌러요.</p>}
       {resumeAsk && (
@@ -504,7 +504,7 @@ export default function Talk() {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <button className="ob-btn" onClick={() => nav('/fix')}><span className="t">고치기</span></button>
-            <button className="ob-btn coral" onClick={() => nav('/')}><span className="t">학습으로</span></button>
+            <button className="ob-btn coral" onClick={() => nav('/')}><span className="t">홈으로</span></button>
           </div>
         </div>
       )}

@@ -35,7 +35,7 @@ export default function Contact() {
 
   // 대화하는 중·관리자 화면에서는 버튼을 숨겨요 (대화에 집중)
   const hideFab = pathname.startsWith('/talk') || pathname.startsWith('/admin') || pathname.startsWith('/login');
-  const withTabs = ['/', '/about', '/review', '/tower', '/me'].includes(pathname);
+  const withTabs = ['/', '/learn', '/about', '/review', '/tower', '/me'].includes(pathname);
 
   const send = async () => {
     if (msg.trim().length < 2) return toast('두 글자 이상 적어 주세요.');

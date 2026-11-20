@@ -132,7 +132,7 @@ export default function Me() {
       <div className="set-card">
         <div className="set-row">
           <span className="set-name">지금 레벨 Lv{st.level}<small>학습 화면의 레벨 카드에서 바꿔요</small></span>
-          <Link className="ob-btn sm" to="/"><span style={{ fontSize: 13, fontWeight: 700 }}>바꾸기</span></Link>
+          <Link className="ob-btn sm" to="/learn"><span style={{ fontSize: 13, fontWeight: 700 }}>Lv 변경</span></Link>
         </div>
       </div>
 

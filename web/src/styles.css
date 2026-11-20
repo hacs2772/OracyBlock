@@ -483,3 +483,13 @@ textarea.input { height: 120px; padding: 10px 12px; resize: vertical; line-heigh
 /* 소개 웹 오른쪽 위 브릭 버튼 (로그인 · 베타로 시작 / 학습하러 가기) */
 .lp-headbtn.ob-btn.sm { margin-top: 8px; min-height: 40px; padding: 4px 14px; text-decoration: none; }
 @media (max-width: 420px) { .lp-head .logo-text { display: none; } }
+
+/* 홈 (concept 11-16) */
+.hm-next { padding: 14px; }
+.hm-place { font-family: var(--display); font-size: 24px; line-height: 1.15; }
+.hm-line { display: flex; flex-wrap: wrap; gap: 4px 8px; justify-content: center; font-size: 13px; color: var(--ink2); }
+.hm-line a { text-decoration: underline; text-underline-offset: 3px; }
+.hm-tower { display: flex; align-items: center; gap: 12px; padding: 8px 12px; text-decoration: none; }
+.hm-tower-t { font-family: var(--display); font-size: 19px; }
+.hm-help { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.hm-help .ob-btn.sm { margin-top: 6px; }

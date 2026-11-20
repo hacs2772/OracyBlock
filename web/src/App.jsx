@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import Home from './pages/Home.jsx';
+import Learn from './pages/Learn.jsx';
 import Talk from './pages/Talk.jsx';
 import Fix from './pages/Fix.jsx';
 import Review from './pages/Review.jsx';
@@ -21,14 +22,10 @@ import { unlock } from './lib/speech.js';
 export default function App() {
   const st = useStore();
   const { pathname } = useLocation();
-  // 베타 동안: 그날 처음 oracyblock.com에 들어오면 소개 탭부터 (하루 한 번). 그다음부터는 바로 여행 판
-  const today = new Date().toLocaleDateString('sv-SE');
-  const introToday = pathname === '/' && st.introDay !== today;
-  useEffect(() => {
-    if (pathname === '/about' && st.introDay !== today) store.set({ introDay: today });
-  }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
+  // 처음 온 사람만 소개 웹(/about)부터. 한 번 본 다음에는 들어오면 홈 (concept 11-16)
+  const firstVisit = pathname === '/' && !st.seenIntro;
   const isLanding = pathname === '/about';
-  // 처음 온 사람 안내 6장(움직이는 그림)은 꼭 한 번 저절로 떠요 (소개 페이지나 여행 판 위에). 게임 방법 3장은 첫 대화를 시작할 때
+  // 처음 온 사람 안내 6장(움직이는 그림)은 꼭 한 번 저절로 떠요 (소개 페이지나 홈 위에). 게임 방법 3장은 첫 대화를 시작할 때
   const showTour = !st.seenTour && (pathname === '/' || pathname === '/about');
 
   // 하루에 한 번 "왔어요" 남기기 (관리자 통계) + 로그인 정보 새로 받기
@@ -45,7 +42,8 @@ export default function App() {
     <div className={isLanding ? 'app-wide' : 'app'} onPointerDown={unlock}>
       <InAppBanner />
       <Routes>
-        <Route path="/" element={introToday ? <Navigate to="/about" replace /> : <Home />} />
+        <Route path="/" element={firstVisit ? <Navigate to="/about" replace /> : <Home />} />
+        <Route path="/learn" element={<Learn />} />
         <Route path="/about" element={<Landing />} />
         <Route path="/talk/:id" element={<Talk />} />
         <Route path="/fix" element={<Fix />} />

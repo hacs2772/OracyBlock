@@ -1,5 +1,6 @@
 // 서버에서 받은 대화 기록으로 학습 화면·레벨 추천을 계산해요
-import { talkById } from '../content/build.js';
+import { talkById, talksAtLevel } from '../content/build.js';
+import { resumeIds } from './resume.js';
 
 export const parseBricks = (s) => {
   try {
@@ -41,4 +42,12 @@ export function freshFixes(groups) {
     const t = talkById(g.talkId);
     return t && parseBricks(g.bricks).length === t.steps.length + 1;
   });
+}
+
+/** 다음에 할 대화: 하던 대화 → 아직 안 한 곳 → 비뚤어졌던 곳 → 첫 곳 (홈의 큰 버튼, 학습의 "다음 차례") */
+export function nextTalk(level, plays) {
+  const talks = talksAtLevel(level);
+  const latest = latestByTalk((plays || []).filter((p) => p.level === level));
+  const resumable = new Set(resumeIds());
+  return talks.find((t) => resumable.has(t.id)) || talks.find((t) => !latest.has(t.id)) || talks.find((t) => latest.get(t.id)?.crooked) || talks[0];
 }

@@ -16,7 +16,7 @@ export function LogoMark({ size = 34 }) {
 
 export function Logo() {
   return (
-    <Link to="/" className="logo" aria-label="OracyBlock 학습">
+    <Link to="/" className="logo" aria-label="OracyBlock 홈">
       <LogoMark />
       <span className="logo-text">
         Oracy<b>Block</b>
@@ -89,6 +89,11 @@ const TAB_ICONS = {
       <rect x="8" y="3" width="8" height="6" rx="1" />
     </svg>
   ),
+  house: (c) => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinejoin="round" aria-hidden="true">
+      <path d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z" />
+    </svg>
+  ),
   intro: (c) => (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M4 6h11a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H9l-4 3v-3H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z" />
@@ -111,8 +116,8 @@ const TAB_ICONS = {
   ),
 };
 const TABS = [
-  ['/about', 'intro', '소개'],
-  ['/', 'home', '학습'],
+  ['/', 'house', '홈'],
+  ['/learn', 'home', '학습'],
   ['/review', 'review', '복습'],
   ['/tower', 'tower', '내 탑'],
 ];
