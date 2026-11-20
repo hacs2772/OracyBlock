@@ -11,6 +11,7 @@ import { Guide, GAME } from '../components/Guides.jsx';
 import { countCorrect } from '../lib/progress.js';
 import { loadResume, saveResume, clearResume } from '../lib/resume.js';
 import LineReport from '../components/LineReport.jsx';
+import Face, { FACE_OF } from '../components/Face.jsx';
 
 const STAGE_TONE = { speak: 'coral', write: 'sky', choose: 'stone' };
 
@@ -33,9 +34,9 @@ function TryWords({ step }) {
   );
 }
 
-function sizeFor(level, n) {
+function sizeFor(level, n, room = 160) {
   const k = LEVEL_SCALE[level] || 1;
-  const h = Math.max(11, Math.min(Math.round(22 * k), Math.floor(160 / Math.max(1, n))));
+  const h = Math.max(10, Math.min(Math.round(22 * k), Math.floor(room / Math.max(1, n))));
   return { studs: 4, pitch: Math.round(h * 0.95), h, depth: Math.round(h * 0.5), studH: Math.max(3, Math.round(h * 0.24)) };
 }
 
@@ -82,7 +83,7 @@ export default function Talk() {
   const [mover, setMover] = useState(null); // 튕겨 나가는 브릭
   const [ph, setPh] = useState({}); // 이번 차례 상태
   const [done, setDone] = useState(false);
-  const stats = useRef({ bounces: 0, hints: 0, speakN: 0, writeN: 0, chooseN: 0, okN: 0, nearN: 0, rescueN: 0, missed: new Map(), fixes: [] });
+  const stats = useRef({ bounces: 0, hints: 0, speakN: 0, writeN: 0, chooseN: 0, okN: 0, nearN: 0, rescueN: 0, missed: new Map(), fixes: [], answers: {} });
   const playId = useRef(null);
   const timers = useRef([]);
   const later = (ms, fn) => timers.current.push(setTimeout(fn, ms));
@@ -91,6 +92,11 @@ export default function Talk() {
   const [resumeAsk, setResumeAsk] = useState(() => loadResume(id)); // 중간에 나갔던 대화면 이어 할지 물어봐요
   const [needTap, setNeedTap] = useState(false); // 아이폰처럼 소리가 저절로 안 나면 "눌러서 들어 보세요"
   const [help, setHelp] = useState(false); // ? → 게임 방법 다시 보기
+  const [talking, setTalking] = useState(false); // 상대가 말하는 중 (얼굴 입이 움직여요)
+  const say = (text, r) => {
+    setTalking(true);
+    return speak(text, r).then((ok) => { setTalking(false); return ok; });
+  };
 
   const newPlay = () => {
     playId.current = null;
@@ -111,7 +117,7 @@ export default function Talk() {
     clearResume(talk.id);
     setResumeAsk(null);
     newPlay();
-    later(300, () => speak(talk.steps[0].line.ja, rate));
+    later(300, () => say(talk.steps[0].line.ja, rate));
   };
 
   useEffect(() => {
@@ -126,7 +132,10 @@ export default function Talk() {
 
   const step = talk?.steps[si];
   const steps = talk?.steps || [];
-  const size = sizeFor(level, steps.length + 1);
+  // 화면이 낮은 휴대폰(아이폰 SE 등)은 무대를 조금 낮게
+  const stageH = typeof window !== 'undefined' && window.innerHeight < 700 ? 128 : 200;
+  const small = stageH < 200;
+  const size = sizeFor(level, steps.length + 1, stageH - 46);
 
   // 차례가 바뀔 때마다 이 기기에 기억해 둬요 (나갔다 와도 이어 하기)
   useEffect(() => {
@@ -144,9 +153,14 @@ export default function Talk() {
   useEffect(() => {
     if (!step || done || resumeAsk) return;
     setNeedTap(false);
+    // 새 차례: 대화창부터 보이게. 낮은 화면은 머리줄을 넘겨 대화창을 맨 위로 (보기 4개까지 한 화면에)
+    later(30, () => {
+      const el = document.querySelector('.tk-chat');
+      window.scrollTo(0, small && el ? Math.max(0, el.getBoundingClientRect().top + window.scrollY - 6) : 0);
+    });
     if (step.type === 'them') {
       setPh({ set: 0, wrong: 0, hint: false, solved: false, fb: '', shake: -1, n: 0 });
-      later(350, () => speak(step.line.ja, rate));
+      later(350, () => say(step.line.ja, rate));
       // 아이폰은 누르지 않으면 소리가 안 날 때가 있어요 → 듣기 버튼을 반짝
       later(900, () => {
         const sy = window.speechSynthesis;
@@ -168,8 +182,6 @@ export default function Talk() {
 
   const partner = talk.partner;
   const prevThem = step?.type === 'me' ? steps[si - 1] : null;
-  const shownLine = step?.type === 'them' ? step.line : prevThem?.line;
-  const showMean = step?.type === 'me' || ph.solved;
 
   const place = (brick) => {
     setBricks((b) => [...b, { ...brick, cls: brick.tilt ? 'b-tilt' : 'b-drop', key: b.length }]);
@@ -195,7 +207,7 @@ export default function Talk() {
     } else {
       fly('mint', false);
       setPh({ ...ph, wrong: ph.wrong + 1, shake: i, n: ph.n + 1, fb: '퉁! 튕겨 나갔어요. 한 번 더 들어 보세요.' });
-      later(1000, () => speak(step.line.ja, rate * 0.8));
+      later(1000, () => say(step.line.ja, rate * 0.8));
     }
   };
   const refreshMeaning = () => {
@@ -264,9 +276,10 @@ export default function Talk() {
       const opt = ph.result?.option != null ? step.options[ph.result.option] : null;
       if (opt?.react && !ph.reacted && ph.result?.kind !== 'near' && ph.result?.kind !== 'skip') {
         setPh({ ...ph, reacted: true });
-        speak(opt.react.ja, rate);
+        say(opt.react.ja, rate);
         return;
       }
+      stats.current.answers = { ...(stats.current.answers || {}), [step.idx]: ph.result?.kind === 'skip' ? null : ph.result?.picked || '' };
       const last = bricks[bricks.length - 1];
       if (last?.tilt && !last.gone) stats.current.fixes.push({ turnIdx: step.idx, kind: 'tilt', prev: ph.result?.picked || '' });
     }
@@ -306,9 +319,27 @@ export default function Talk() {
   const shownBricks = bricks.map((b) => ({ ...b }));
   const ghost = !done && !mover ? [{ tone: step?.type === 'them' ? 'mint' : 'coral', ghost: true, key: 'ghost' }] : [];
   const stackList = [...shownBricks, ...ghost];
-  const baseY = 194;
+  // 탑이 무대보다 높아지면 위쪽이 보이게 아래로 내려요 (카메라가 꼭대기를 따라가듯)
+  const shown = bricks.filter((b) => !b.gone).length + 1;
+  const baseY = Math.max(stageH - 16, shown * size.h + size.studH + size.depth + 12);
 
   const allWords = done ? talkWords(talk) : [];
+
+  // 위쪽 대화창: 상대(왼쪽 얼굴 + 말풍선) · 나(오른쪽). 가장 최근 두 마디만 (낮은 화면에서는 상대 말 차례에 내 지난 대답은 빼요)
+  const face = talk.face || FACE_OF[talk.id];
+  const chat = [];
+  if (!done && step && !resumeAsk) {
+    const said = stats.current.answers || {};
+    if (step.type === 'them') {
+      const prev = steps[si - 1];
+      if (prev?.type === 'me' && prev.idx in said && !small) chat.push({ key: 'm' + prev.idx, side: 'me', text: said[prev.idx], skipped: said[prev.idx] === null });
+      chat.push({ key: 't' + step.idx, side: 'them', line: step.line, casual: step.casual, guess: !ph.solved });
+    } else if (prevThem) {
+      const r = ph.result;
+      chat.push({ key: 't' + prevThem.idx, side: 'them', line: prevThem.line, casual: prevThem.casual, translated: true });
+      chat.push({ key: 'm' + step.idx, side: 'me', text: r?.kind === 'skip' ? null : r?.placed ? r.picked : null, skipped: r?.kind === 'skip' });
+    }
+  }
   const correctNow = done && !bricks.some((b) => b.tilt || b.gone);
 
   return (
@@ -317,15 +348,56 @@ export default function Talk() {
         <Link className="icon-btn" to="/" aria-label="학습으로 나가기"><Close /></Link>
         <div className="ttl">
           {talk.place}
-          <div className="small muted" style={{ fontFamily: 'var(--body)' }}>{partner} · {talk.partnerDesc} · Lv{level}</div>
+          <div className="small muted" style={{ fontFamily: 'var(--body)' }}>{talk.partnerDesc} · Lv{level}</div>
         </div>
         <button className="icon-btn" onClick={() => setHelp(true)} aria-label="게임 방법 보기"><Question /></button>
       </div>
       {help && <Guide slides={GAME} label="게임 방법" doneLabel="알겠어요" skipLabel="닫기" onDone={() => setHelp(false)} />}
 
-      <div className="stage plate" style={{ boxShadow: 'none', padding: 0 }}>
+      {!done && chat.length > 0 && (
+        <div className="tk-chat" aria-live="polite">
+          {chat.map((m) => (m.side === 'them' ? (
+            <div key={m.key} className="tk-row them">
+              <Face kind={face} talking={talking && !m.translated} />
+              <div className={'tk-b them' + (m.guess ? ' guess' : '')}>
+                {m.translated ? (
+                  <>
+                    <div className="tk-main">{m.line.mean}</div>
+                    {st.settings.kana && <div className="tk-sub">{m.line.ko}</div>}
+                  </>
+                ) : (
+                  <>
+                    {st.settings.kana && <div className="tk-main">{m.line.ko}{m.casual && <span className="tag-casual">반말</span>}</div>}
+                    <Ja>{m.line.ja}</Ja>
+                    {!m.guess && <div className="tk-mean fade-up">{m.line.mean}</div>}
+                  </>
+                )}
+                <button className={'icon-btn tk-play' + (needTap && m.guess ? ' tap-ring' : '')} onClick={() => { unlock(); setNeedTap(false); say(m.line.ja, rate); }} aria-label={`${partner} 말 다시 듣기`}>
+                  <span className="play-dot sm"><Play size={10} /></span>
+                </button>
+                {m.guess && <span className="tk-q" aria-hidden="true">?</span>}
+              </div>
+            </div>
+          ) : (
+            <div key={m.key} className="tk-row me">
+              <div className={'tk-b me' + (m.text == null && !m.skipped ? ' ask' : '')}>
+                {m.skipped ? <span className="tk-skip">못 쌓고 넘어갔어요</span> : m.text == null ? <span className="tk-ask" aria-label="내 차례">?</span> : <div className="tk-main">{m.text}</div>}
+              </div>
+              <Face kind="me" />
+            </div>
+          )))}
+        </div>
+      )}
+
+      <div className="stage plate" style={{ boxShadow: 'none', padding: 0, height: stageH }}>
+        {!done && step?.type === 'them' && !ph.solved && (
+          <div className="tk-tools">
+            <button className="pill" onClick={() => { unlock(); setNeedTap(false); say(step.line.ja, rate * 0.7); }}><span className="play-dot sm"><Play size={10} /></span>느리게</button>
+            <button className={'pill' + (ph.hint ? ' on' : '')} onClick={() => setPh({ ...ph, hint: true })} aria-expanded={ph.hint} aria-label="힌트 보기 (쓰면 브릭이 살짝 비뚤게 쌓여요)">힌트</button>
+          </div>
+        )}
         <div style={{ position: 'absolute', left: '50%', top: 0, marginLeft: -(size.pitch * 2 + 14) }}>
-          <Stack bricks={stackList} size={size} x0={20} baseY={baseY} height={210} width={200} plate={6} label={`대화 탑, 브릭 ${bricks.filter((b) => !b.gone).length}개`} />
+          <Stack bricks={stackList} size={size} x0={20} baseY={baseY} height={stageH} width={200} plate={6} label={`대화 탑, 브릭 ${bricks.filter((b) => !b.gone).length}개`} />
           {mover && (
             <div key={mover.n} className="b-fly" style={{ position: 'absolute', left: 15, top: baseY - bricks.filter((b) => !b.gone).length * size.h - (5 + size.studH + size.depth + size.h) }}>
               <Brick tone={mover.tone} shine={mover.shine} {...size} />
@@ -334,24 +406,6 @@ export default function Talk() {
         </div>
       </div>
 
-      {!done && shownLine && (
-        <div className="bubble">
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div className="small muted">{partner}</div>
-            {st.settings.kana && (
-              <div className="ko">
-                {shownLine.ko}
-                {(step.type === 'them' ? step.casual : prevThem?.casual) && <span className="tag-casual">반말</span>}
-              </div>
-            )}
-            <Ja>{shownLine.ja}</Ja>
-            {showMean && <div className="mean fade-up">{shownLine.mean}</div>}
-          </div>
-          <button className={'icon-btn' + (needTap ? ' tap-ring' : '')} onClick={() => { unlock(); setNeedTap(false); speak(shownLine.ja, rate); }} aria-label={`${partner} 말 다시 듣기`}>
-            <span className="play-dot"><Play /></span>
-          </button>
-        </div>
-      )}
       {!done && needTap && <p className="small" style={{ color: '#B9473A', fontWeight: 700, marginTop: -4 }}>소리가 안 나오면 말풍선의 재생 버튼을 눌러 들어 보세요.</p>}
       {resumeAsk && (
         <Sheet title="이어서 할까요?" onClose={restart} labelId="resume-title">
@@ -364,7 +418,7 @@ export default function Talk() {
       )}
 
       {!done && step?.type === 'them' && (
-        <ThemPanel talkId={talk.id} step={step} ph={ph} setPh={setPh} partner={partner} rate={rate} pick={pickMeaning} refresh={refreshMeaning} next={() => setSi(si + 1)} onHear={() => setNeedTap(false)} />
+        <ThemPanel say={say} talkId={talk.id} step={step} ph={ph} setPh={setPh} partner={partner} rate={rate} pick={pickMeaning} refresh={refreshMeaning} next={() => setSi(si + 1)} onHear={() => setNeedTap(false)} />
       )}
 
       {!done && step?.type === 'me' && (
@@ -412,7 +466,7 @@ export default function Talk() {
   );
 }
 
-function ThemPanel({ talkId, step, ph, setPh, partner, rate, pick, refresh, next, onHear }) {
+function ThemPanel({ say, talkId, step, ph, setPh, partner, rate, pick, refresh, next, onHear }) {
   const opts = step.sets[ph.set || 0] || [];
   if (ph.solved) {
     return (
@@ -429,16 +483,7 @@ function ThemPanel({ talkId, step, ph, setPh, partner, rate, pick, refresh, next
   }
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div className="bubble-tools">
-        <button className="pill" onClick={() => { unlock(); onHear(); speak(step.line.ja, rate); }}><span className="play-dot sm"><Play size={10} /></span>듣기</button>
-        <button className="pill" onClick={() => { unlock(); onHear(); speak(step.line.ja, rate * 0.7); }}><span className="play-dot sm"><Play size={10} /></span>느리게</button>
-        <button className={'pill' + (ph.hint ? ' on' : '')} onClick={() => setPh({ ...ph, hint: true })} aria-expanded={ph.hint}>힌트</button>
-      </div>
-      {ph.hint ? (
-        <div className="hint-box">힌트 단어: {step.keys.map((w) => `${w.ko}(${w.mean})`).join(' · ')}</div>
-      ) : (
-        <p className="small muted">어려우면 힌트를 눌러 보세요. 쓰면 브릭이 비뚤게 쌓여요.</p>
-      )}
+      {ph.hint && <div className="hint-box">힌트 단어: {step.keys.map((w) => `${w.ko}(${w.mean})`).join(' · ')} <span className="small muted">(브릭이 살짝 비뚤게 쌓여요)</span></div>}
       <h2 style={{ fontSize: 21, marginTop: 2 }}>{partner}가 뭐라고 했을까요?</h2>
       {ph.fb && <p className="fb" aria-live="polite">{ph.fb}</p>}
       <div className={'opts' + (ph.shake === 99 ? ' shake-' + (ph.n % 2) : '')}>
