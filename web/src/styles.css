@@ -370,3 +370,10 @@ textarea.input { height: 120px; padding: 10px 12px; resize: vertical; line-heigh
 .sh-wave i { display: block; width: 3px; flex-shrink: 0; border-radius: 2px; background: var(--coral); }
 .play-dot.coral { background: var(--coral); }
 @media (prefers-reduced-motion: reduce) { .sh-mic.rec { animation: none; } }
+
+/* 대사 신고 */
+.lr-open { align-self: flex-end; color: var(--faint); font-size: 12px; min-height: 32px; padding: 4px 2px; }
+.lr-sent { align-self: flex-end; }
+.lr-reasons { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.lr-reason { appearance: none; min-height: 40px; padding: 0 12px; border: 2px solid var(--navy); border-radius: 20px; background: #fff; font-size: 14px; font-weight: 700; cursor: pointer; }
+.lr-reason.on { background: var(--yellow); }

@@ -1,6 +1,7 @@
 package com.oracyblock.admin;
 
 import com.oracyblock.common.Who;
+import com.oracyblock.report.ReportController.ReportMapper;
 import com.oracyblock.user.UserMapper;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,10 +17,12 @@ public class AdminController {
 
     private final AdminMapper admin;
     private final UserMapper users;
+    private final ReportMapper reports;
 
-    public AdminController(AdminMapper admin, UserMapper users) {
+    public AdminController(AdminMapper admin, UserMapper users, ReportMapper reports) {
         this.admin = admin;
         this.users = users;
+        this.reports = reports;
     }
 
     @GetMapping("/stats")
@@ -35,6 +38,7 @@ public class AdminController {
         m.put("funnel", admin.funnel(today));
         m.put("talks", admin.talks());
         m.put("openFeedback", admin.openFeedback());
+        m.put("openReports", reports.openCount());
         return m;
     }
 

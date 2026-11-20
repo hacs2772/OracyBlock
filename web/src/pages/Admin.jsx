@@ -15,6 +15,7 @@ function Num({ label, value, sub }) {
     </div>
   );
 }
+const REASON = { ja: '일본어 어색', ko: '한글 발음', mean: '뜻 틀림', answer: '대답 튕김', etc: '기타' };
 const pct = (a, b) => (b ? Math.round((a * 100) / b) + '%' : '-');
 const when = (s) => (s ? new Date(s).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-');
 
@@ -24,6 +25,11 @@ export default function Admin() {
   const [users, setUsers] = useState([]);
   const [fb, setFb] = useState([]);
   const [onlyOpen, setOnlyOpen] = useState(false);
+  const [reps, setReps] = useState([]);
+  const repDone = (x) => {
+    setReps((list) => list.filter((y) => !(y.talkId === x.talkId && y.turnIdx === x.turnIdx)));
+    api('/admin/line-reports/done', { method: 'PUT', body: { talkId: x.talkId, turnIdx: x.turnIdx } }).catch((e) => setErr(e.message));
+  };
   const markDone = (id, done) => {
     setFb((list) => list.map((x) => (x.id === id ? { ...x, done } : x)));
     api(`/admin/feedback/${id}`, { method: 'PUT', body: { done } }).catch((e) => setErr(e.message));
@@ -31,8 +37,8 @@ export default function Admin() {
   const [err, setErr] = useState('');
   const load = () => {
     setErr('');
-    Promise.all([api('/admin/stats'), api('/admin/users'), api('/admin/feedback')])
-      .then(([a, b, c]) => { setD(a); setUsers(b); setFb(c); })
+    Promise.all([api('/admin/stats'), api('/admin/users'), api('/admin/feedback'), api('/admin/line-reports')])
+      .then(([a, b, c, r]) => { setD(a); setUsers(b); setFb(c); setReps(r); })
       .catch((e) => setErr(e.status === 403 || e.status === 401 ? '관리자 계정으로 로그인해야 볼 수 있어요.' : e.message));
   };
   useEffect(load, [st.user?.id]);
@@ -57,6 +63,7 @@ export default function Admin() {
       {d && (
         <>
           <p className="small muted">날짜는 한국 시간이에요. 관리자 계정은 숫자에서 뺐어요. 방문자 = 기기 하나(브라우저 하나)를 한 명으로 세요.</p>
+          {d.openReports > 0 && <a className="note warn" href="#reports" style={{ display: 'block', textDecoration: 'none' }}>신고된 대사가 <b>{d.openReports}개</b> 있어요.</a>}
           {d.openFeedback > 0 && <a className="note warn" href="#contact" style={{ display: 'block', textDecoration: 'none' }}>처리 안 한 문의가 <b>{d.openFeedback}개</b> 있어요. 맨 아래에서 볼 수 있어요.</a>}
           <h2 style={{ fontSize: 20 }}>사람</h2>
           <div className="adm-grid">
@@ -146,6 +153,26 @@ export default function Admin() {
           </tbody>
         </table>
       </div>
+
+      <div id="reports">
+        <h2 style={{ fontSize: 20 }}>대사 신고 · 처리 안 한 대사 {reps.length}개</h2>
+        <p className="small muted">"이 문장 이상해요"로 들어온 신고를 대사마다 모았어요. 대사를 고쳐서 올린 다음 "고쳤어요"를 눌러요.</p>
+      </div>
+      {reps.map((x) => {
+        const t = talkById(x.talkId);
+        const s = t?.steps[x.turnIdx];
+        const now = s ? (s.type === 'them' ? `${s.line.ko} / ${s.line.mean}` : `내 차례: ${s.options.map((o) => o.natural.ko).join(' · ')}`) : '';
+        return (
+          <div key={x.talkId + ':' + x.turnIdx} className="card">
+            <div className="small muted">{t?.place || x.talkId} · {x.turnIdx + 1}번째 대사 · {x.people}명 ({x.n}번) · 마지막 {x.last}</div>
+            <p style={{ fontSize: 14, lineHeight: 1.5, marginTop: 4 }}><b>{now}</b></p>
+            {x.line && x.line !== now && <p className="small muted">신고한 화면: {x.line}</p>}
+            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 6 }}>{String(x.reasons || '').split(',').map((r) => <span key={r} className="chip">{REASON[r] || r}</span>)}</div>
+            {x.notes && <p style={{ fontSize: 13, lineHeight: 1.5, marginTop: 6, whiteSpace: 'pre-wrap' }}>{x.notes}</p>}
+            <button className="ob-btn sm" onClick={() => repDone(x)}><span className="t">고쳤어요</span></button>
+          </div>
+        );
+      })}
 
       <div id="contact" style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
         <h2 style={{ fontSize: 20 }}>문의 · 의견 ({fb.length}) · 처리 안 함 {fb.filter((x) => !x.done).length}</h2>

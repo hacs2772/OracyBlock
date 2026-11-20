@@ -1,7 +1,7 @@
 // 대화 화면: 상대 말 뜻 맞히기 → 내 차례(말하기 → 쓰기 → 고르기) → 대화 끝
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { talkById, judge, talkWords, LEVEL_SCALE, LEVEL_RATE, RESCUE_LINES, ASK_AGAIN, READY_LEVELS } from '../content/build.js';
+import { talkById, judge, talkWords, isReviewWord, LEVEL_SCALE, LEVEL_RATE, RESCUE_LINES, ASK_AGAIN, READY_LEVELS } from '../content/build.js';
 import { speak, stopSpeaking, listen, stopListening, canListen, MIC_ERRORS, sfx, unlock } from '../lib/speech.js';
 import { api, quiet } from '../lib/api.js';
 import { store, useStore } from '../lib/store.js';
@@ -10,6 +10,7 @@ import { Stack, Play, Close, Mic, Refresh, Ja, Sheet, Question } from '../compon
 import { Guide, GAME } from '../components/Guides.jsx';
 import { countCorrect } from '../lib/progress.js';
 import { loadResume, saveResume, clearResume } from '../lib/resume.js';
+import LineReport from '../components/LineReport.jsx';
 
 const STAGE_TONE = { speak: 'coral', write: 'sky', choose: 'stone' };
 
@@ -286,7 +287,7 @@ export default function Talk() {
       crooked: finalBricks.some((b) => b.tilt || b.gone),
       bounces: s.bounces, hints: s.hints, speakN: s.speakN, writeN: s.writeN, chooseN: s.chooseN, okN: s.okN, nearN: s.nearN, rescueN: s.rescueN,
       bricks: JSON.stringify(finalBricks.map((b) => ({ t: b.tone, s: b.shine ? 1 : 0, k: b.tilt ? 1 : 0, m: b.missing || '', ...(b.gone ? { g: 1 } : {}) }))),
-      words: words.map((w) => ({ key: w.key, ko: w.ko, mean: w.mean, say: w.say, missed: s.missed.has(w.key) })),
+      words: words.filter(isReviewWord).map((w) => ({ key: w.key, ko: w.ko, mean: w.mean, say: w.say, missed: s.missed.has(w.key) })),
       fixes: s.fixes,
     };
     if (playId.current) {
@@ -363,11 +364,11 @@ export default function Talk() {
       )}
 
       {!done && step?.type === 'them' && (
-        <ThemPanel step={step} ph={ph} setPh={setPh} partner={partner} rate={rate} pick={pickMeaning} refresh={refreshMeaning} next={() => setSi(si + 1)} onHear={() => setNeedTap(false)} />
+        <ThemPanel talkId={talk.id} step={step} ph={ph} setPh={setPh} partner={partner} rate={rate} pick={pickMeaning} refresh={refreshMeaning} next={() => setSi(si + 1)} onHear={() => setNeedTap(false)} />
       )}
 
       {!done && step?.type === 'me' && (
-        <MePanel step={step} ph={ph} partner={partner} pickAnswer={pickAnswer} goNext={goNext} isLast={si + 1 >= steps.length} nextIsThem={steps[si + 1]?.type === 'them'} />
+        <MePanel talkId={talk.id} step={step} ph={ph} partner={partner} pickAnswer={pickAnswer} goNext={goNext} isLast={si + 1 >= steps.length} nextIsThem={steps[si + 1]?.type === 'them'} />
       )}
 
       {done && (
@@ -411,7 +412,7 @@ export default function Talk() {
   );
 }
 
-function ThemPanel({ step, ph, setPh, partner, rate, pick, refresh, next, onHear }) {
+function ThemPanel({ talkId, step, ph, setPh, partner, rate, pick, refresh, next, onHear }) {
   const opts = step.sets[ph.set || 0] || [];
   if (ph.solved) {
     return (
@@ -422,6 +423,7 @@ function ThemPanel({ step, ph, setPh, partner, rate, pick, refresh, next, onHear
         <div className="small" style={{ fontWeight: 700 }}>꼭 들어야 할 단어</div>
         {step.keys.map((w) => <BigWord key={w.key} w={w} />)}
         <button className="ob-btn coral" onClick={next}><span className="t">대답하러 가기</span></button>
+        <LineReport key={talkId + step.idx} talkId={talkId} turnIdx={step.idx} line={`${step.line.ko} / ${step.line.ja} / ${step.line.mean}`} />
       </div>
     );
   }
@@ -449,7 +451,7 @@ function ThemPanel({ step, ph, setPh, partner, rate, pick, refresh, next, onHear
   );
 }
 
-function MePanel({ step, ph, partner, pickAnswer, goNext, isLast, nextIsThem }) {
+function MePanel({ talkId, step, ph, partner, pickAnswer, goNext, isLast, nextIsThem }) {
   const r = ph.result;
   const nextLabel = isLast ? '대화 마무리' : nextIsThem ? `${partner} 말 듣기` : '다음';
 
@@ -471,6 +473,7 @@ function MePanel({ step, ph, partner, pickAnswer, goNext, isLast, nextIsThem }) 
         ))}
         <TryWords step={step} />
         <button className="ob-btn coral" onClick={goNext}><span className="t">{nextLabel}</span></button>
+        <LineReport key={talkId + step.idx} kind="me" talkId={talkId} turnIdx={step.idx} line={`(두 번 튕김) 고른 대답: ${r.picked}`} />
       </div>
     );
   }
@@ -504,6 +507,7 @@ function MePanel({ step, ph, partner, pickAnswer, goNext, isLast, nextIsThem }) 
           </div>
         )}
         <button className="ob-btn coral" onClick={goNext}><span className="t">{ph.reacted || !opt?.react ? nextLabel : `${partner} 반응 듣기`}</span></button>
+        <LineReport key={talkId + step.idx} kind="me" talkId={talkId} turnIdx={step.idx} line={opt ? `${opt.natural.ko} / ${opt.natural.ja} / ${opt.natural.mean}` : r.picked} />
       </div>
     );
   }
@@ -520,6 +524,7 @@ function MePanel({ step, ph, partner, pickAnswer, goNext, isLast, nextIsThem }) 
           {near.fix.map((w) => <BigWord key={w.key} w={w} />)}
           <p className="small muted">아래에서 다시 골라 바로 세우거나, 이대로 넘어가도 돼요.</p>
           <button className="link-btn" onClick={goNext}>이대로 {isLast ? '마무리할래요' : '넘어갈래요'}</button>
+          <LineReport key={talkId + step.idx} kind="me" talkId={talkId} turnIdx={step.idx} line={`(어색한 대답) ${r.picked}`} />
         </div>
       ) : (
         <>

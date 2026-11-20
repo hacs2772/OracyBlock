@@ -329,10 +329,14 @@ export function talkWords(talk) {
   return [...map.values()];
 }
 
+/** 조사처럼 혼자서는 뜻이 약한 단어는 복습 단어로 쓰지 않아요 (대화 중 힌트로는 그대로 써요) */
+const NOT_REVIEW = new Set(['から', 'まで', 'で', 'に', 'は', 'が', 'を', 'の', 'と', 'も', 'へ', 'ね', 'よ', 'か']);
+export const isReviewWord = (w) => !NOT_REVIEW.has(w.say);
+
 /** 복습용 단어 뜻 보기 (정답 + 다른 단어 뜻 3개) */
 const ALL_WORDS = (() => {
   const map = new Map();
-  for (const t of GAME_TALKS) for (const w of talkWords(t)) if (!map.has(w.mean)) map.set(w.mean, w);
+  for (const t of GAME_TALKS) for (const w of talkWords(t)) if (isReviewWord(w) && !map.has(w.mean)) map.set(w.mean, w);
   return [...map.values()];
 })();
 export function wordChoices(w, salt = '') {
