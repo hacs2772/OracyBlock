@@ -248,7 +248,16 @@ function shuffle(list, rnd) {
   return a;
 }
 
-const isCasual = (ja) => !/(です|ます|でした|ました|ください|ません|ましょう|でしょうか)/.test(ja);
+// 반말 표시: 존댓말 끝(です·ます·でしょう…)이 없고, 문장이 반말 끝(だ·の·よ·ね·る·た·い·て…)으로 끝날 때만.
+// "どちらまで？" "ご注文は？" "良い旅を！"처럼 끝이 없는 짧은 말은 반말로 치지 않아요 (사용자 신고: 기사님 말이 반말로 나옴)
+const POLITE = /(です|ます|でした|ました|ません|ましょう|ください|でしょう|ございます|いらっしゃいませ)/;
+const CASUAL_END = /(だ|だよ|だね|よね|じゃん|の|かい|んだ|ね|よ|さ|わ|な|や|る|た|い|う|て|ろ|ぞ|ぜ|って|っけ|ちゃって|しな|みな|いき|みて)$/;
+const isCasual = (ja) => {
+  const t = String(ja || '').replace(/うます|ますぎ/g, '');
+  if (POLITE.test(t)) return false;
+  return t.split(/[。！？!?]/).map((x) => x.trim().replace(/[〜ー…ぁぃぅぇぉっ]+$/, '')).filter(Boolean).some((x) => CASUAL_END.test(x));
+};
+export { isCasual };
 
 // ---------- 대화 만들기 ----------
 
@@ -261,37 +270,104 @@ const ALL_ME = TALKS.flatMap((t) => t.turns.flatMap((x, j) => {
 }));
 
 /**
- * 뜻이 비슷한지: 한국어 뜻에 같은 말 줄기(앞 두 글자)가 있거나, 핵심 단어(일본어)가 겹치면 비슷하다고 봐요.
- * 예: "어디 가요?"와 "어디까지 가세요?"는 비슷 → 서로 틀린 보기로 쓰지 않아요 (사용자 신고: 맞게 골랐는데 튕김)
+ * 보기 고르기 규칙 (concept 11-22)
+ * - "뜻이 같은 말"은 틀린 보기로 절대 안 넣어요 (사용자 신고: "어디 가요?"에 "어디까지 가세요?"를 골랐는데 튕김)
+ *   같은 말 = 뜻 글자가 같거나, 직접 적은 짝(ALSO_SIMILAR), 또는 낱말마다 첫 글자를 모았을 때 60% 넘게 겹침
+ *   ("어디 가요?" {어,가} = "어디까지 가세요?" {어,가})
+ * - 대신 **헷갈리는 말**을 먼저 넣어요: 같은 핵심 단어가 들리지만 뜻이 다른 말("어디서 왔어요?"),
+ *   같은 장면의 다른 말, 소리·모양이 비슷한 대답
  */
-const STEM_SKIP = new Set(['그럼', '그래', '좋네', '아니', '이거', '여기', '저기', '그쪽', '정말', '진짜', '요즘', '조금', '오늘']);
-const stems = (ko) => new Set(String(ko || '').replace(/[?!.,~…()·]/g, ' ').split(/\s+/).filter((w) => w.length >= 2).map((w) => w.slice(0, 2)).filter((w) => !STEM_SKIP.has(w)));
-const kanaOf = (line) => new Set((line?.keys || []).map((k) => (k.key || k[0] || '').split('|')[0]));
-// 말 줄기 규칙으로 못 잡는 비슷한 뜻 (직접 적어 둬요)
+const STEM_SKIP = new Set(['그럼', '그래', '좋네', '아니', '이거', '여기', '저기', '그쪽', '정말', '진짜', '요즘', '조금', '오늘', '근데', '아이', '오오', '우와', '어서', '자,']);
+const words = (ko) => String(ko || '').replace(/[?!.,~…()·]/g, ' ').split(/\s+/).filter((w) => w.length >= 1);
+const heads = (ko) => new Set(words(ko).filter((w) => !STEM_SKIP.has(w.slice(0, 2)) && w.length >= 2).map((w) => w[0]));
+const kanaOf = (line) => new Set((line?.keys || []).map((k) => (k.key || k[0] || '').split('|')[0]).filter((k) => !['から', 'まで', 'の', 'は', 'も', 'で', 'に'].includes(k)));
+const jac = (a, b) => {
+  if (!a.size || !b.size) return 0;
+  let n = 0;
+  for (const x of a) if (b.has(x)) n++;
+  return n / (a.size + b.size - n);
+};
+// 말 줄기 규칙으로 못 잡는 같은 뜻 (직접 적어 둬요)
 const ALSO_SIMILAR = [
   ['다음엔 뭐 부를래?', '한 곡 더 가자! 뭐가 좋아?'],
+  ['뭘로 하시겠어요?', '어서 와요! 뭘로 할래요?'],
 ];
+/** 뜻이 사실상 같아서 틀린 보기로 쓰면 안 되는 말 */
 export function similar(a, b) {
   if (!a || !b) return false;
+  if (a.mean === b.mean) return true;
   if (ALSO_SIMILAR.some(([x, y]) => (a.mean === x && b.mean === y) || (a.mean === y && b.mean === x))) return true;
-  const sa = stems(a.mean);
-  for (const w of stems(b.mean)) if (sa.has(w)) return true;
-  const ka = kanaOf(a);
-  for (const k of kanaOf(b)) if (ka.has(k) && !['から', 'まで', 'の', 'は', 'も'].includes(k)) return true;
-  return false;
+  if (jac(heads(a.mean), heads(b.mean)) >= 0.6) return true;
+  // 한쪽 뜻이 다른 쪽에 거의 다 들어 있으면("그럼 좋은 여행 하세요!" ⊂ "곧 나고야네. 그럼 좋은 여행 해요!") 같은 말
+  const x = bigrams(a.mean), y = bigrams(b.mean);
+  const small = x.size <= y.size ? x : y, big = small === x ? y : x;
+  const inside = (sm, bg) => { let hit = 0; for (const g of sm) if (bg.has(g)) hit++; return hit / Math.max(1, sm.size); };
+  if (small.size >= 4 && inside(small, big) >= 0.6) return true;
+  const ha = heads(a.mean), hb = heads(b.mean);
+  const hs = ha.size <= hb.size ? ha : hb, hl = hs === ha ? hb : ha;
+  return hs.size >= 3 && inside(hs, hl) >= 0.75;
 }
+/** 헷갈리는 정도 (높을수록 먼저 보기로): 같은 핵심 단어 > 같은 장면 > 뜻 글자 일부 겹침 */
+function confusable(line, x, sameTalk) {
+  let n = 0;
+  const ka = kanaOf(line);
+  for (const k of kanaOf(x)) if (ka.has(k)) n += 3;
+  if (sameTalk) n += 2;
+  n += 2 * jac(heads(line.mean), heads(x.mean));
+  return n;
+}
+/** 두 한글 발음이 얼마나 비슷하게 생겼는지 (두 글자씩 겹침) */
+const bigrams = (s) => {
+  const t = String(s || '').replace(/[\s,.!?~\-…]/g, '');
+  const out = new Set();
+  for (let i = 0; i < t.length - 1; i++) out.add(t.slice(i, i + 2));
+  return out;
+};
 
-/** 상대 말 뜻 맞히기: 보기 5개 (정답 1 + 뜻이 비슷하지 않은 말 4) */
+/**
+ * 모양 맞추기 (사용자 의견: "딱 봐도 아닌" 보기는 안 돼요. 길이·물음·말투가 다르면 바로 티가 나요)
+ * 정답과 같은 모양인 말만 틀린 보기로: 물음표/느낌표/평서문, 문장 수, 길이(0.65~1.5배), 존댓말/반말(한국어 뜻 끝)
+ */
+const shapeOf = (ko) => {
+  const t = String(ko || '').trim();
+  const parts = t.match(/[^.?!~]+[.?!~]*/g) || [];
+  const sentences = parts.map((x) => x.trim()).filter((x) => /[가-힣A-Za-z0-9]/.test(x));
+  const endOf = (x) => (/\?\s*$/.test(x) ? '?' : /!\s*$/.test(x) ? '!' : '.');
+  const politeOf = (x) => /(요|니다|세요|까|죠)$/.test(x.replace(/[^가-힣]+$/, ''));
+  return {
+    end: endOf(t),
+    marks: sentences.map(endOf).join(''),
+    n: sentences.length,
+    len: t.replace(/[\s,.?!~…-]/g, '').length,
+    polite: sentences.some(politeOf),
+    casual: sentences.some((x) => !politeOf(x)),
+  };
+};
+/** 모양이 얼마나 맞는지. 단계마다 하나씩 풀어 줘요: 0 다 맞음 → 1 길이 조금 → 2 문장 수 → 3 말투 */
+function shapeGap(a, b) {
+  const x = shapeOf(a), y = shapeOf(b);
+  const ratio = Math.max(x.len, y.len) / Math.max(1, Math.min(x.len, y.len));
+  return { end: x.end !== y.end, marks: x.marks !== y.marks, n: x.n !== y.n, ratio, polite: x.polite !== y.polite || x.casual !== y.casual };
+}
+const fits = (g, level) =>
+  !g.end && (level >= 3 || !g.polite) && (level >= 2 || (!g.n && !g.marks)) && g.ratio <= (level === 0 ? 1.5 : level === 1 ? 1.9 : 2.4);
+
+/** 상대 말 뜻 맞히기: 보기 5개 = 정답 1 + 모양이 같고 헷갈리는 말 4 (뜻이 같은 말은 빼고) */
 function meaningSets(talk, idx, line) {
   const rnd = seeded(talk.id + ':' + idx);
-  const ok = (x) => x.line !== line && x.line.mean !== line.mean && !similar(line, x.line);
-  const same = shuffle(ALL_THEM.filter((x) => x.talk === talk.id && ok(x)), rnd);
-  const other = shuffle(ALL_THEM.filter((x) => x.talk !== talk.id && ok(x)), rnd);
+  const cands = ALL_THEM.filter((x) => x.line !== line && !similar(line, x.line))
+    .map((x) => {
+      const g = shapeGap(line.mean, x.line.mean);
+      return { line: x.line, g, score: confusable(line, x.line, x.talk === talk.id) - g.ratio + rnd() * 1.2 };
+    })
+    .sort((p, q) => q.score - p.score);
   const pool = [];
-  for (const x of [...same.slice(0, 2), ...other]) {
-    if (pool.length >= 4) break;
-    if (pool.some((p) => p.mean === x.line.mean || similar(p, x.line))) continue;
-    pool.push(x.line);
+  for (let level = 0; level <= 3 && pool.length < 4; level++) {
+    for (const c of cands) {
+      if (pool.length >= 4) break;
+      if (!fits(c.g, level) || pool.includes(c.line) || pool.some((p) => similar(p, c.line))) continue;
+      pool.push(c.line);
+    }
   }
   return { meanings: shuffle([line.mean, ...pool.map((p) => p.mean)], rnd) };
 }
@@ -306,14 +382,29 @@ function chooseSets(talk, idx, options, near, q) {
   const nearOpts = near.filter((n) => n.say).map((n) => ({ kind: 'near', near: n, ja: n.say[0], ko: n.say[1], mean: n.say[2] }));
   const used = new Set([...ok, ...nearOpts].map((x) => x.ko));
   const okKana = new Set(options.flatMap((o) => o.words.map((w) => w.key)));
+  const okGrams = options.map((o) => bigrams(o.natural.ko));
+  // 상관없는 대답도 "모양이 비슷한 것"(…까라 키마시따, …데스)부터: 소리만 듣고 고르면 헷갈리게
+  // 보기에 보이는 건 한글 발음이라, 모양(물음·길이)은 한글 발음으로, 말투는 일본어(です·ます)로 맞춰요
+  const okPolite = options.some((o) => POLITE.test(o.natural.ja));
+  const gapTo = (x) => {
+    const gs = options.map((o) => shapeGap(o.natural.ko, x.o.natural.ko));
+    const best = gs.reduce((m, g) => (g.ratio < m.ratio ? g : m), gs[0]);
+    return { ...best, polite: POLITE.test(x.o.natural.ja) !== okPolite };
+  };
+  const cands = ALL_ME.filter((x) => x.talk !== talk.id && !similar(q, x.q) && !x.o.words.some((w) => okKana.has(w.key)))
+    .map((x) => {
+      const g = gapTo(x);
+      return { x, g, score: 3 * Math.max(...okGrams.map((gr) => jac(gr, bigrams(x.o.natural.ko)))) - g.ratio + rnd() * 0.6 };
+    })
+    .sort((p, r) => r.score - p.score);
   const offs = [];
-  for (const x of shuffle(ALL_ME.filter((x) => x.talk !== talk.id), rnd)) {
-    if (offs.length >= 4) break;
-    if (used.has(x.o.natural.ko)) continue;
-    if (similar(q, x.q)) continue;
-    if (x.o.words.some((w) => okKana.has(w.key))) continue;
-    used.add(x.o.natural.ko);
-    offs.push({ kind: 'off', ja: x.o.natural.ja, ko: x.o.natural.ko, mean: x.o.natural.mean });
+  for (let level = 0; level <= 3 && offs.length < 4; level++) {
+    for (const { x, g } of cands) {
+      if (offs.length >= 4) break;
+      if (!fits(g, level) || used.has(x.o.natural.ko)) continue;
+      used.add(x.o.natural.ko);
+      offs.push({ kind: 'off', ja: x.o.natural.ja, ko: x.o.natural.ko, mean: x.o.natural.mean });
+    }
   }
   const picked = [...ok, ...nearOpts.slice(0, Math.max(0, 4 - ok.length))];
   return shuffle([...picked, ...offs].slice(0, Math.max(5, picked.length + 1)), rnd);
@@ -372,14 +463,24 @@ const ALL_WORDS = (() => {
 })();
 export function wordChoices(w, salt = '') {
   const rnd = seeded('w:' + w.key + salt);
+  // 소리가 비슷한 단어(첫 글자·두 글자 겹침)부터 틀린 보기로. 뜻이 같은 단어는 빼요
+  const g = bigrams(w.ko);
+  const cands = ALL_WORDS.filter((x) => x.mean !== w.mean && x.key !== w.key && !similar({ mean: w.mean }, { mean: x.mean }))
+    .map((x) => {
+      // 뜻 모양: 움직임·상태 말(…다, …요, …해)끼리, 이름 말끼리. 길이도 비슷하게
+      const verbish = (m) => /(다|요|해|어|아|워|와|지|자)(\s*\(.*\))?$/.test(m);
+      const sameKind = verbish(w.mean) === verbish(x.mean);
+      const lenGap = Math.abs(w.mean.length - x.mean.length);
+      return { x, score: (x.ko[0] === w.ko[0] ? 2 : 0) + 3 * jac(g, bigrams(x.ko)) + (sameKind ? 3 : -3) - lenGap * 0.4 + rnd() * 1.2 };
+    })
+    .sort((p, q) => q.score - p.score);
   const picked = [];
-  for (const x of shuffle(ALL_WORDS.filter((x) => x.mean !== w.mean && x.key !== w.key), rnd)) {
+  for (const { x } of cands) {
     if (picked.length >= 4) break;
-    if ([w, ...picked].some((p) => similar({ mean: p.mean }, { mean: x.mean }))) continue;
+    if (picked.some((p) => similar({ mean: p.mean }, { mean: x.mean }))) continue;
     picked.push(x);
   }
-  const others = picked.map((x) => x.mean);
-  return shuffle([w.mean, ...others], rnd);
+  return shuffle([w.mean, ...picked.map((x) => x.mean)], rnd);
 }
 
 export function dailyCognate(d = new Date()) {

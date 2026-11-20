@@ -49,6 +49,23 @@ export function unlock() {
   ac();
 }
 
+/**
+ * 휴대폰 음성이 한자를 잘못 읽기 쉬운 말은 읽기 전에 가나로 바꿔요 (화면 글자는 그대로).
+ * 예: 一人 → ひとり (いちにん X), 三日 → みっか, 一杯 → いっぱい, 行った → いった (おこなった X).
+ * 대사 정확도 검사(scripts/check-reading)에서 찾은 것들. 긴 말부터 바꿔요
+ */
+export const READ_AS = {
+  一人旅: 'ひとりたび', 一人っ子: 'ひとりっこ', 一人: 'ひとり', 三日: 'みっか', 五日: 'いつか', 何日: 'なんにち',
+  一杯: 'いっぱい', 三十分: 'さんじゅっぷん', 十分: 'じゅっぷん', 七時: 'しちじ', 何時: 'なんじ', 十一時: 'じゅういちじ',
+  一回: 'いっかい', 二回目: 'にかいめ', 三回目: 'さんかいめ', 何回: 'なんかい', 三年目: 'さんねんめ', 何年目: 'なんねんめ',
+  行った: 'いった', 行って: 'いって', 行く: 'いく', 行き: 'いき', 来たん: 'きたん', 来た: 'きた', 寄って: 'よって',
+  この辺: 'このへん', 鶏肉: 'とりにく', かわいい盛り: 'かわいいざかり', 日本: 'にほん', 辛い: 'からい', 辛味噌: 'からみそ', 上手く: 'うまく', 上手: 'じょうず',
+  今日: 'きょう', 明日: 'あした', 一緒: 'いっしょ', 一曲: 'いっきょく', 一枚: 'いちまい', 一番: 'いちばん', 一日: 'いちにち',
+  飲み会: 'のみかい', 二次会: 'にじかい', 三次会: 'さんじかい', 就活: 'しゅうかつ', 前髪: 'まえがみ', 方: 'ほう',
+};
+const READ_KEYS = Object.keys(READ_AS).sort((a, b) => b.length - a.length);
+export const toReading = (text) => READ_KEYS.reduce((t, k) => (t.includes(k) ? t.split(k).join(READ_AS[k]) : t), String(text || ''));
+
 let seq = 0;
 /** 일본어를 읽어요. rate는 1이 보통 (설정의 빠르기를 곱해요) */
 export function speak(text, rate = 1) {
@@ -56,7 +73,7 @@ export function speak(text, rate = 1) {
   const my = ++seq;
   synth.cancel();
   return new Promise((resolve) => {
-    const u = new SpeechSynthesisUtterance(text);
+    const u = new SpeechSynthesisUtterance(toReading(text));
     u.lang = 'ja-JP';
     const v = pickVoice();
     if (v) u.voice = v;

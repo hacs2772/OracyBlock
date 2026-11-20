@@ -1,7 +1,7 @@
 // 대화 화면: 상대 말 뜻 맞히기 → 내 차례(말하기 → 쓰기 → 고르기) → 대화 끝
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { talkById, judge, talkWords, isReviewWord, LEVEL_SCALE, LEVEL_RATE, RESCUE_LINES, ASK_AGAIN, READY_LEVELS } from '../content/build.js';
+import { talkById, judge, talkWords, isReviewWord, isCasual, LEVEL_SCALE, LEVEL_RATE, RESCUE_LINES, ASK_AGAIN, READY_LEVELS } from '../content/build.js';
 import { speak, stopSpeaking, listen, stopListening, canListen, MIC_ERRORS, sfx, unlock } from '../lib/speech.js';
 import { api, quiet } from '../lib/api.js';
 import { store, useStore } from '../lib/store.js';
@@ -138,7 +138,7 @@ export default function Talk() {
     const v = vmap[s.idx];
     if (!v) return s;
     const a = s.alts[v - 1];
-    return { ...s, line: { ...s.line, ja: a.ja, ko: a.ko }, keys: a.keys, casual: !/(です|ます|でした|ました|ください|ません|ましょう|でしょうか)/.test(a.ja) };
+    return { ...s, line: { ...s.line, ja: a.ja, ko: a.ko }, keys: a.keys, casual: isCasual(a.ja) };
   };
   // 가지: 고른 대답의 꼬리표(go)에 맞는 차례만 지나가요
   const nextIdx = (from, tags = stats.current.tags || []) => {
