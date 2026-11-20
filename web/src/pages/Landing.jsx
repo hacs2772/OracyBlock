@@ -1,6 +1,6 @@
 // 소개 페이지 (웹 시안 Web.dc.html 그대로): 처음 온 사람의 oracyblock.com, 그리고 /about
 // 휴대폰과 PC 둘 다. "무료로 시작하기"를 누르면 학습으로 들어가요
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { GAME_TALKS } from '../content/build.js';
 import { speak, sfx, unlock } from '../lib/speech.js';
@@ -9,6 +9,7 @@ import { SPEEDS, SPEED_KEYS } from '../lib/speed.js';
 import Brick, { brickBox } from '../components/Brick.jsx';
 import { LogoMark, Play, Refresh, Tabs } from '../components/ui.jsx';
 import { openContact } from '../components/Contact.jsx';
+import { INTRO } from '../components/Guides.jsx';
 
 const ANS = '뭐 마시고 있어요?';
 const SETS = [
@@ -17,6 +18,49 @@ const SETS = [
 ];
 const DEMO = { studs: 4, pitch: 20, h: 22, depth: 11, studH: 5 };
 const DAYC = ['#29B6A5', '#FF7967', '#FFC857', '#6BB8E8', '#A792E0', '#8CCB6E', '#F49AC1'];
+
+/** 첫 화면 오른쪽: 처음 안내 팝업 6장을 그대로 저절로 넘기며 보여 줘요 (우리가 뭘 하는지 = 읽지 않고 듣고 말하기) */
+const SLIDE_MS = [5200, 5200, 6400, 4800, 4400, 5600];
+function IntroShow() {
+  const [i, setI] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const artRef = useRef(null);
+  const [scale, setScale] = useState(1);
+  useEffect(() => {
+    const fit = () => {
+      const el = artRef.current;
+      if (el) setScale(Math.min(1.3, el.clientWidth / 310));
+    };
+    fit();
+    window.addEventListener('resize', fit);
+    return () => window.removeEventListener('resize', fit);
+  }, []);
+  useEffect(() => {
+    if (paused) return undefined;
+    const t = setTimeout(() => setI((n) => (n + 1) % INTRO.length), SLIDE_MS[i] || 5200);
+    return () => clearTimeout(t);
+  }, [i, paused]);
+  const s = INTRO[i];
+  const go = (n) => { setI((n + INTRO.length) % INTRO.length); setPaused(true); };
+  return (
+    <div className="lp-show" aria-roledescription="슬라이드" aria-label="OracyBlock 소개">
+      <div className="lp-show-art" ref={artRef}>
+        <div key={i} style={{ transform: `scale(${scale})`, transformOrigin: '50% 50%', lineHeight: 0 }} dangerouslySetInnerHTML={{ __html: s.art }} />
+      </div>
+      <div key={'t' + i} className="lp-show-txt fade-up" aria-live="polite">
+        <h2>{s.t}</h2>
+        <p>{s.b}</p>
+      </div>
+      <div className="lp-show-foot">
+        <button className="icon-btn" onClick={() => go(i - 1)} aria-label="이전 장"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#24324A" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button>
+        <div className="dots">
+          {INTRO.map((_, j) => <button key={j} className={'lp-dot' + (j === i ? ' on' : '')} onClick={() => go(j)} aria-label={`${j + 1}번째 장`} aria-current={j === i ? 'step' : undefined} />)}
+        </div>
+        <button className="icon-btn" onClick={() => go(i + 1)} aria-label="다음 장"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#24324A" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg></button>
+      </div>
+    </div>
+  );
+}
 
 function Demo() {
   const [st, setSt] = useState({ set: 0, wrong: [], mode: 'idle', busy: false, done: false, k: 0, note: '', shake: -1 });
@@ -61,7 +105,7 @@ function Demo() {
   const moving = st.mode === 'ok' || (st.mode === 'no' && st.busy);
 
   return (
-    <div id="try" className="lp-demo">
+    <div className="lp-demo">
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
         <span style={{ fontFamily: 'var(--display)', fontSize: 22 }}>직접 끼워 보기</span>
         <button className="lp-play" onClick={() => { unlock(); speak('何飲んでるの？', 1); }}><span className="play-dot" style={{ width: 32, height: 32 }}><Play /></span>듣기</button>
@@ -168,16 +212,26 @@ export default function Landing() {
           </nav>
         </header>
 
-        <section className="lp-hero">
-          <div style={{ flex: '1 1 440px', minWidth: 0 }}>
+        <section className="lp-hero lp-hero-grid">
+          <div className="lp-hero-top">
             <h1 className="lp-h1">Hear it. Say it.<br />No reading required.</h1>
             <p className="lp-sub">듣고, 말하고, 읽기 공부는 생략.</p>
+          </div>
+          <IntroShow />
+          <div className="lp-hero-bottom">
             <p className="lp-p" style={{ maxWidth: 520, fontSize: 17 }}>일본 여행에서 옆자리 사람이 말을 걸어올 때. 다 알아듣지 못해도 괜찮아요. 들리는 단어로 뜻을 맞히고, 하고 싶은 대답을 골라 쌓으면서 스몰토크를 이어 가요.</p>
             <div style={{ display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap', marginTop: 26 }}>
               <button className="ob-btn coral" style={{ minWidth: 240 }} onClick={start}><span className="t">무료로 시작하기</span><span className="s">가입 없이 바로 대화해 보기</span></button>
               <Link to="/login" style={{ fontSize: 15, fontWeight: 500, textUnderlineOffset: 3 }}>이미 계정이 있어요 · 로그인</Link>
             </div>
             <p className="small muted" style={{ marginTop: 22, fontSize: 13, lineHeight: 1.6 }}>휴대폰 브라우저에서 oracyblock.com을 열고 홈 화면에 추가하면 앱처럼 쓸 수 있어요. 지금은 일본어부터, 영어와 중국어는 준비 중이에요.</p>
+          </div>
+        </section>
+
+        <section id="try" className="lp-sec lp-row" style={{ alignItems: 'center' }}>
+          <div style={{ flex: '1 1 360px', minWidth: 0 }}>
+            <h2 className="lp-h2">직접 끼워 보기</h2>
+            <p className="lp-p">이자카야 옆자리 사람이 말을 걸어요. 듣기를 누르고, 들리는 단어로 뜻을 맞혀 브릭을 끼워 보세요.</p>
           </div>
           <Demo />
         </section>

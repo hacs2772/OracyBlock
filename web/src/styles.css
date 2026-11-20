@@ -402,3 +402,24 @@ textarea.input { height: 120px; padding: 10px 12px; resize: vertical; line-heigh
 @media (prefers-reduced-motion: reduce) { .face-mouth, .tk-b.me.ask { animation: none; } }
 .tk-tools { position: absolute; left: 8px; top: 8px; z-index: 2; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
 .tk-tools .pill { min-height: 34px; }
+
+/* 소개 첫 화면 오른쪽: 안내 6장 슬라이드 */
+.lp-show { flex: 1 1 320px; max-width: 440px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; padding: 18px 16px 12px; border-radius: 28px; border: 3px solid var(--navy); box-shadow: 0 8px 0 var(--navy); background: #fff; }
+.lp-show-art { height: clamp(250px, 32vw, 320px); display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 18px; background: var(--cream); }
+.lp-show-txt { min-height: 112px; padding: 0 4px; }
+.lp-show-txt h2 { font-size: 24px; line-height: 1.2; }
+.lp-show-txt p { font-size: 15px; line-height: 1.6; margin-top: 6px; color: var(--ink2); }
+.lp-show-foot { display: flex; align-items: center; justify-content: space-between; }
+.lp-show-foot .dots { display: flex; gap: 6px; }
+.lp-dot { appearance: none; width: 10px; height: 10px; padding: 0; border-radius: 5px; border: 2px solid var(--navy); background: #fff; cursor: pointer; }
+.lp-dot.on { width: 26px; background: var(--coral); }
+/* 첫 화면: PC는 글(위·아래) 왼쪽 + 슬라이드 오른쪽, 휴대폰은 제목 → 슬라이드 → 설명·시작 버튼 */
+.lp-hero.lp-hero-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 440px); grid-template-areas: 'top show' 'bottom show'; align-items: start; column-gap: clamp(28px, 5vw, 64px); row-gap: 0; }
+.lp-hero-top { grid-area: top; align-self: end; }
+.lp-hero-bottom { grid-area: bottom; }
+.lp-hero-grid .lp-show { grid-area: show; align-self: center; width: 100%; }
+@media (max-width: 860px) {
+  .lp-hero.lp-hero-grid { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'top' 'show' 'bottom'; row-gap: 18px; }
+  .lp-hero-grid .lp-show-art { height: 230px; }
+  .lp-hero-grid .lp-show-txt { min-height: 96px; }
+}
