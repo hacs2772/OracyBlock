@@ -34,6 +34,7 @@ public class AdminController {
         m.put("days", admin.days(today));
         m.put("funnel", admin.funnel(today));
         m.put("talks", admin.talks());
+        m.put("openFeedback", admin.openFeedback());
         return m;
     }
 
@@ -45,5 +46,15 @@ public class AdminController {
     @GetMapping("/feedback")
     public List<Map<String, Object>> feedback() {
         return admin.feedback();
+    }
+
+    public record DoneRequest(boolean done) {
+    }
+
+    /** 문의 처리 완료 표시 (다시 풀 수도 있어요) */
+    @PutMapping("/feedback/{id}")
+    public Map<String, Object> markFeedback(@PathVariable long id, @RequestBody DoneRequest body) {
+        admin.markFeedback(id, body.done());
+        return Map.of("ok", true);
     }
 }

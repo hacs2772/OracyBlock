@@ -8,6 +8,7 @@ import { store } from '../lib/store.js';
 import { SPEEDS, SPEED_KEYS } from '../lib/speed.js';
 import Brick, { brickBox } from '../components/Brick.jsx';
 import { LogoMark, Play, Refresh, Tabs } from '../components/ui.jsx';
+import { openContact } from '../components/Contact.jsx';
 
 const ANS = '뭐 마시고 있어요?';
 const SETS = [
@@ -297,7 +298,7 @@ export default function Landing() {
 
         <footer className="lp-foot">
           <span><b style={{ color: '#24324A' }}>OracyBlock</b> oracyblock.com</span>
-          <span style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}><Link to="/terms">이용약관</Link><Link to="/privacy">개인정보 처리방침</Link><Link to="/me">의견 보내기</Link></span>
+          <span style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}><Link to="/terms">이용약관</Link><Link to="/privacy">개인정보 처리방침</Link><button className="link-btn" style={{ padding: 0, minHeight: 0, fontSize: 13, color: '#4A566B' }} onClick={openContact}>문의하기</button></span>
           <span>같은 브릭 가족 <a href="https://asmrblock.com">ASMR Block</a></span>
         </footer>
       </div>

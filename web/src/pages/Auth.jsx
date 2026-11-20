@@ -104,7 +104,7 @@ export default function Auth() {
         )}
         {err && <p className="err" role="alert">{err}</p>}
         <button type="submit" className="ob-btn coral" disabled={busy} style={{ marginTop: 10 }}><span className="t">{join ? '가입하고 시작하기' : '로그인'}</span></button>
-        {!join && <p className="small muted" style={{ textAlign: 'center' }}>비밀번호를 잊었다면 내 정보의 "의견 보내기"나 운영자에게 알려 주세요.</p>}
+        {!join && <p className="small muted" style={{ textAlign: 'center' }}>비밀번호를 잊었다면 오른쪽 아래 "문의"로 알려 주세요.</p>}
       </form>
       <div style={{ marginTop: 'auto', paddingTop: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }} className="small muted" aria-hidden="true">

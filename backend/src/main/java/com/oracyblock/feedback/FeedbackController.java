@@ -18,11 +18,13 @@ public class FeedbackController {
 
     @Mapper
     public interface FeedbackMapper {
-        @Insert("INSERT INTO feedback (user_id, visitor_id, message, page) VALUES (#{userId}, #{visitorId}, #{message}, #{page})")
-        void insert(@Param("userId") Long userId, @Param("visitorId") String visitorId, @Param("message") String message, @Param("page") String page);
+        @Insert("INSERT INTO feedback (user_id, visitor_id, message, page, contact) VALUES (#{userId}, #{visitorId}, #{message}, #{page}, #{contact})")
+        void insert(@Param("userId") Long userId, @Param("visitorId") String visitorId, @Param("message") String message,
+                    @Param("page") String page, @Param("contact") String contact);
     }
 
-    public record FeedbackRequest(String message, String page) {
+    /** 문의·의견. contact = 답장 받을 이메일 등 (선택), page = 보낸 화면 */
+    public record FeedbackRequest(String message, String page, String contact) {
     }
 
     private final FeedbackMapper mapper;
@@ -41,7 +43,9 @@ public class FeedbackController {
         limiter.check(key, 5, 600_000L, "조금 뒤에 다시 보내 주세요.");
         limiter.record(key);
         String page = body.page() == null ? null : body.page().substring(0, Math.min(40, body.page().length()));
-        mapper.insert(userId, Who.of(userId, req).visitorId(), m, page);
+        String contact = body.contact() == null || body.contact().isBlank() ? null : body.contact().strip();
+        if (contact != null && contact.length() > 100) throw new ApiException(HttpStatus.BAD_REQUEST, "연락처는 100자 안으로 적어 주세요.");
+        mapper.insert(userId, Who.of(userId, req).visitorId(), m, page, contact);
         return Map.of("ok", true);
     }
 }

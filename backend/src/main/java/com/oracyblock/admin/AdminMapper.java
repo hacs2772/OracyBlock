@@ -82,9 +82,15 @@ public interface AdminMapper {
     List<Map<String, Object>> talks();
 
     @Select("""
-        SELECT f.id, f.message, f.page, u.nickname,
+        SELECT f.id, f.message, f.page, f.contact, f.is_done AS done, u.nickname, u.email,
           to_char(f.created_at AT TIME ZONE 'Asia/Seoul', 'YYYY-MM-DD"T"HH24:MI:SS"+09:00"') AS "createdAt"
         FROM feedback f LEFT JOIN users u ON u.id = f.user_id ORDER BY f.created_at DESC LIMIT 200
         """)
     List<Map<String, Object>> feedback();
+
+    @Update("UPDATE feedback SET is_done = #{done} WHERE id = #{id}")
+    int markFeedback(@Param("id") long id, @Param("done") boolean done);
+
+    @Select("SELECT COUNT(*) FROM feedback WHERE NOT is_done")
+    long openFeedback();
 }

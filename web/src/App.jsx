@@ -12,6 +12,7 @@ import Legal from './pages/Legal.jsx';
 import Landing from './pages/Landing.jsx';
 import { Guide, INTRO } from './components/Guides.jsx';
 import { Toaster } from './components/ui.jsx';
+import Contact from './components/Contact.jsx';
 import { store, useStore } from './lib/store.js';
 import { quiet } from './lib/api.js';
 import { unlock } from './lib/speech.js';
@@ -56,6 +57,7 @@ export default function App() {
         <Route path="*" element={<Home />} />
       </Routes>
       {showTour && <Guide slides={INTRO} label="처음 오셨나요" doneLabel={isLanding ? '알겠어요' : '시작하기'} onDone={() => store.set({ seenTour: true })} />}
+      <Contact />
       <Toaster />
     </div>
   );

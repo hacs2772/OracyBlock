@@ -23,6 +23,11 @@ export default function Admin() {
   const [d, setD] = useState(null);
   const [users, setUsers] = useState([]);
   const [fb, setFb] = useState([]);
+  const [onlyOpen, setOnlyOpen] = useState(false);
+  const markDone = (id, done) => {
+    setFb((list) => list.map((x) => (x.id === id ? { ...x, done } : x)));
+    api(`/admin/feedback/${id}`, { method: 'PUT', body: { done } }).catch((e) => setErr(e.message));
+  };
   const [err, setErr] = useState('');
   const load = () => {
     setErr('');
@@ -52,6 +57,7 @@ export default function Admin() {
       {d && (
         <>
           <p className="small muted">날짜는 한국 시간이에요. 관리자 계정은 숫자에서 뺐어요. 방문자 = 기기 하나(브라우저 하나)를 한 명으로 세요.</p>
+          {d.openFeedback > 0 && <a className="note warn" href="#contact" style={{ display: 'block', textDecoration: 'none' }}>처리 안 한 문의가 <b>{d.openFeedback}개</b> 있어요. 맨 아래에서 볼 수 있어요.</a>}
           <h2 style={{ fontSize: 20 }}>사람</h2>
           <div className="adm-grid">
             <Num label="오늘 방문자" value={d.people.visitorsToday} sub={`어제 ${d.people.visitorsYesterday}`} />
@@ -141,11 +147,20 @@ export default function Admin() {
         </table>
       </div>
 
-      <h2 style={{ fontSize: 20 }}>의견 ({fb.length})</h2>
-      {fb.map((x) => (
-        <div key={x.id} className="card">
-          <div className="small muted">{when(x.createdAt)} · {x.nickname || '둘러보는 사람'}</div>
+      <div id="contact" style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+        <h2 style={{ fontSize: 20 }}>문의 · 의견 ({fb.length}) · 처리 안 함 {fb.filter((x) => !x.done).length}</h2>
+        <label className="check" style={{ fontSize: 13 }}><input type="checkbox" checked={onlyOpen} onChange={(e) => setOnlyOpen(e.target.checked)} />처리 안 한 것만</label>
+      </div>
+      {fb.filter((x) => !onlyOpen || !x.done).map((x) => (
+        <div key={x.id} className="card" style={x.done ? { opacity: 0.6 } : null}>
+          <div className="small muted">
+            {when(x.createdAt)} · {x.nickname ? `${x.nickname} (${x.email})` : '둘러보는 사람'}{x.page ? ` · 보낸 화면 ${x.page}` : ''}
+          </div>
           <p style={{ fontSize: 14, lineHeight: 1.55, whiteSpace: 'pre-wrap', marginTop: 4 }}>{x.message}</p>
+          {x.contact && <p className="small" style={{ marginTop: 6 }}>답장 받을 곳: <a href={`mailto:${x.contact}`}><b>{x.contact}</b></a></p>}
+          <label className="check" style={{ marginTop: 8, fontSize: 13 }}>
+            <input type="checkbox" checked={!!x.done} onChange={(e) => markDone(x.id, e.target.checked)} />처리 완료
+          </label>
         </div>
       ))}
     </div>

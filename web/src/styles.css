@@ -322,3 +322,10 @@ textarea.input { height: 120px; padding: 10px 12px; resize: vertical; line-heigh
 @keyframes lpDrop { 0% { transform: translateY(-120px); opacity: 0; } 12% { opacity: 1; } 58% { transform: translateY(0); } 68% { transform: translateY(1px) scale(1.05, 0.9); } 82% { transform: translateY(-4px) scale(0.98, 1.03); } 100% { transform: translateY(0); } }
 @keyframes lpBounce { 0% { transform: translateY(-120px); opacity: 0; } 12% { opacity: 1; } 42% { transform: translateY(-2px); } 48% { transform: translate(-5px, -8px) rotate(-6deg); } 54% { transform: translate(5px, -10px) rotate(7deg); } 72% { transform: translate(150px, -170px) rotate(220deg) scale(0.8); opacity: 1; } 100% { transform: translate(460px, -130px) rotate(560deg) scale(0.35); opacity: 0; } }
 @media (max-width: 640px) { .lp-hide-sm { display: none; } .lp-nav { gap: 14px; } }
+
+/* 문의하기 버튼 (오른쪽 아래, 아래 탭이 있으면 그 위) */
+.contact-fab { position: fixed; right: max(12px, calc(50% - 240px + 12px)); bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 30; display: flex; align-items: center; justify-content: center; gap: 6px; width: 44px; height: 44px; padding: 0; border: 2px solid var(--navy); border-radius: 22px; background: #fff; box-shadow: 0 3px 0 var(--navy); cursor: pointer; }
+.contact-fab.above-tabs { bottom: calc(92px + env(safe-area-inset-bottom)); }
+.contact-fab-t { display: none; font-size: 13px; font-weight: 700; }
+.contact-fab:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--navy); }
+@media (min-width: 900px) { .contact-fab { right: 24px; width: auto; padding: 0 14px 0 10px; } .contact-fab-t { display: inline; } .app-wide .contact-fab.above-tabs { bottom: 24px; } }

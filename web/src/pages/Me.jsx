@@ -8,6 +8,7 @@ import Brick from '../components/Brick.jsx';
 import { TopBar, Chevron, Mic, Sheet, toast, Tabs } from '../components/ui.jsx';
 import { SPEEDS, SPEED_KEYS, speedOf, crackRule } from '../lib/speed.js';
 import { Guide, INTRO, GAME } from '../components/Guides.jsx';
+import { openContact } from '../components/Contact.jsx';
 
 function Switch({ on, label, onClick }) {
   return (
@@ -35,7 +36,6 @@ export default function Me() {
   const [mic, setMic] = useState({ state: 'idle', text: '' });
   const [guide, setGuide] = useState(null);
   const [leave, setLeave] = useState(false);
-  const [fb, setFb] = useState(null);
   const user = st.user;
   const [pref, setPref] = useState(null);
   useEffect(() => {
@@ -213,7 +213,7 @@ export default function Me() {
         <Link className="go-row" to="/about">OracyBlock 소개 페이지<Chevron /></Link>
         <button className="go-row" onClick={() => setGuide('intro')}>처음 온 사람 안내 다시 보기<Chevron /></button>
         <button className="go-row" onClick={() => setGuide('game')}>게임 방법 다시 보기<Chevron /></button>
-        <button className="go-row" onClick={() => setFb({ text: '', sending: false })}>의견 보내기<Chevron /></button>
+        <button className="go-row" onClick={openContact}>문의하기 · 의견 보내기<Chevron /></button>
         <Link className="go-row" to="/terms">이용약관<Chevron /></Link>
         <Link className="go-row" to="/privacy">개인정보 처리방침<Chevron /></Link>
       </div>
@@ -235,25 +235,6 @@ export default function Me() {
             <button className="ob-btn" onClick={() => setLeave(false)}><span className="t">그만두기</span></button>
             <button className="ob-btn" style={{ background: '#F3D4CF' }} onClick={withdraw}><span className="t" style={{ color: '#9B2A20' }}>탈퇴하기</span></button>
           </div>
-        </Sheet>
-      )}
-      {fb && (
-        <Sheet title="의견 보내기" onClose={() => setFb(null)} labelId="fb-title">
-          <p className="small muted" style={{ marginTop: 4 }}>불편한 점, 틀린 발음, 바라는 것 무엇이든 좋아요. 만든 사람이 직접 읽어요.</p>
-          <label className="sr-only" htmlFor="fb-text">의견</label>
-          <textarea id="fb-text" className="input" style={{ marginTop: 10 }} maxLength={2000} value={fb.text} onChange={(e) => setFb({ ...fb, text: e.target.value })} />
-          <button
-            className="ob-btn coral wide"
-            disabled={fb.sending || fb.text.trim().length < 2}
-            onClick={async () => {
-              setFb({ ...fb, sending: true });
-              const r = await quiet('/feedback', { method: 'POST', body: { message: fb.text.trim(), page: 'me' } });
-              setFb(null);
-              toast(r ? '고마워요! 잘 받았어요.' : '보내지 못했어요. 잠시 뒤에 다시 해 주세요.');
-            }}
-          >
-            <span className="t">보내기</span>
-          </button>
         </Sheet>
       )}
     </div>
