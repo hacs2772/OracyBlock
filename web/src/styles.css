@@ -291,7 +291,8 @@ textarea.input { height: 120px; padding: 10px 12px; resize: vertical; line-heigh
 
 /* 소개 페이지 (웹 시안 그대로, 휴대폰·PC) */
 .app-wide { min-height: 100dvh; background: var(--cream); }
-.lp { background: var(--cream); color: var(--navy); overflow: hidden; }
+.lp { background: var(--cream); color: var(--navy); overflow: hidden; padding-bottom: 96px; }
+@media (min-width: 900px) { .lp { padding-bottom: 0; } .lp-tabs { display: none; } }
 .lp-wrap { max-width: 1180px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 40px); }
 .lp a { color: var(--navy); }
 .lp-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 18px 0 10px; }

@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Route, Routes, useLocation } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import Home from './pages/Home.jsx';
 import Talk from './pages/Talk.jsx';
 import Fix from './pages/Fix.jsx';
@@ -19,9 +19,13 @@ import { unlock } from './lib/speech.js';
 export default function App() {
   const st = useStore();
   const { pathname } = useLocation();
-  // 처음 온 사람은 oracyblock.com에서 소개 페이지를 봐요. "무료로 시작하기"를 누르거나 로그인하면 그다음부터는 바로 여행 판
-  const firstVisit = !st.seenIntro && !st.user;
-  const isLanding = pathname === '/about' || (pathname === '/' && firstVisit);
+  // 베타 동안: 그날 처음 oracyblock.com에 들어오면 소개 탭부터 (하루 한 번). 그다음부터는 바로 여행 판
+  const today = new Date().toLocaleDateString('sv-SE');
+  const introToday = pathname === '/' && st.introDay !== today;
+  useEffect(() => {
+    if (pathname === '/about' && st.introDay !== today) store.set({ introDay: today });
+  }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
+  const isLanding = pathname === '/about';
   // 처음 온 사람 안내 6장(움직이는 그림)은 꼭 한 번 저절로 떠요 (소개 페이지나 여행 판 위에). 게임 방법 3장은 첫 대화를 시작할 때
   const showTour = !st.seenTour && (pathname === '/' || pathname === '/about');
 
@@ -38,7 +42,7 @@ export default function App() {
   return (
     <div className={isLanding ? 'app-wide' : 'app'} onPointerDown={unlock}>
       <Routes>
-        <Route path="/" element={firstVisit ? <Landing /> : <Home />} />
+        <Route path="/" element={introToday ? <Navigate to="/about" replace /> : <Home />} />
         <Route path="/about" element={<Landing />} />
         <Route path="/talk/:id" element={<Talk />} />
         <Route path="/fix" element={<Fix />} />

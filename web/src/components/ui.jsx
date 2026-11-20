@@ -89,6 +89,13 @@ const TAB_ICONS = {
       <rect x="8" y="3" width="8" height="6" rx="1" />
     </svg>
   ),
+  intro: (c) => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M4 6h11a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H9l-4 3v-3H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z" />
+      <path d="M17 9h3a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-1v2l-3-2" />
+      <path d="M9.5 10.5h.01M9.5 13v.5" />
+    </svg>
+  ),
   review: (c) => (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <rect x="3" y="13" width="18" height="7" rx="1.5" />
@@ -104,14 +111,15 @@ const TAB_ICONS = {
   ),
 };
 const TABS = [
+  ['/about', 'intro', '소개'],
   ['/', 'home', '여행 판'],
   ['/review', 'review', '복습'],
   ['/tower', 'tower', '내 탑'],
 ];
-export function Tabs() {
+export function Tabs({ className = '' }) {
   const { pathname } = useLocation();
   return (
-    <nav className="tabs" aria-label="메뉴" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
+    <nav className={'tabs ' + className} aria-label="메뉴">
       {TABS.map(([to, icon, label]) => {
         const on = to === '/' ? pathname === '/' : pathname.startsWith(to);
         return (

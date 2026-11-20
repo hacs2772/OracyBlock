@@ -7,7 +7,7 @@ import { speak, sfx, unlock } from '../lib/speech.js';
 import { store } from '../lib/store.js';
 import { SPEEDS, SPEED_KEYS } from '../lib/speed.js';
 import Brick, { brickBox } from '../components/Brick.jsx';
-import { LogoMark, Play, Refresh } from '../components/ui.jsx';
+import { LogoMark, Play, Refresh, Tabs } from '../components/ui.jsx';
 
 const ANS = '뭐 마시고 있어요?';
 const SETS = [
@@ -164,6 +164,7 @@ export default function Landing() {
             <span className="logo-text" style={{ fontSize: 28 }}>Oracy<b>Block</b></span>
           </Link>
           <nav className="lp-nav" aria-label="소개 메뉴">
+            <Link className="lp-hide-sm" to="/" onClick={() => store.set({ seenIntro: true })}>여행 판</Link>
             <a className="lp-hide-sm" href="#try">대화해 보기</a>
             <a className="lp-hide-sm" href="#bricks">브릭 이야기</a>
             <a className="lp-hide-sm" href="#tower">내 탑과 순위</a>
@@ -300,6 +301,7 @@ export default function Landing() {
           <span>같은 브릭 가족 <a href="https://asmrblock.com">ASMR Block</a></span>
         </footer>
       </div>
+      <Tabs className="lp-tabs" />
     </div>
   );
 }

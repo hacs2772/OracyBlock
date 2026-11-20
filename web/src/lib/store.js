@@ -10,6 +10,7 @@ const DEFAULTS = {
   level: 1,
   seenIntro: false, // 소개 페이지에서 "무료로 시작하기"를 눌렀는지
   seenTour: false, // 처음 온 사람 안내 6장을 봤는지
+  introDay: '', // 소개 탭을 마지막으로 본 날 (그날 처음 들어오면 소개 탭부터)
   seenGame: false,
   settings: {
     speed: 'normal', // slow | normal | fast
