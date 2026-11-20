@@ -34,7 +34,7 @@ export default function Fix() {
   return (
     <div className="page">
       <div className="talk-top">
-        <Link className="icon-btn" to="/" aria-label="여행 판으로"><Back /></Link>
+        <Link className="icon-btn" to="/" aria-label="학습으로"><Back /></Link>
         <div className="ttl">고치기</div>
         <span style={{ width: 44 }} />
       </div>
@@ -96,7 +96,7 @@ function Remake({ group, onExit }) {
     const nb = bricks.map((b, i) => {
       if (i !== item.turnIdx) return b;
       if (item.kind === 'hole') return { ...b, missing: '', cls: 'b-pop' };
-      return { ...b, tilt: false, cls: 'b-stand', ...(how === 'choose' ? { tone: 'stone', shine: false } : {}) };
+      return { ...b, tilt: false, cls: 'b-stand' };
     });
     setBricks(nb);
     sfx('snap');
@@ -171,17 +171,14 @@ function Remake({ group, onExit }) {
         <>
           <h2 style={{ fontSize: 21 }}>{item.kind === 'hole' ? '무슨 뜻일까요?' : '이번엔 딱 맞게 대답해 볼까요?'}</h2>
           {ph.fb && <p className="fb">{ph.fb}</p>}
-          {item.kind === 'tilt' && canListen && (
-            <button className="ob-btn coral row" style={{ minHeight: 54 }} onClick={mic}><Mic /><span className={'t' + (ph.listening ? ' pulse' : '')}>{ph.listening ? '듣고 있어요' : '말로 다시 대답'}</span></button>
-          )}
-          {item.kind === 'tilt' && <p className="small muted">어려우면 골라서 대답해요. 고르면 돌 브릭이 돼요.</p>}
+          {item.kind === 'tilt' && <p className="small muted">이번엔 딱 맞는 대답을 골라 보세요.</p>}
           <div className="opts">
             {options.map((o, i) => {
               const text = item.kind === 'hole' ? o : o.ko;
               return (
                 <div className="opt-row" key={text}>
                   <button
-                    className={'opt ' + (item.kind === 'hole' ? 'mint' : 'stone') + (ph.shake === i ? ' shake-' + (ph.n % 2) : '')}
+                    className={'opt ' + (item.kind === 'hole' ? 'mint' : '') + (ph.shake === i ? ' shake-' + (ph.n % 2) : '')}
                     onClick={() => {
                       if (item.kind === 'hole') return o === them.line.mean ? solve('hear') : miss(i, '아쉬워요. 한 번 더 들어 보고 골라 보세요.');
                       if (o.kind === 'ok') return solve('choose');
@@ -199,8 +196,8 @@ function Remake({ group, onExit }) {
       )}
       {ph.solved && (
         <div className="result">
-          <h3>{item.kind === 'hole' ? '딸깍! 돌기가 채워졌어요' : ph.solved === 'speak' ? '스르륵, 바로 섰어요' : '바로 섰어요'}</h3>
-          <p className="small muted">{ph.solved === 'choose' ? '골라서 고친 브릭은 돌 브릭이 돼요. 다음엔 말로 해 봐요.' : '이 단어는 며칠 뒤에 한 번 더 들려 드려요.'}</p>
+          <h3>{item.kind === 'hole' ? '딸깍! 돌기가 채워졌어요' : '스르륵, 바로 섰어요'}</h3>
+          <p className="small muted">이 단어는 며칠 뒤에 한 번 더 들려 드려요.</p>
           {optWords.slice(0, 2).map((w) => <BigWord key={w.key} w={w} />)}
           <button className="ob-btn coral" onClick={next}><span className="t">{k + 1 < items.length ? '다음 고칠 곳' : '다 고쳤어요'}</span></button>
         </div>

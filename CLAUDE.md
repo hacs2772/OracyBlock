@@ -16,7 +16,7 @@
 - 서버: asmrBlock과 같은 구성 (Spring Boot + PostgreSQL + MyBatis, 웹은 React). 사용자의 집 PC + Cloudflare Tunnel, Docker(`docker compose`)로 묶어서 나중에 클라우드로 옮기기 쉽게
 - 웹 먼저(휴대폰에서 앱처럼 쓰는 PWA) → 인기가 생기면 앱(Expo)
 - 브릭 모양은 B(테두리)
-- 휴대폰 아래 탭: (베타 동안) 소개 · 여행 판 · 복습 · 내 탑, 내 정보는 오른쪽 위 (`docs/concept.md` 6절·11-1절). 그날 처음 들어오면 소개 탭부터. 고치기는 여행 판 안 (`/fix`). 쌓는 속도 `web/src/lib/speed.js` + 서버 `PrefController.DAY_CAP`. 로그인은 asmrBlock처럼 이메일 + 비밀번호, 가입 없이 둘러보기도 가능
+- 휴대폰 아래 탭: (베타 동안) 소개 · 학습 · 복습 · 내 탑 ("여행 판"이라는 말은 쓰지 않아요), 내 정보는 오른쪽 위 (`docs/concept.md` 6절·11-1절). 그날 처음 들어오면 소개 탭부터. 고치기는 학습 안 (`/fix`). 내 차례는 **고르기만** (말하기·글자 입력은 뺌, concept 11-5). 쌓는 속도 `web/src/lib/speed.js` + 서버 `PrefController.DAY_CAP`. 로그인은 asmrBlock처럼 이메일 + 비밀번호, 가입 없이 둘러보기도 가능
 - 코드: `web/`(React + Vite, 색은 `web/src/styles.css`의 `:root`에만), `backend/`(Spring Boot 4 + MyBatis 어노테이션 매퍼 + Flyway), `docker-compose.yml`, 켜는 법 `docs/deploy.md`
   - 대사 `web/src/content/talks.js`(EarToMouth에서 옮김), 레벨·어긋남(NEAR)·4지선다·판정 `web/src/content/build.js`
   - 기록 주인(owner) = 로그인 `u:아이디` / 둘러보기 `v:방문자번호`(헤더 `X-Visitor-Id`). 가입·로그인하면 `UserService.claim`이 옮겨요
@@ -40,7 +40,7 @@
 - **한글 발음은 처음부터 보여 줘요** (상대 말풍선, 내 대답 브릭 모두). 이어폰 없이 화면만 보는 사람도 할 수 있게요. **일본어 글자는 작고 흐리게** 함께
 - 반말은 작은 "반말" 표시만. 크게 강조하지 않아요
 - **0원 운영**: 유료 서버·유료 API 없이 시작 (무료 한도 안의 Cloudflare Workers·D1은 괜찮음). 음성 듣기·인식은 브라우저 기능
-- 내 차례 대답 브릭에는 **한글 발음만**, 한국어 뜻은 보여 주지 않아요 (뜻은 대답한 다음 결과에서)
+- 내 차례 대답 보기에는 **한글 발음만**, 한국어 뜻은 보여 주지 않아요 (뜻은 대답한 다음 결과에서). "뜻 보기"를 누르면 보여 주되 브릭이 비뚤게 쌓여요
 - **휴대폰 먼저**: 320px 폭(아이폰 SE)에서도 넘치지 않게. 뜻 브릭 4개 + "여기엔 없어요" 버튼이 SE 화면 안에 들어와야 해요
 - 버튼 배경색에 `transition`을 걸지 않아요 (상태가 바뀔 때 색이 번쩍임)
 - 클래스 이름이 다른 화면과 겹치지 않게 지어요

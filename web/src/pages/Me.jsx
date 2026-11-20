@@ -131,7 +131,7 @@ export default function Me() {
       <h2 className="set-h2">레벨</h2>
       <div className="set-card">
         <div className="set-row">
-          <span className="set-name">지금 레벨 Lv{st.level}<small>여행 판의 레벨 카드에서 바꿔요</small></span>
+          <span className="set-name">지금 레벨 Lv{st.level}<small>학습 화면의 레벨 카드에서 바꿔요</small></span>
           <Link className="ob-btn sm" to="/"><span style={{ fontSize: 13, fontWeight: 700 }}>바꾸기</span></Link>
         </div>
       </div>
@@ -177,26 +177,6 @@ export default function Me() {
         {canSpeak && !hasJaVoice() && <p className="small" style={{ padding: '0 0 10px', color: '#B9473A' }}>이 기기에 일본어 목소리가 없을 수 있어요. 휴대폰 설정에서 일본어 음성을 받아 주세요.</p>}
       </div>
 
-      <h2 className="set-h2">말하기</h2>
-      <div className="set-card">
-        <div className="set-row">
-          <span className="set-name">조용한 곳에서<small>내 차례를 말하기 대신 글자로 시작해요</small></span>
-          <Switch on={s.quiet} label="조용한 곳에서, 글자로 시작" onClick={() => store.setSettings({ quiet: !s.quiet })} />
-        </div>
-        <div className="set-col">
-          <span className="set-name">마이크 시험<small>버튼을 누르고 "콘니찌와"라고 말해 보세요</small></span>
-          {canListen ? (
-            <button className="ob-btn row" style={{ minHeight: 50 }} onClick={micTest} disabled={mic.state === 'listen'}>
-              <Mic size={22} /><span className={'t' + (mic.state === 'listen' ? ' pulse' : '')}>{mic.state === 'listen' ? '듣고 있어요' : '마이크 시험하기'}</span>
-            </button>
-          ) : (
-            <p className="small" style={{ color: '#B9473A' }}>{MIC_ERRORS.unsupported}</p>
-          )}
-          {mic.state === 'done' && <p role="status" className="note" style={{ background: '#DDF3EF', borderColor: '#29B6A5' }}><b>잘 들려요.</b> "{mic.text}"로 알아들었어요.</p>}
-          {mic.state === 'error' && <p role="status" className="note warn">{mic.text}</p>}
-        </div>
-      </div>
-
       <h2 className="set-h2">소리와 진동</h2>
       <div className="set-card">
         <div className="set-row">
@@ -214,7 +194,7 @@ export default function Me() {
         <Link className="go-row" to="/about">OracyBlock 소개 페이지<Chevron /></Link>
         <button className="go-row" onClick={() => setGuide('intro')}>처음 온 사람 안내 다시 보기<Chevron /></button>
         <button className="go-row" onClick={() => setGuide('game')}>게임 방법 다시 보기<Chevron /></button>
-        <button className="go-row" onClick={() => setGuide('check')}>소리·마이크 다시 확인<Chevron /></button>
+        <button className="go-row" onClick={() => setGuide('check')}>소리 다시 확인<Chevron /></button>
         <button className="go-row" onClick={openContact}>문의하기 · 의견 보내기<Chevron /></button>
         <Link className="go-row" to="/terms">이용약관<Chevron /></Link>
         <Link className="go-row" to="/privacy">개인정보 처리방침<Chevron /></Link>

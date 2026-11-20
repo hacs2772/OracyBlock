@@ -1,5 +1,5 @@
-// 첫 대화 전 소리·마이크 확인: "소리 안 나요", "마이크가 안 돼요"로 막히지 않게 한 번 확인해요
-// 내 정보 "소리·마이크 다시 확인"에서도 열 수 있어요
+// 첫 대화 전 소리 확인: "소리 안 나요"로 막히지 않게 한 번 확인해요 (말하기는 뺐어서 마이크 확인은 없어요)
+// 내 정보 "소리 다시 확인"에서도 열 수 있어요
 import { useState } from 'react';
 import { speak, canSpeak, hasJaVoice, listen, canListen, stopListening, MIC_ERRORS, unlock } from '../lib/speech.js';
 import { store } from '../lib/store.js';
@@ -36,7 +36,7 @@ export default function SoundCheck({ onDone, onClose }) {
   };
 
   return (
-    <Sheet title={step === 'sound' ? '소리가 들리나요?' : '마이크도 확인해요'} onClose={onClose || finish} labelId="check-title">
+    <Sheet title="소리가 들리나요?" onClose={onClose || finish} labelId="check-title">
       {step === 'sound' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 6 }}>
           <p className="small muted">대화는 일본어 소리를 듣고 시작해요. 무음 모드를 끄고 눌러 보세요.</p>
@@ -50,7 +50,7 @@ export default function SoundCheck({ onDone, onClose }) {
           {canSpeak && !hasJaVoice() && <p className="note warn">이 기기에 일본어 목소리가 없을 수 있어요. 아래 방법으로 받아 주세요.</p>}
           {heard !== 'no' ? (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-              <button className="ob-btn" onClick={() => setStep('mic')}><span className="t">잘 들려요</span></button>
+              <button className="ob-btn" onClick={finish}><span className="t">잘 들려요</span></button>
               <button className="ob-btn" onClick={() => setHeard('no')}><span className="t">안 들려요</span></button>
             </div>
           ) : (
@@ -68,35 +68,7 @@ export default function SoundCheck({ onDone, onClose }) {
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <button className="ob-btn" onClick={play}><span className="t">다시 들어 보기</span></button>
-                <button className="ob-btn" onClick={() => setStep('mic')}><span className="t">소리 없이 할게요</span></button>
-              </div>
-            </>
-          )}
-        </div>
-      )}
-      {step === 'mic' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 6 }}>
-          {!canListen ? (
-            <>
-              <p className="note warn">이 브라우저는 마이크로 대답하기가 안 돼요. 대신 한글 발음으로 써서 대답하게 해 둘게요. 크롬이나 사파리에서는 말로도 할 수 있어요.</p>
-              <button className="ob-btn coral" onClick={noMic}><span className="t">알겠어요</span></button>
-            </>
-          ) : (
-            <>
-              <p className="small muted">버튼을 누르고 <b>"콘니찌와"</b>라고 말해 보세요. 마이크 허용 창이 뜨면 허용을 눌러요.</p>
-              <button className="ob-btn coral row" style={{ minHeight: 58 }} onClick={tryMic}>
-                <Mic /><span className={'t' + (mic.state === 'listen' ? ' pulse' : '')}>{mic.state === 'listen' ? '듣고 있어요' : '눌러서 말하기'}</span>
-              </button>
-              {mic.state === 'ok' && <p className="note" style={{ background: '#DDF3EF', borderColor: '#29B6A5' }} role="status"><b>잘 들려요.</b> "{mic.text}"로 알아들었어요.</p>}
-              {mic.state === 'error' && (
-                <p className="note warn" role="status">
-                  {mic.text}
-                  <br />주소창 왼쪽의 자물쇠(또는 aA) → 마이크 → 허용으로 바꾼 뒤 다시 눌러 보세요.
-                </p>
-              )}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                <button className="ob-btn" onClick={noMic}><span className="t">말 없이 할게요</span><span className="s">글자로 대답</span></button>
-                <button className="ob-btn coral" onClick={finish} disabled={mic.state === 'listen'}><span className="t">{mic.state === 'ok' ? '대화 시작' : '그냥 할게요'}</span></button>
+                <button className="ob-btn" onClick={finish}><span className="t">소리 없이 할게요</span></button>
               </div>
             </>
           )}

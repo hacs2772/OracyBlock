@@ -45,7 +45,7 @@ export default function Auth() {
   return (
     <div className="page">
       <div className="talk-top">
-        <Link className="icon-btn" to="/" aria-label="닫고 여행 판으로"><Close /></Link>
+        <Link className="icon-btn" to="/" aria-label="닫고 학습으로"><Close /></Link>
         <span className="logo-text" style={{ fontSize: 22 }}>Oracy<b>Block</b></span>
         <span style={{ width: 44 }} aria-hidden="true" />
       </div>

@@ -16,7 +16,7 @@ export function LogoMark({ size = 34 }) {
 
 export function Logo() {
   return (
-    <Link to="/" className="logo" aria-label="OracyBlock 여행 판">
+    <Link to="/" className="logo" aria-label="OracyBlock 학습">
       <LogoMark />
       <span className="logo-text">
         Oracy<b>Block</b>
@@ -112,7 +112,7 @@ const TAB_ICONS = {
 };
 const TABS = [
   ['/about', 'intro', '소개'],
-  ['/', 'home', '여행 판'],
+  ['/', 'home', '학습'],
   ['/review', 'review', '복습'],
   ['/tower', 'tower', '내 탑'],
 ];

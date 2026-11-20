@@ -269,22 +269,24 @@ function meaningSets(talk, idx, line) {
   return { sets: [a, b], answerSet: inFirst ? 0 : 1 };
 }
 
+/**
+ * 골라서 대답하기: 보기 4개를 한 번에. "답정너"가 아니게 **맞는 대답을 모두** 넣고 (하고 싶은 말을 골라요),
+ * 어색한 대답(어긋남)과 상관없는 대답을 섞어요
+ */
 function chooseSets(talk, idx, options, near) {
   const rnd = seeded('me:' + talk.id + ':' + idx);
-  const ok = options.map((o, i) => ({ kind: 'ok', option: i, ja: o.natural.ja, ko: o.natural.ko }));
-  const nearOpts = near.filter((n) => n.say).map((n) => ({ kind: 'near', near: n, ja: n.say[0], ko: n.say[1] }));
+  const ok = options.map((o, i) => ({ kind: 'ok', option: i, ja: o.natural.ja, ko: o.natural.ko, mean: o.natural.mean }));
+  const nearOpts = near.filter((n) => n.say).map((n) => ({ kind: 'near', near: n, ja: n.say[0], ko: n.say[1], mean: n.say[2] }));
   const used = new Set([...ok, ...nearOpts].map((x) => x.ko));
   const offs = [];
   for (const x of shuffle(ALL_ME.filter((x) => x.talk !== talk.id), rnd)) {
-    if (offs.length >= 8) break;
+    if (offs.length >= 4) break;
     if (used.has(x.o.natural.ko)) continue;
     used.add(x.o.natural.ko);
-    offs.push({ kind: 'off', ja: x.o.natural.ja, ko: x.o.natural.ko });
+    offs.push({ kind: 'off', ja: x.o.natural.ja, ko: x.o.natural.ko, mean: x.o.natural.mean });
   }
-  let a = [ok[0], nearOpts[0], ...offs.slice(0, 4)].filter(Boolean).slice(0, 4);
-  let b = [ok[1], nearOpts[1], ...offs.slice(4, 8)].filter(Boolean).slice(0, 4);
-  if (ok.length === 1 && rnd() < 0.4) [a, b] = [b, a];
-  return [shuffle(a, rnd), shuffle(b, rnd)];
+  const picked = [...ok, ...nearOpts.slice(0, Math.max(0, 3 - ok.length))];
+  return shuffle([...picked, ...offs].slice(0, Math.max(4, picked.length + 1)), rnd);
 }
 
 function buildTalk(t) {

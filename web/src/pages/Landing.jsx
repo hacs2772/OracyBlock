@@ -1,5 +1,5 @@
 // 소개 페이지 (웹 시안 Web.dc.html 그대로): 처음 온 사람의 oracyblock.com, 그리고 /about
-// 휴대폰과 PC 둘 다. "무료로 시작하기"를 누르면 여행 판으로 들어가요
+// 휴대폰과 PC 둘 다. "무료로 시작하기"를 누르면 학습으로 들어가요
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { GAME_TALKS } from '../content/build.js';
@@ -105,7 +105,7 @@ function Demo() {
               </button>
             ))}
           </div>
-          <p style={{ margin: '12px 0 0', fontSize: 14, lineHeight: 1.6 }}>다음은 내 차례예요. "비-루!" 단어 하나만 말해도 브릭이 바로 위에 쌓여요.</p>
+          <p style={{ margin: '12px 0 0', fontSize: 14, lineHeight: 1.6 }}>다음은 내 차례예요. 하고 싶은 대답("비-루데스", "하이보-루데스")을 고르면 브릭이 바로 위에 쌓여요.</p>
           <button className="lp-play" style={{ marginTop: 8, padding: '0 14px' }} onClick={() => setSt({ set: 0, wrong: [], mode: 'idle', busy: false, done: false, k: 0, note: '', shake: -1 })}>다시 해 보기</button>
         </div>
       )}
@@ -139,12 +139,6 @@ const TIERS = [
   { name: '어긋남', say: '(가리키며) "코레!" (이거!)', desc: '통하긴 하지만 핵심 단어가 빠졌어요. 비뚤게 얹히고, 이유와 바꿀 단어를 알려 줘요.', style: { left: 50, top: 47, transform: 'rotate(7deg)', transformOrigin: '50% 92%' } },
   { name: '틀림', say: '"오이시-!" (맛있어요!)', desc: '질문과 상관없는 말이에요. 저 멀리 튕겨 나가요.', style: { left: 112, top: -8, transform: 'rotate(38deg) scale(.8)' }, lines: true },
 ];
-const WAYS = [
-  { name: '말로 대답', desc: '마이크를 눌러 말해요. 반짝이는 코랄 브릭이 쌓여요.', tone: 'coral', shine: true },
-  { name: '글자로 대답', desc: '한글 발음으로 써요. "비-루"처럼 단어 하나면 돼요. 반짝이는 하늘 브릭.', tone: 'sky', shine: true },
-  { name: '골라서 대답', desc: '한글 발음 보기 중에서 골라요. 칙칙한 돌 브릭이 쌓여요.', tone: 'stone' },
-  { name: '힌트를 쓰면', desc: '맞혀도 살짝 비뚤게 쌓여요. 다음엔 힌트 없이 해 봐요.', tone: 'coral', shine: true, tilt: true },
-];
 const TOPICS = ['#자기소개', '#여행', '#음식·술', '#고향', '#일', '#가족', '#연애', '#취미', '#고민'];
 const RANKS = [['토모', 6], ['곰', 5], ['나', 4, true], ['스시', 3], ['민트', 2]];
 
@@ -165,7 +159,7 @@ export default function Landing() {
             <span className="logo-text" style={{ fontSize: 28 }}>Oracy<b>Block</b></span>
           </Link>
           <nav className="lp-nav" aria-label="소개 메뉴">
-            <Link className="lp-hide-sm" to="/" onClick={() => store.set({ seenIntro: true })}>여행 판</Link>
+            <Link className="lp-hide-sm" to="/" onClick={() => store.set({ seenIntro: true })}>학습</Link>
             <a className="lp-hide-sm" href="#try">대화해 보기</a>
             <a className="lp-hide-sm" href="#bricks">브릭 이야기</a>
             <a className="lp-hide-sm" href="#tower">내 탑과 순위</a>
@@ -178,7 +172,7 @@ export default function Landing() {
           <div style={{ flex: '1 1 440px', minWidth: 0 }}>
             <h1 className="lp-h1">Hear it. Say it.<br />No reading required.</h1>
             <p className="lp-sub">듣고, 말하고, 읽기 공부는 생략.</p>
-            <p className="lp-p" style={{ maxWidth: 520, fontSize: 17 }}>일본 여행에서 옆자리 사람이 말을 걸어올 때. 다 알아듣지 못해도 괜찮아요. 들리는 단어로 뜻을 맞히고, 단어 하나로 대답하면서 스몰토크를 이어 가요.</p>
+            <p className="lp-p" style={{ maxWidth: 520, fontSize: 17 }}>일본 여행에서 옆자리 사람이 말을 걸어올 때. 다 알아듣지 못해도 괜찮아요. 들리는 단어로 뜻을 맞히고, 하고 싶은 대답을 골라 쌓으면서 스몰토크를 이어 가요.</p>
             <div style={{ display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap', marginTop: 26 }}>
               <button className="ob-btn coral" style={{ minWidth: 240 }} onClick={start}><span className="t">무료로 시작하기</span><span className="s">가입 없이 바로 대화해 보기</span></button>
               <Link to="/login" style={{ fontSize: 15, fontWeight: 500, textUnderlineOffset: 3 }}>이미 계정이 있어요 · 로그인</Link>
@@ -190,7 +184,7 @@ export default function Landing() {
 
         <section id="bricks" className="lp-sec">
           <h2 className="lp-h2">단어 하나면 통해요</h2>
-          <p className="lp-p">문법보다 단어가 먼저예요. 핵심 단어가 들어 있으면 브릭이 바로 위에 딱 맞게 쌓여요. 어색하면 비뚤게 얹히고, 왜 그런지 알려 드려요. 상관없는 말이면 저 멀리 튕겨 나가요.</p>
+          <p className="lp-p">문법보다 단어가 먼저예요. 대답은 골라서 해요. 핵심 단어가 들어간 대답을 고르면 브릭이 바로 위에 딱 맞게 쌓여요. 어색하면 비뚤게 얹히고, 왜 그런지 알려 드려요. 상관없는 말이면 저 멀리 튕겨 나가요.</p>
           <div className="plate" style={{ marginTop: 28, padding: '22px clamp(14px,3vw,32px) 28px' }}>
             <div className="bubble" style={{ display: 'inline-flex', fontSize: 15 }}><span><b>나니 논데루노?</b> <span className="muted">뭐 마시고 있어요?</span></span></div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, marginTop: 18 }}>
@@ -210,37 +204,6 @@ export default function Landing() {
                 </div>
               ))}
             </div>
-          </div>
-        </section>
-
-        <section className="lp-sec">
-          <h2 className="lp-h2">말이 안 나와도 괜찮아요</h2>
-          <p className="lp-p">이어폰이 없거나 소리를 낼 수 없을 땐 한글 발음으로 써서 대답하고, 그래도 어려우면 골라서 대답해요. 대신 어떻게 대답했는지에 따라 쌓이는 브릭이 달라져요.</p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px 28px', marginTop: 28 }}>
-            {WAYS.map((w) => (
-              <div key={w.name} style={{ flex: '1 1 200px', minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 6 }}>
-                <div style={{ height: 76, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} aria-hidden="true">
-                  <div style={w.tilt ? { transform: 'rotate(7deg)', transformOrigin: '50% 90%' } : null}><Brick tone={w.tone} shine={w.shine} studs={4} pitch={20} h={26} depth={12} studH={6} /></div>
-                </div>
-                <p style={{ margin: 0, fontFamily: 'var(--display)', fontSize: 22 }}>{w.name}</p>
-                <p className="muted" style={{ margin: 0, fontSize: 14, lineHeight: 1.6, maxWidth: 230 }}>{w.desc}</p>
-              </div>
-            ))}
-          </div>
-          <div className="cry" style={{ marginTop: 26, maxWidth: 560, fontSize: 15 }}>
-            <svg width="70" height="64" viewBox="0 0 70 64" aria-hidden="true" style={{ flexShrink: 0, overflow: 'visible', strokeLinejoin: 'round' }}>
-              <rect x="16" y="10" width="11" height="7" rx="2" fill="#B8B1A4" stroke="#24324A" strokeWidth="2" />
-              <rect x="43" y="10" width="11" height="7" rx="2" fill="#B8B1A4" stroke="#24324A" strokeWidth="2" />
-              <rect x="8" y="16" width="54" height="40" rx="4" fill="#B8B1A4" stroke="#24324A" strokeWidth="2" />
-              <rect x="10" y="47" width="50" height="7" fill="#9C9587" />
-              <path d="M20 27l7-3M50 27l-7-3" fill="none" stroke="#24324A" strokeWidth="2" strokeLinecap="round" />
-              <circle cx="25" cy="33" r="2.6" fill="#24324A" />
-              <circle cx="45" cy="33" r="2.6" fill="#24324A" />
-              <path d="M29 46q6-6 12 0" fill="none" stroke="#24324A" strokeWidth="2" strokeLinecap="round" />
-              <path className="lp-tear" d="M25 37q-3 5 0 7q3-2 0-7z" fill="#8FD3F4" stroke="#24324A" strokeWidth="1" />
-              <path className="lp-tear" d="M45 37q-3 5 0 7q3-2 0-7z" fill="#8FD3F4" stroke="#24324A" strokeWidth="1" style={{ animationDelay: '.6s' }} />
-            </svg>
-            <span>골라서 대답하면 브릭이 칙칙해서 울어요. 다음엔 말로 대답해서 반짝이게 해 주세요.</span>
           </div>
         </section>
 

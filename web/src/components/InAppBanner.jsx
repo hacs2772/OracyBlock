@@ -44,7 +44,7 @@ export default function InAppBanner() {
   return (
     <div className="inapp" role="region" aria-label="브라우저 안내">
       <p>
-        <b>{inKakao ? '카톡 안에서 열었어요.' : '앱 안에서 열었어요.'}</b> 여기선 말로 대답하기가 안 될 수 있어요. 크롬이나 사파리로 열어 주세요.
+        <b>{inKakao ? '카톡 안에서 열었어요.' : '앱 안에서 열었어요.'}</b> 여기선 일본어 소리가 안 나올 수 있어요. 크롬이나 사파리로 열어 주세요.
         {!android && <> 화면 아래 메뉴(점 세 개나 공유 버튼) → <b>"다른 브라우저로 열기"</b>.</>}
       </p>
       <div className="inapp-btns">

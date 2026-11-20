@@ -152,7 +152,7 @@ export default function Talk() {
         if (sy && !sy.speaking && !sy.pending) setNeedTap(true);
       });
     } else {
-      setPh({ view: store.s.settings.quiet || !canListen ? 'write' : 'mic', hint: false, typed: '', set: 0, result: null, listening: false, fb: '', shake: -1, n: 0, micNote: !canListen ? MIC_ERRORS.unsupported : '' });
+      setPh({ hint: false, hintUsed: false, result: null, fb: '', shake: -1, n: 0, wrong: 0 });
     }
   }, [si, done, resumeAsk]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -160,7 +160,7 @@ export default function Talk() {
     return (
       <div className="page">
         <p>대화를 찾지 못했어요.</p>
-        <Link to="/" className="ob-btn"><span className="t">여행 판으로</span></Link>
+        <Link to="/" className="ob-btn"><span className="t">학습으로</span></Link>
       </div>
     );
   }
@@ -207,85 +207,46 @@ export default function Talk() {
     setPh({ ...ph, set: ph.set ? 0 : 1, fb: '', shake: -1 });
   };
 
-  // ---------- 내 차례 ----------
-  const meResult = (kind, stage, extra = {}) => {
-    const hinted = ph.hint && stage !== 'choose';
-    const fixing = ph.result?.kind === 'near' && ph.result.placed;
-    if (fixing && kind !== 'ok' && kind !== 'near') {
-      setPh({ ...ph, listening: false, fb: '아직 안 맞아요. 아래 단어로 다시 해 보세요.' });
-      return;
-    }
-    if (kind === 'ok' || kind === 'near') {
-      const tilt = kind === 'near' || hinted;
+  // ---------- 내 차례: 하고 싶은 대답을 골라요 (말하기·글자 입력은 뺐어요, concept 11-5) ----------
+  const pickAnswer = (o, i) => {
+    const r = ph.result;
+    const fixing = r?.kind === 'near' && r.placed;
+    if (r?.placed && !fixing) return;
+    if (o.kind === 'ok') {
       if (fixing) {
-        // 비뚤어진 브릭을 다시 대답해서 바로 세우기
-        if (kind === 'ok' && !hinted) {
-          setBricks((b) => b.map((x, i) => (i === b.length - 1 ? { ...x, tilt: false, cls: 'b-stand', tone: STAGE_TONE[stage], shine: stage !== 'choose' } : x)));
-          sfx('snap');
-          setPh({ ...ph, result: { kind: 'fixed', stage, ...extra }, listening: false, fb: '' });
-          return;
-        }
-        setPh({ ...ph, listening: false, fb: kind === 'near' ? '아직 비뚤어요. 아래 단어로 말해 보세요.' : '힌트를 써서 아직 비뚤어요.' });
+        // 비뚤어진 브릭을 다시 골라 바로 세우기
+        setBricks((b) => b.map((x, j) => (j === b.length - 1 ? { ...x, tilt: false, cls: 'b-stand' } : x)));
+        sfx('snap');
+        setPh({ ...ph, result: { kind: 'fixed', option: o.option, picked: o.ko, placed: true }, fb: '' });
         return;
       }
-      stats.current[stage + 'N']++;
-      stats.current[kind === 'ok' ? 'okN' : 'nearN']++;
-      if (hinted) stats.current.hints++;
-      place({ tone: STAGE_TONE[stage], shine: stage !== 'choose', tilt });
-      setPh({ ...ph, result: { kind: kind === 'ok' && hinted ? 'hintok' : kind, stage, placed: true, ...extra }, listening: false, fb: '' });
+      stats.current.chooseN++;
+      stats.current.okN++;
+      if (ph.hintUsed) stats.current.hints++;
+      place({ tone: 'coral', shine: true, tilt: !!ph.hintUsed });
+      setPh({ ...ph, result: { kind: ph.hintUsed ? 'hintok' : 'ok', option: o.option, picked: o.ko, placed: true }, fb: '' });
       return;
     }
-    if (kind === 'rescue') {
-      stats.current.rescueN++;
-      setPh({ ...ph, listening: false, result: null, typed: '', fb: `괜찮아요. ${partner}가 천천히 다시 말해 줬어요.` });
-      later(400, () => speak(prevThem.line.ja, rate * 0.7));
+    if (o.kind === 'near') {
+      if (fixing) {
+        sfx('thud');
+        setPh({ ...ph, shake: i, n: ph.n + 1, fb: '이것도 살짝 어색해요. 다른 대답을 골라 보세요.' });
+        return;
+      }
+      stats.current.chooseN++;
+      stats.current.nearN++;
+      place({ tone: 'coral', shine: true, tilt: true });
+      setPh({ ...ph, result: { kind: 'near', near: o.near, picked: o.ko, placed: true }, fb: '' });
       return;
     }
-    if (kind === 'korean') {
-      setPh({ ...ph, listening: false, fb: `일본어 소리로 써 보세요. "${extra.word.mean}"${josa(extra.word.mean, '은', '는')} 일본어로 ${extra.word.ko}${josa(extra.word.ko, '이에요', '예요')}.` });
+    if (fixing) {
+      sfx('thud');
+      setPh({ ...ph, shake: i, n: ph.n + 1, fb: '이 대답은 안 맞아요. 다른 걸 골라 보세요.' });
       return;
     }
-    if (stage === 'speak') {
-      setPh({ ...ph, listening: false, result: { kind: 'fail1', stage, ...extra } });
-      return;
-    }
-    if (stage === 'write') {
-      fly('sky', true);
-      setPh({ ...ph, listening: false, result: { kind: 'off2', stage, ...extra }, typed: '' });
-      return;
-    }
-    fly('stone', false);
-    setPh({ ...ph, listening: false, shake: extra.i, n: ph.n + 1, fb: '퉁! 이 대답은 튕겨 나가요. 다시 골라 보세요.' });
-  };
-
-  const micTap = async () => {
-    unlock();
-    if (ph.listening) {
-      stopListening();
-      return;
-    }
-    setPh((p) => ({ ...p, listening: true, fb: '', result: p.result?.kind === 'near' ? p.result : null }));
-    try {
-      const heard = await listen();
-      const r = judge(step, { heard });
-      meResult(r.kind, 'speak', { heard: heard[0], option: r.option, near: r.near, words: r.words });
-    } catch (e) {
-      setPh((p) => ({ ...p, listening: false, result: p.result?.kind === 'near' ? p.result : { kind: 'fail1', stage: 'speak', micErr: MIC_ERRORS[e?.code] || '' } }));
-    }
-  };
-  const submitTyped = () => {
-    const r = judge(step, { typed: ph.typed });
-    if (r.kind === 'none') {
-      setPh({ ...ph, fb: '한글 발음으로 써 주세요. 예: ' + step.hintWords[0].ko });
-      return;
-    }
-    meResult(r.kind, 'write', { typed: ph.typed, option: r.option, near: r.near, words: r.words, word: r.word });
-  };
-  const pickAnswer = (o, i) => {
-    if (ph.result?.placed && ph.result.kind !== 'near') return;
-    if (o.kind === 'ok') meResult('ok', 'choose', { option: o.option, picked: o.ko });
-    else if (o.kind === 'near') meResult('near', 'choose', { near: o.near, picked: o.ko });
-    else meResult('off', 'choose', { i });
+    fly('coral', true);
+    const wrong = (ph.wrong || 0) + 1;
+    setPh({ ...ph, wrong, shake: i, n: ph.n + 1, fb: wrong >= 2 ? '퉁! 아래 단어가 들어간 대답을 골라 보세요.' : '퉁! 이 대답은 튕겨 나가요. 다른 걸 골라 보세요.' });
   };
 
   const goNext = () => {
@@ -298,7 +259,7 @@ export default function Talk() {
         return;
       }
       const last = bricks[bricks.length - 1];
-      if (last?.tilt) stats.current.fixes.push({ turnIdx: step.idx, kind: 'tilt', prev: ph.result?.heard || ph.result?.typed || ph.result?.picked || '' });
+      if (last?.tilt) stats.current.fixes.push({ turnIdx: step.idx, kind: 'tilt', prev: ph.result?.picked || '' });
     }
     if (si + 1 >= steps.length) finish();
     else setSi(si + 1);
@@ -344,7 +305,7 @@ export default function Talk() {
   return (
     <div className="page" style={{ gap: 10 }}>
       <div className="talk-top">
-        <Link className="icon-btn" to="/" aria-label="여행 판으로 나가기"><Close /></Link>
+        <Link className="icon-btn" to="/" aria-label="학습으로 나가기"><Close /></Link>
         <div className="ttl">
           {talk.place}
           <div className="small muted" style={{ fontFamily: 'var(--body)' }}>{partner} · {talk.partnerDesc} · Lv{level}</div>
@@ -377,7 +338,7 @@ export default function Talk() {
             <Ja>{shownLine.ja}</Ja>
             {showMean && <div className="mean fade-up">{shownLine.mean}</div>}
           </div>
-          <button className={'icon-btn' + (needTap ? ' tap-ring' : '')} onClick={() => { unlock(); setNeedTap(false); speak(shownLine.ja, rate); }} aria-label={`${partner} 말 듣기`}>
+          <button className={'icon-btn' + (needTap ? ' tap-ring' : '')} onClick={() => { unlock(); setNeedTap(false); speak(shownLine.ja, rate); }} aria-label={`${partner} 말 다시 듣기`}>
             <span className="play-dot"><Play /></span>
           </button>
         </div>
@@ -398,7 +359,7 @@ export default function Talk() {
       )}
 
       {!done && step?.type === 'me' && (
-        <MePanel step={step} ph={ph} setPh={setPh} partner={partner} micTap={micTap} submitTyped={submitTyped} pickAnswer={pickAnswer} goNext={goNext} isLast={si + 1 >= steps.length} nextIsThem={steps[si + 1]?.type === 'them'} />
+        <MePanel step={step} ph={ph} setPh={setPh} partner={partner} pickAnswer={pickAnswer} goNext={goNext} isLast={si + 1 >= steps.length} nextIsThem={steps[si + 1]?.type === 'them'} />
       )}
 
       {done && (
@@ -434,7 +395,7 @@ export default function Talk() {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <button className="ob-btn" onClick={() => nav('/fix')}><span className="t">고치기</span></button>
-            <button className="ob-btn coral" onClick={() => nav('/')}><span className="t">여행 판으로</span></button>
+            <button className="ob-btn coral" onClick={() => nav('/')}><span className="t">학습으로</span></button>
           </div>
         </div>
       )}
@@ -480,52 +441,19 @@ function ThemPanel({ step, ph, setPh, partner, rate, pick, refresh, next, onHear
   );
 }
 
-function MePanel({ step, ph, setPh, partner, micTap, submitTyped, pickAnswer, goNext, isLast, nextIsThem }) {
+function MePanel({ step, ph, setPh, partner, pickAnswer, goNext, isLast, nextIsThem }) {
   const r = ph.result;
   const nextLabel = isLast ? '대화 마무리' : nextIsThem ? `${partner} 말 듣기` : '다음';
-  const hintRow = (
-    <>
-      <button className="link-btn" onClick={() => setPh({ ...ph, hint: !ph.hint })} aria-expanded={ph.hint}>{ph.hint ? '힌트 닫기' : '힌트 보기 (쓰면 비뚤게 쌓여요)'}</button>
-      {ph.hint && <div className="hint-box">힌트 단어: {step.hintWords.map((w) => w.ko).join(' · ')}</div>}
-    </>
-  );
 
-  if (r && (r.kind === 'ok' || r.kind === 'hintok' || r.kind === 'near' || r.kind === 'fixed')) {
+  if (r && (r.kind === 'ok' || r.kind === 'hintok' || r.kind === 'fixed')) {
     const opt = r.option != null ? step.options[r.option] : null;
-    const near = r.near;
-    const title = { ok: '딸깍! 딱 맞아요', hintok: '툭. 힌트로 맞혔어요', near: r.stage === 'write' ? '애매한 대답이에요' : '툭. 통하긴 했어요', fixed: '스르륵, 바로 섰어요' }[r.kind];
-    const sub = {
-      ok: r.stage === 'choose' ? '골라서 대답하면 돌 브릭이 쌓여요. 다음엔 말로 해 봐요.' : '단어가 통했어요.',
-      hintok: '다음엔 힌트 없이 해 봐요!',
-      near: '살짝 어긋나서 비뚤게 얹혔어요.',
-      fixed: '비뚤어진 브릭이 바로 섰어요.',
-    }[r.kind];
-    const said = r.heard || r.typed || r.picked;
+    const title = { ok: '딸깍! 딱 맞아요', hintok: '툭. 뜻을 보고 맞혔어요', fixed: '스르륵, 바로 섰어요' }[r.kind];
+    const sub = { ok: '단어가 통했어요.', hintok: '뜻을 봐서 브릭이 살짝 비뚤게 쌓였어요. 다음엔 뜻 없이 골라 봐요!', fixed: '비뚤어진 브릭이 바로 섰어요.' }[r.kind];
     return (
       <div className="result">
         <h3>{title}</h3>
-        <p className="small muted">{sub}{said ? ` 내 대답: ${said}` : ''}</p>
-        {r.kind === 'near' && near && (
-          <>
-            <p style={{ fontSize: 14, lineHeight: 1.55 }}>{near.why}</p>
-            <div className="small" style={{ fontWeight: 700 }}>이 단어로 바꾸면 딱 맞아요</div>
-            {near.fix.map((w) => <BigWord key={w.key} w={w} />)}
-            {ph.fb && <p className="fb">{ph.fb}</p>}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-              {canListen && <button className="ob-btn sm coral row" onClick={micTap}><Mic size={18} /><span className={'t' + (ph.listening ? ' pulse' : '')}>{ph.listening ? '듣고 있어요' : '다시 말해서 세우기'}</span></button>}
-              <button className="ob-btn sm" onClick={() => setPh({ ...ph, view: 'write', fixMode: true })}><span className="t">써서 세우기</span></button>
-            </div>
-            {ph.fixMode && (
-              <div style={{ display: 'flex', gap: 8 }}>
-                <label className="sr-only" htmlFor="fix-type">한글 발음으로 쓰기</label>
-                <input id="fix-type" className="type-input" value={ph.typed} onChange={(e) => setPh({ ...ph, typed: e.target.value })} onKeyDown={(e) => e.key === 'Enter' && submitTyped()} placeholder={'예: ' + near.fix[0].ko} autoComplete="off" />
-                <button className="ob-btn sm" style={{ marginTop: 0, minHeight: 50 }} onClick={submitTyped}><span className="t">세우기</span></button>
-              </div>
-            )}
-            <button className="link-btn" onClick={goNext}>이대로 {isLast ? '마무리할래요' : '넘어갈래요'}</button>
-          </>
-        )}
-        {r.kind !== 'near' && opt && (
+        <p className="small muted">{sub} 내 대답: {r.picked}</p>
+        {opt && (
           <>
             <div style={{ padding: '6px 10px', borderRadius: 10, background: '#F4E9D2' }}>
               <div style={{ fontWeight: 700 }}>{opt.natural.ko}</div>
@@ -533,7 +461,7 @@ function MePanel({ step, ph, setPh, partner, micTap, submitTyped, pickAnswer, go
               <div style={{ fontSize: 13 }}>{opt.natural.mean}</div>
             </div>
             <div className="small" style={{ fontWeight: 700 }}>통한 단어</div>
-            {opt.words.slice(0, 2).map((w) => <BigWord key={w.key} w={w} />)}
+            {opt.words.filter((w) => w.ko !== '하이').slice(0, 2).map((w) => <BigWord key={w.key} w={w} />)}
           </>
         )}
         {ph.reacted && opt?.react && (
@@ -545,92 +473,50 @@ function MePanel({ step, ph, setPh, partner, micTap, submitTyped, pickAnswer, go
             </div>
           </div>
         )}
-        {r.kind !== 'near' && <button className="ob-btn coral" onClick={goNext}><span className="t">{ph.reacted || !opt?.react ? nextLabel : `${partner} 반응 듣기`}</span></button>}
+        <button className="ob-btn coral" onClick={goNext}><span className="t">{ph.reacted || !opt?.react ? nextLabel : `${partner} 반응 듣기`}</span></button>
       </div>
     );
   }
 
-  if (r?.kind === 'fail1') {
-    return (
-      <div className="result">
-        <h3>잘 못 알아들었어요</h3>
-        <p className="small muted">{r.micErr || (r.heard ? `들린 말: ${r.heard}` : '소리가 잘 안 들렸어요.')} 튕기지는 않아요.</p>
-        <TryWords step={step} />
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-          {canListen && <button className="ob-btn sm coral" onClick={() => { setPh({ ...ph, result: null }); }}><span className="t">다시 말하기</span></button>}
-          <button className="ob-btn sm" onClick={() => setPh({ ...ph, result: null, view: 'write' })}><span className="t">글자로 대답</span></button>
-          <button className="ob-btn sm" onClick={() => setPh({ ...ph, result: null, view: 'choose' })}><span className="t">골라서 대답</span></button>
-        </div>
-      </div>
-    );
-  }
-  if (r?.kind === 'off2') {
-    return (
-      <div className="result">
-        <h3>퉁! 튕겨 나갔어요</h3>
-        <p className="small muted">"{r.typed}"{josa(r.typed, '은', '는')} {partner}의 말과 안 맞아요. 아래 단어로 다시 써 보거나 골라서 대답해요.</p>
-        <TryWords step={step} />
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-          <button className="ob-btn sm coral" onClick={() => setPh({ ...ph, result: null })}><span className="t">다시 쓰기</span></button>
-          <button className="ob-btn sm" onClick={() => setPh({ ...ph, result: null, view: 'choose' })}><span className="t">골라서 대답</span></button>
-        </div>
-      </div>
-    );
-  }
-
-  if (ph.view === 'mic') {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, textAlign: 'center' }}>
-        <h2 style={{ fontSize: 22 }}>{partner}에게 말로 대답해 보세요</h2>
-        <p className="small muted">단어 하나만 말해도 딱 맞아요</p>
-        {ph.fb && <p className="fb">{ph.fb}</p>}
-        <button className="ob-btn coral mic-btn" onClick={micTap} aria-label={ph.listening ? '듣고 있어요, 누르면 멈춰요' : '눌러서 말하기'}>
-          <Mic size={40} />
-          <span className={'t' + (ph.listening ? ' pulse' : '')} style={{ fontSize: 22 }}>{ph.listening ? '듣고 있어요' : '눌러서 말하기'}</span>
-        </button>
-        <div>{hintRow}</div>
-        <button className="ob-btn" style={{ alignSelf: 'center', minWidth: 220 }} onClick={() => { stopListening(); setPh({ ...ph, view: 'write', listening: false }); }}><span className="t">지금은 말할 수 없어요</span><span className="s">글자로 대답할게요</span></button>
-      </div>
-    );
-  }
-
-  if (ph.view === 'write') {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <h2 style={{ fontSize: 22 }}>일본어 소리를 한글로 써 보세요</h2>
-        <p className="small muted">예: {step.hintWords[0].ko} · 단어 하나만 써도 돼요{ph.micNote ? ` · ${ph.micNote}` : ''}</p>
-        {ph.fb && <p className="fb" aria-live="polite">{ph.fb}</p>}
-        <div style={{ display: 'flex', gap: 8 }}>
-          <label className="sr-only" htmlFor="me-type">한글 발음으로 쓰기</label>
-          <input id="me-type" className="type-input" value={ph.typed} onChange={(e) => setPh({ ...ph, typed: e.target.value, fb: '' })} onKeyDown={(e) => e.key === 'Enter' && submitTyped()} placeholder="여기에 써요" autoComplete="off" />
-          <button className="ob-btn sm coral" style={{ marginTop: 0, minHeight: 50 }} onClick={submitTyped}><span className="t">세우기</span></button>
-        </div>
-        <div>{hintRow}</div>
-        <div className="cry">
-          <Brick tone="stone" studs={2} pitch={14} h={18} depth={8} studH={4} />
-          <span>그래도 어려우면 골라서 대답해요. 고르면 칙칙한 돌 브릭이 쌓여요.</span>
-        </div>
-        <button className="ob-btn" onClick={() => setPh({ ...ph, view: 'choose', fb: '' })}><span className="t">골라서 대답하기</span></button>
-        {canListen && <button className="link-btn" onClick={() => setPh({ ...ph, view: 'mic', fb: '' })}>말로 대답할래요</button>}
-      </div>
-    );
-  }
-
-  const set = step.choose[ph.set || 0];
+  const near = r?.kind === 'near' ? r.near : null;
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <h2 style={{ fontSize: 22 }}>어떻게 대답할까요?</h2>
+      {near ? (
+        <div className="result">
+          <h3>툭. 통하긴 했어요</h3>
+          <p className="small muted">살짝 어색해서 비뚤게 얹혔어요. 내 대답: {r.picked}</p>
+          <p style={{ fontSize: 14, lineHeight: 1.55 }}>{near.why}</p>
+          <div className="small" style={{ fontWeight: 700 }}>이 단어로 바꾸면 딱 맞아요</div>
+          {near.fix.map((w) => <BigWord key={w.key} w={w} />)}
+          <p className="small muted">아래에서 다시 골라 바로 세우거나, 이대로 넘어가도 돼요.</p>
+          <button className="link-btn" onClick={goNext}>이대로 {isLast ? '마무리할래요' : '넘어갈래요'}</button>
+        </div>
+      ) : (
+        <>
+          <h2 style={{ fontSize: 22 }}>{partner}에게 뭐라고 대답할까요?</h2>
+          <p className="small muted">하고 싶은 말을 골라요. 맞는 대답이 여러 개일 수 있어요. 재생 버튼으로 소리도 들어 보세요.</p>
+        </>
+      )}
       {ph.fb && <p className="fb" aria-live="polite">{ph.fb}</p>}
+      {ph.wrong >= 2 && !near && <TryWords step={step} />}
       <div className="opts">
-        {set.map((o, i) => (
-          <div className="opt-row" key={(ph.set || 0) + o.ko}>
-            <button className={'opt stone' + (ph.shake === i ? ' shake-' + (ph.n % 2) : '')} onClick={() => pickAnswer(o, i)}>{o.ko}</button>
+        {step.choose.map((o, i) => (
+          <div className="opt-row" key={o.ko}>
+            <button className={'opt' + (ph.shake === i ? ' shake-' + (ph.n % 2) : '')} onClick={() => pickAnswer(o, i)}>
+              <span style={{ display: 'block' }}>
+                {o.ko}
+                {ph.hint && <span className="small muted" style={{ display: 'block', fontWeight: 400 }}>{o.mean}</span>}
+              </span>
+            </button>
             <button className="icon-btn" onClick={() => speak(o.ja, 0.9)} aria-label={`${o.ko} 들어 보기`}><span className="play-dot sm"><Play size={10} /></span></button>
           </div>
         ))}
       </div>
-      <button className="refresh" onClick={() => setPh({ ...ph, set: ph.set ? 0 : 1, shake: -1, fb: '' })}><Refresh />{ph.set ? '앞 4개 다시 보기' : '여기엔 맞는 대답이 없어요'}</button>
-      <button className="link-btn" onClick={() => setPh({ ...ph, view: 'write', fb: '' })}>글자로 대답할래요</button>
+      {!near && (
+        <button className="link-btn" onClick={() => setPh({ ...ph, hint: !ph.hint, hintUsed: true })} aria-expanded={ph.hint}>
+          {ph.hint ? '뜻 숨기기' : '뜻 보기 (보면 브릭이 살짝 비뚤게 쌓여요)'}
+        </button>
+      )}
     </div>
   );
 }

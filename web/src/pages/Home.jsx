@@ -93,7 +93,7 @@ export default function Home() {
       </TopBar>
       <TowerAlert tower={tower} speed={prog?.speed} />
       <div className="title-row">
-        <h1>내 여행 판</h1>
+        <h1>학습</h1>
         <span className="small muted">완성 {doneCount}곳 · 남은 곳 {talks.length - doneCount}곳</span>
       </div>
 
