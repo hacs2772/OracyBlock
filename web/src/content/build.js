@@ -502,7 +502,16 @@ export function wordChoices(w, salt = '') {
   const rnd = seeded('w:' + w.key + salt);
   // 소리가 비슷한 단어(첫 글자·두 글자 겹침)부터 틀린 보기로. 뜻이 같은 단어는 빼요
   const g = bigrams(w.ko);
-  const cands = ALL_WORDS.filter((x) => x.mean !== w.mean && x.key !== w.key && !similar({ mean: w.mean }, { mean: x.mean }))
+  // 한쪽 뜻이 다른 쪽을 품으면("돌아가다" ⊂ "돌아가 버리다", "좋았다" ⊂ "기분 좋았다") 문법 차이라 빼요. 있다/없다처럼 뜻이 뒤집히는 건 남겨요
+  const plain = (m) => String(m).replace(/\s*\(.*\)/, '').replace(/[^가-힣0-9]/g, '');
+  const grammarOnly = (a, b) => {
+    const x = plain(a), y = plain(b);
+    if (!x || !y || x === y) return x === y;
+    const [sm, bg] = x.length <= y.length ? [x, y] : [y, x];
+    const stem = sm.replace(/(다|요|어요|아요)$/, '');
+    return bg.includes(stem) && stem.length >= 2 && !/(없|안|못|더)/.test(bg.replace(stem, ''));
+  };
+  const cands = ALL_WORDS.filter((x) => x.mean !== w.mean && x.key !== w.key && !similar({ mean: w.mean }, { mean: x.mean }) && !grammarOnly(w.mean, x.mean))
     .map((x) => {
       // 뜻 모양: 움직임·상태 말(…다, …요, …해)끼리, 이름 말끼리. 길이도 비슷하게
       const verbish = (m) => /(다|요|해|어|아|워|와|지|자)(\s*\(.*\))?$/.test(m);
