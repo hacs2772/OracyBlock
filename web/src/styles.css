@@ -354,3 +354,19 @@ textarea.input { height: 120px; padding: 10px 12px; resize: vertical; line-heigh
 .todo-go.ob-btn.sm { margin-top: 6px; min-width: 64px; padding: 4px 10px; flex-shrink: 0; }
 .todo-row.none .todo-txt b { color: var(--faint); }
 .skip-ans { display: flex; align-items: center; gap: 4px; padding: 6px 4px 6px 10px; border-radius: 10px; background: var(--plate); }
+
+/* 복습: 따라 말하기 */
+.sh-wrap { display: flex; flex-direction: column; gap: 8px; padding-top: 8px; border-top: 1.5px dashed var(--line); }
+.sh-h { font-family: var(--display); font-size: 19px; line-height: 1.2; }
+.sh-row { display: flex; align-items: center; gap: 12px; }
+.sh-mic { appearance: none; display: flex; align-items: center; justify-content: center; width: 60px; height: 60px; flex-shrink: 0; border-radius: 50%; border: 2px solid var(--navy); background: var(--coral); box-shadow: 0 4px 0 var(--navy); cursor: pointer; }
+.sh-mic:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--navy); }
+.sh-mic.rec { background: #fff; outline: 4px solid var(--coral); outline-offset: 3px; animation: shRec 1s ease-in-out infinite; }
+@keyframes shRec { 50% { outline-color: var(--pink-bg); } }
+.sh-lane { display: flex; align-items: center; gap: 6px; min-height: 46px; padding: 2px 10px 2px 4px; border-radius: 10px; background: #fff; border: 2px solid var(--card-line); }
+.sh-lane > b { width: 40px; flex-shrink: 0; font-size: 12px; text-align: center; }
+.sh-word { font-family: var(--display); font-size: 19px; }
+.sh-wave { flex: 1; min-width: 0; display: flex; align-items: center; gap: 2px; height: 28px; overflow: hidden; }
+.sh-wave i { display: block; width: 3px; flex-shrink: 0; border-radius: 2px; background: var(--coral); }
+.play-dot.coral { background: var(--coral); }
+@media (prefers-reduced-motion: reduce) { .sh-mic.rec { animation: none; } }

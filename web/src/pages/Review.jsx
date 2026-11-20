@@ -70,7 +70,7 @@ export default function Review() {
             <button className="ob-btn coral" onClick={() => { setQuiz(null); setDone(null); load(); }}><span className="t">복습 탑 보기</span></button>
           </div>
         ) : (
-          <WordQuiz words={quiz} onDone={setDone} />
+          <WordQuiz words={quiz} onDone={setDone} shadow />
         )}
       </div>
     );

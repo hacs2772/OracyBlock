@@ -7,6 +7,7 @@ import { speak, sfx } from '../lib/speech.js';
 import { dayTone } from '../lib/progress.js';
 import Brick from './Brick.jsx';
 import { Play, Ja } from './ui.jsx';
+import Shadow from './Shadow.jsx';
 
 const STEPS_DAYS = [1, 3, 7, 14, 30];
 export const WORD_BRICK = { studs: 4, pitch: 22, h: 22, depth: 10, studH: 5 };
@@ -29,7 +30,7 @@ export function BigWordRow({ w }) {
 }
 
 /** words: [{ key, ko, mean, say, stage }], onDone({ ok: [...], wrong: [...] }) */
-export default function WordQuiz({ words, onDone, lastLabel = '복습 마치기' }) {
+export default function WordQuiz({ words, onDone, lastLabel = '복습 마치기', shadow = false }) {
   const [i, setI] = useState(0);
   const [st, setSt] = useState({ picked: null, ok: false, n: 0 });
   const [result, setResult] = useState({ ok: [], wrong: [] });
@@ -99,6 +100,7 @@ export default function WordQuiz({ words, onDone, lastLabel = '복습 마치기'
             </div>
           </div>
           <BigWordRow w={w} />
+          {shadow && <Shadow key={w.key} w={w} />}
           <button className="ob-btn coral" onClick={next}><span className="t">{i + 1 < words.length ? '다음 단어' : lastLabel}</span></button>
         </div>
       )}
