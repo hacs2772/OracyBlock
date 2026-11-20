@@ -106,6 +106,15 @@ const NEAR = {
   ],
 };
 
+/** 예/아니오 질문에 "하이(네)"만 해도 통하는 대답 (몇 번째 대답인지). 사용자 피드백: "료꼬-데스까?"에 "하이"가 튕겼음 */
+const YES = {
+  'plane:1': 0, 'plane:5': 0, 'izakaya:1': 0, 'izakaya:5': 1, 'shinkansen:1': 0, 'shinkansen:7': 1,
+  'park:3': 0, 'park:7': 0, 'festival:5': 0, 'izakaya2:5': 0, 'guesthouse2:7': 0, 'guesthouse2:9': 0,
+  'onsen2:1': 0, 'onsen2:5': 0, 'park2:1': 0,
+};
+const YES_WORD = ['はい|ええ|うん', '하이', '네'];
+const KOREAN_YES = /^(네|넹|넵|예|응|어|ㅇㅇ|웅)[.!~]*$/;
+
 /** 살리는 말: 브릭은 안 쌓이지만 튕기지도 않아요. 상대가 천천히 다시 말해 줘요 */
 const RESCUE = [
   ['すみません', '스미마셍', '죄송해요'],
@@ -203,8 +212,9 @@ export function judge(turn, input) {
   }
   if (RESCUE.some(hit)) return { kind: 'rescue' };
   if (typed != null) {
-    // 일본어 소리 대신 한국어 뜻을 썼을 때 (예: "한국") → 튕기지 않고 알려 줘요
+    // 일본어 소리 대신 한국어 뜻을 썼을 때 (예: "한국", "네") → 튕기지 않고 알려 줘요
     const raw = String(input.typed).replace(/\s/g, '');
+    if (turn.yes && KOREAN_YES.test(raw)) return { kind: 'korean', word: word(YES_WORD) };
     for (const o of turn.options) for (const w of o.words) {
       const m = String(w.mean).replace(/\(.*?\)|\s/g, '');
       if (m.length >= 2 && raw.includes(m)) return { kind: 'korean', word: w };
@@ -291,9 +301,10 @@ function buildTalk(t) {
       });
     } else if (turn.me) {
       const near = (NEAR[t.id + ':' + idx] || []).map((n) => ({ ...n, words: n.words.map(word), fix: n.fix.map(word) }));
-      const options = turn.me;
+      const yes = YES[t.id + ':' + idx];
+      const options = yes == null ? turn.me : turn.me.map((o, i) => (i === yes ? { ...o, words: [...o.words, word(YES_WORD)] } : o));
       steps.push({
-        type: 'me', idx, options, near,
+        type: 'me', idx, options, near, yes: yes != null,
         hintWords: options.flatMap((o) => o.words.slice(0, 1)),
         choose: chooseSets(t, idx, options, near),
       });

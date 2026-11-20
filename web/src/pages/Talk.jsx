@@ -6,11 +6,31 @@ import { speak, stopSpeaking, listen, stopListening, canListen, MIC_ERRORS, sfx,
 import { api, quiet } from '../lib/api.js';
 import { store, useStore } from '../lib/store.js';
 import Brick from '../components/Brick.jsx';
-import { Stack, Play, Close, Mic, Refresh, Ja, Sheet } from '../components/ui.jsx';
+import { Stack, Play, Close, Mic, Refresh, Ja, Sheet, Question } from '../components/ui.jsx';
+import { Guide, GAME } from '../components/Guides.jsx';
 import { countCorrect } from '../lib/progress.js';
 import { loadResume, saveResume, clearResume } from '../lib/resume.js';
 
 const STAGE_TONE = { speak: 'coral', write: 'sky', choose: 'stone' };
+
+/** 받침에 맞게 "은/는", "이에요/예요" 고르기 */
+export function josa(w, withB, withoutB) {
+  const s = String(w || '').trim();
+  const c = s.charCodeAt(s.length - 1) - 0xac00;
+  return c >= 0 && c <= 11171 && c % 28 ? withB : withoutB;
+}
+
+/** 튕기거나 못 알아들었을 때: "이 단어를 넣어 대답해 보세요" (대답마다 첫 단어, 크게 + 소리) */
+function TryWords({ step }) {
+  const seen = new Set();
+  const words = step.options.map((o) => o.words[0]).filter((w) => !seen.has(w.key) && seen.add(w.key));
+  return (
+    <>
+      <div className="small" style={{ fontWeight: 700 }}>이 단어를 넣어 대답해 보세요</div>
+      {words.map((w) => <BigWord key={w.key} w={w} />)}
+    </>
+  );
+}
 
 function sizeFor(level, n) {
   const k = LEVEL_SCALE[level] || 1;
@@ -69,6 +89,7 @@ export default function Talk() {
   const [capNote, setCapNote] = useState(null);
   const [resumeAsk, setResumeAsk] = useState(() => loadResume(id)); // 중간에 나갔던 대화면 이어 할지 물어봐요
   const [needTap, setNeedTap] = useState(false); // 아이폰처럼 소리가 저절로 안 나면 "눌러서 들어 보세요"
+  const [help, setHelp] = useState(false); // ? → 게임 방법 다시 보기
 
   const newPlay = () => {
     playId.current = null;
@@ -221,7 +242,7 @@ export default function Talk() {
       return;
     }
     if (kind === 'korean') {
-      setPh({ ...ph, listening: false, fb: `일본어 소리로 써 보세요. "${extra.word.mean}"은 ${extra.word.ko}예요.` });
+      setPh({ ...ph, listening: false, fb: `일본어 소리로 써 보세요. "${extra.word.mean}"${josa(extra.word.mean, '은', '는')} 일본어로 ${extra.word.ko}${josa(extra.word.ko, '이에요', '예요')}.` });
       return;
     }
     if (stage === 'speak') {
@@ -328,8 +349,9 @@ export default function Talk() {
           {talk.place}
           <div className="small muted" style={{ fontFamily: 'var(--body)' }}>{partner} · {talk.partnerDesc} · Lv{level}</div>
         </div>
-        <span style={{ width: 44 }} aria-hidden="true" />
+        <button className="icon-btn" onClick={() => setHelp(true)} aria-label="게임 방법 보기"><Question /></button>
       </div>
+      {help && <Guide slides={GAME} label="게임 방법" doneLabel="알겠어요" skipLabel="닫기" onDone={() => setHelp(false)} />}
 
       <div className="stage plate" style={{ boxShadow: 'none', padding: 0 }}>
         <div style={{ position: 'absolute', left: '50%', top: 0, marginLeft: -(size.pitch * 2 + 14) }}>
@@ -533,6 +555,7 @@ function MePanel({ step, ph, setPh, partner, micTap, submitTyped, pickAnswer, go
       <div className="result">
         <h3>잘 못 알아들었어요</h3>
         <p className="small muted">{r.micErr || (r.heard ? `들린 말: ${r.heard}` : '소리가 잘 안 들렸어요.')} 튕기지는 않아요.</p>
+        <TryWords step={step} />
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
           {canListen && <button className="ob-btn sm coral" onClick={() => { setPh({ ...ph, result: null }); }}><span className="t">다시 말하기</span></button>}
           <button className="ob-btn sm" onClick={() => setPh({ ...ph, result: null, view: 'write' })}><span className="t">글자로 대답</span></button>
@@ -545,7 +568,8 @@ function MePanel({ step, ph, setPh, partner, micTap, submitTyped, pickAnswer, go
     return (
       <div className="result">
         <h3>퉁! 튕겨 나갔어요</h3>
-        <p className="small muted">"{r.typed}"은 {partner}의 말과 안 맞아요. 다시 써 보거나 골라서 대답해요.</p>
+        <p className="small muted">"{r.typed}"{josa(r.typed, '은', '는')} {partner}의 말과 안 맞아요. 아래 단어로 다시 써 보거나 골라서 대답해요.</p>
+        <TryWords step={step} />
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
           <button className="ob-btn sm coral" onClick={() => setPh({ ...ph, result: null })}><span className="t">다시 쓰기</span></button>
           <button className="ob-btn sm" onClick={() => setPh({ ...ph, result: null, view: 'choose' })}><span className="t">골라서 대답</span></button>
