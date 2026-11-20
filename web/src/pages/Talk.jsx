@@ -65,6 +65,7 @@ export default function Talk() {
   const timers = useRef([]);
   const later = (ms, fn) => timers.current.push(setTimeout(fn, ms));
   const [levelUp, setLevelUp] = useState(null);
+  const [capNote, setCapNote] = useState(null);
 
   useEffect(() => {
     if (!talk) return undefined;
@@ -260,6 +261,7 @@ export default function Talk() {
       await quiet(`/plays/${playId.current}/finish`, { method: 'POST', body });
       const prog = await quiet('/progress');
       if (prog) {
+        if (prog.finishedToday > prog.dayCap) setCapNote({ cap: prog.dayCap, fast: prog.speed === 'fast' });
         const lv = store.s.level;
         const c = countCorrect(prog.plays, lv);
         if (!body.crooked && level === lv && c >= 3 && lv < 2) setLevelUp(lv + 1);
@@ -334,6 +336,12 @@ export default function Talk() {
               {correctNow ? '비뚤어진 브릭 없는 올바른 탑이에요.' : '비뚤어진 곳은 고치기에서 다시 세울 수 있어요.'}
             </p>
           </div>
+          {capNote && (
+            <div className="note">
+              오늘 브릭은 다 쌓았어요 (하루 {capNote.cap}개). 대화 연습과 단어는 그대로 남아요.
+              {!capNote.fast && <> 더 빨리 쌓고 싶다면 <Link to="/me"><b>쌓는 속도</b></Link>를 올려 보세요.</>}
+            </div>
+          )}
           {levelUp && (
             <div className="note">
               Lv{store.s.level}에서 올바른 탑을 3개 쌓았어요. <b>Lv{levelUp}</b> 해 볼래요?

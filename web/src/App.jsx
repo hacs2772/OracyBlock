@@ -3,6 +3,7 @@ import { Route, Routes, useLocation } from 'react-router-dom';
 import Home from './pages/Home.jsx';
 import Talk from './pages/Talk.jsx';
 import Fix from './pages/Fix.jsx';
+import Review from './pages/Review.jsx';
 import TowerPage from './pages/TowerPage.jsx';
 import Me from './pages/Me.jsx';
 import Auth from './pages/Auth.jsx';
@@ -34,6 +35,7 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/talk/:id" element={<Talk />} />
         <Route path="/fix" element={<Fix />} />
+        <Route path="/review" element={<Review />} />
         <Route path="/tower" element={<TowerPage />} />
         <Route path="/me" element={<Me />} />
         <Route path="/login" element={<Auth />} />

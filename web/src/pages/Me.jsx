@@ -1,11 +1,12 @@
 // 내 정보: 계정 · 설정 · 도움말 · 의견 보내기
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api, quiet } from '../lib/api.js';
 import { store, useStore } from '../lib/store.js';
 import { listen, canListen, MIC_ERRORS, speak, unlock, canSpeak, hasJaVoice } from '../lib/speech.js';
 import Brick from '../components/Brick.jsx';
-import { Logo, Chevron, Mic, Sheet, toast, Tabs } from '../components/ui.jsx';
+import { TopBar, Chevron, Mic, Sheet, toast, Tabs } from '../components/ui.jsx';
+import { SPEEDS, SPEED_KEYS, speedOf } from '../lib/speed.js';
 import { Guide, INTRO, GAME } from '../components/Guides.jsx';
 
 function Switch({ on, label, onClick }) {
@@ -36,6 +37,21 @@ export default function Me() {
   const [leave, setLeave] = useState(false);
   const [fb, setFb] = useState(null);
   const user = st.user;
+  const [pref, setPref] = useState(null);
+  useEffect(() => {
+    quiet('/pref').then(setPref);
+  }, [user?.id]);
+  const changeSpeed = async (k) => {
+    if (pref?.speed === k) return;
+    try {
+      setPref(await api('/pref', { method: 'PUT', body: { speed: k } }));
+      toast(`쌓는 속도를 "${SPEEDS[k].label}"로 바꿨어요.`);
+    } catch (e) {
+      toast(e.message);
+    }
+  };
+  const sp = speedOf(pref?.speed);
+  const preValue = s.preWords == null ? sp.pre : s.preWords;
 
   const saveNick = async () => {
     const v = draft.trim();
@@ -76,7 +92,7 @@ export default function Me() {
 
   return (
     <div className="page has-tabs">
-      <div className="top-row"><Logo /></div>
+      <TopBar me={false} />
       <h1 style={{ fontSize: 28 }}>내 정보</h1>
 
       {user ? (
@@ -116,6 +132,30 @@ export default function Me() {
         <div className="set-row">
           <span className="set-name">지금 레벨 Lv{st.level}<small>여행 판의 레벨 카드에서 바꿔요</small></span>
           <Link className="ob-btn sm" to="/"><span style={{ fontSize: 13, fontWeight: 700 }}>바꾸기</span></Link>
+        </div>
+      </div>
+
+      <h2 className="set-h2">쌓는 속도</h2>
+      <div className="set-card" style={{ padding: '10px 12px' }}>
+        <p className="small muted" style={{ marginBottom: 8 }}>하루에 얼마나 쌓을지 골라요. 레벨(얼마나 어렵게)과는 따로예요. 3일에 한 번 바꿀 수 있어요.</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }} role="radiogroup" aria-label="쌓는 속도">
+          {SPEED_KEYS.map((k) => {
+            const o = SPEEDS[k];
+            const on = (pref?.speed || 'normal') === k;
+            const locked = !on && !!pref?.nextChangeAt;
+            return (
+              <button key={k} className={'speed-opt' + (on ? ' on' : '')} role="radio" aria-checked={on} disabled={locked} onClick={() => changeSpeed(k)}>
+                <span style={{ fontFamily: 'var(--display)', fontSize: 19, minWidth: 64 }}>{o.label}</span>
+                <span className="small" style={{ flex: 1 }}>하루 브릭 {o.bricks}개 · 복습 단어 {o.review}개<br /><span className="muted">{o.time}</span></span>
+                {on && <span className="chip dark">지금</span>}
+              </button>
+            );
+          })}
+        </div>
+        {pref?.nextChangeAt && <p className="small muted" style={{ marginTop: 8 }}>{new Date(pref.nextChangeAt).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}부터 다시 바꿀 수 있어요.</p>}
+        <div className="set-col" style={{ paddingBottom: 2 }}>
+          <span className="set-name" id="set-pre">대화 전에 단어 맞혀 보기<small>복습할 단어가 있을 때만 떠요. 건너뛸 수 있어요</small></span>
+          <Segs labelId="set-pre" value={preValue} options={[[0, '끄기'], [3, '3개'], [5, '5개']]} onPick={(v) => store.setSettings({ preWords: v })} />
         </div>
       </div>
 

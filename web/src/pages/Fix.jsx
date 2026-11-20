@@ -1,58 +1,46 @@
-// 고치기: 단어 복습 + 구멍 난 돌기·비뚤어진 브릭 다시 만들기
-import { useEffect, useMemo, useState } from 'react';
-import { talkById, wordChoices, judge } from '../content/build.js';
+// 고치기 (여행 판에서 들어와요): 구멍 난 돌기·비뚤어진 브릭이 있는 대화를 다시 만들기
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { talkById, judge } from '../content/build.js';
 import { api, quiet } from '../lib/api.js';
 import { parseBricks } from '../lib/progress.js';
 import { speak, unlock, sfx, listen, canListen, stopListening } from '../lib/speech.js';
-import { Logo, Stack, Play, Back, Mic, Ja, toast, Tabs } from '../components/ui.jsx';
+import { Stack, Play, Back, Mic, Ja, toast } from '../components/ui.jsx';
 import { BigWord } from './Talk.jsx';
 
 const MINI = { studs: 4, pitch: 9, h: 11, depth: 6, studH: 3 };
 const BIG = { studs: 4, pitch: 14, h: 16, depth: 8, studH: 4 };
-const STEPS_DAYS = [1, 3, 7, 14, 30];
 
 export default function Fix() {
-  const [data, setData] = useState(null);
-  const [mode, setMode] = useState(null); // { type: 'words' } | { type: 'fix', group }
-  const load = () => Promise.all([quiet('/words'), quiet('/fixes')]).then(([w, f]) => setData({ words: w || [], groups: f || [] }));
+  const [groups, setGroups] = useState(null);
+  const [mode, setMode] = useState(null);
+  const load = () => quiet('/fixes').then((f) => setGroups(f || []));
   useEffect(() => {
     load();
   }, []);
+  // 여행 판에서 장소를 골라 들어오면 (/fix?talk=izakaya) 그 대화부터 바로
+  useEffect(() => {
+    const want = new URLSearchParams(window.location.search).get('talk');
+    if (want && groups && !mode) {
+      const g = groups.find((x) => x.talkId === want);
+      if (g) setMode({ group: g });
+    }
+  }, [groups]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (mode?.type === 'words') return <WordQuiz words={mode.words} onExit={() => { setMode(null); load(); }} />;
-  if (mode?.type === 'fix') return <Remake group={mode.group} onExit={() => { setMode(null); load(); }} />;
+  if (mode) return <Remake group={mode.group} onExit={() => { setMode(null); window.history.replaceState(null, '', '/fix'); load(); }} />;
 
-  const words = data?.words || [];
-  const today = new Date().toLocaleDateString('sv-SE');
-  const due = words.filter((w) => w.dueDay <= today);
-  const groups = data?.groups || [];
-  const openCount = groups.reduce((n, g) => n + g.items.length, 0);
-
+  const list = groups || [];
+  const openCount = list.reduce((n, g) => n + g.items.length, 0);
   return (
-    <div className="page has-tabs">
-      <div className="top-row"><Logo /></div>
-      <div className="title-row">
-        <h1>고치기</h1>
-        <span className="small muted">복습 {due.length} · 고칠 곳 {openCount}</span>
+    <div className="page">
+      <div className="talk-top">
+        <Link className="icon-btn" to="/" aria-label="여행 판으로"><Back /></Link>
+        <div className="ttl">고치기</div>
+        <span style={{ width: 44 }} />
       </div>
-
-      <div className="card strong">
-        <h2 style={{ fontSize: 21 }}>오늘 복습할 단어 {due.length}개</h2>
-        <p className="small muted" style={{ marginTop: 2 }}>소리를 듣고 뜻을 골라요. 맞히면 3일 뒤, 7일 뒤처럼 점점 멀리 다시 나와요.</p>
-        {due.length > 0 ? (
-          <button className="ob-btn coral wide" onClick={() => { unlock(); setMode({ type: 'words', words: due.slice(0, 10) }); }}><span className="t">복습 시작 ({Math.min(10, due.length)}개)</span></button>
-        ) : (
-          <p className="small" style={{ marginTop: 8 }}>{words.length ? '오늘 복습은 다 했어요.' : '대화를 하나 끝내면 단어가 여기에 쌓여요.'}</p>
-        )}
-      </div>
-
-      <h2 style={{ fontSize: 20, marginTop: 6 }}>고칠 곳</h2>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 14px' }} className="small muted">
-        <span>구멍 난 돌기 = 놓친 단어</span>
-        <span>비뚤어진 브릭 = 어긋난 대답</span>
-      </div>
-      {groups.length === 0 && <p className="small">고칠 곳이 없어요. 탑이 단단해요!</p>}
-      {groups.map((g) => {
+      <p className="small muted">고칠 곳 {openCount}개 · 구멍 난 돌기 = 놓친 단어, 비뚤어진 브릭 = 어긋난 대답. 고쳐도 레벨 추천에 쓰는 올바른 탑으로는 세지 않아요.</p>
+      {groups && list.length === 0 && <p className="card small">고칠 곳이 없어요. 탑이 단단해요!</p>}
+      {list.map((g) => {
         const t = talkById(g.talkId);
         if (!t) return null;
         const holes = g.items.filter((x) => x.kind === 'hole').length;
@@ -68,94 +56,11 @@ export default function Fix() {
                 {holes > 0 && <span className="chip">놓친 단어 {holes}</span>}
                 {tilts > 0 && <span className="chip">비뚤어진 브릭 {tilts}</span>}
               </span>
-              <button className="ob-btn sm coral" onClick={() => { unlock(); setMode({ type: 'fix', group: g }); }}><span className="t">다시 만들기</span></button>
+              <button className="ob-btn sm coral" onClick={() => { unlock(); setMode({ group: g }); }}><span className="t">다시 만들기</span></button>
             </div>
           </div>
         );
       })}
-
-      {words.length > 0 && (
-        <>
-          <h2 style={{ fontSize: 20, marginTop: 6 }}>내 단어 {words.length}개</h2>
-          <div className="word-row" style={{ marginTop: 8 }}>
-            {words.map((w) => (
-              <button key={w.key} className="word-chip" onClick={() => { unlock(); speak(w.say, 0.85); }} aria-label={`${w.ko}, ${w.mean}, 들어 보기`}>
-                <span className="play-dot sm"><Play size={10} /></span>
-                <span style={{ minWidth: 0 }}>
-                  <span className="w">{w.ko}</span>
-                  <span className="m">{w.mean}{w.dueDay <= today ? ' · 오늘' : ''}</span>
-                </span>
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-      <Tabs />
-    </div>
-  );
-}
-
-function WordQuiz({ words, onExit }) {
-  const [i, setI] = useState(0);
-  const [state, setState] = useState({ picked: null, n: 0, okCount: 0 });
-  const w = words[i];
-  const choices = useMemo(() => (w ? wordChoices({ ...w, variants: [w.say] }, ':' + i) : []), [w, i]);
-  useEffect(() => {
-    if (w) setTimeout(() => speak(w.say, 0.85), 250);
-  }, [w]);
-  if (!w) {
-    return (
-      <div className="page">
-        <div className="result" style={{ marginTop: 40 }}>
-          <h3>복습 끝!</h3>
-          <p className="small muted">{words.length}개 중 {state.okCount}개를 바로 알아들었어요. 틀린 단어는 내일 다시 나와요.</p>
-          <button className="ob-btn coral" onClick={onExit}><span className="t">고치기로</span></button>
-        </div>
-      </div>
-    );
-  }
-  const pick = (m) => {
-    if (state.picked) return;
-    const ok = m === w.mean;
-    sfx(ok ? 'snap' : 'thud');
-    quiet('/words/result', { method: 'POST', body: { key: w.key, ok } });
-    setState({ ...state, picked: m, ok, okCount: state.okCount + (ok ? 1 : 0), n: state.n + 1 });
-    speak(w.say, 0.85);
-  };
-  const nextDays = state.ok ? STEPS_DAYS[Math.min(STEPS_DAYS.length - 1, (w.stage || 0) + 1)] : 1;
-  return (
-    <div className="page">
-      <div className="talk-top">
-        <button className="icon-btn" onClick={onExit} aria-label="복습 그만하기"><Back /></button>
-        <div className="ttl">단어 복습</div>
-        <span style={{ width: 44, textAlign: 'center', fontSize: 13, fontWeight: 700 }}>{i + 1}/{words.length}</span>
-      </div>
-      <div className="card strong" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 16 }}>
-        <button className="icon-btn" style={{ width: 56, height: 56 }} onClick={() => speak(w.say, 0.85)} aria-label="다시 듣기">
-          <span className="play-dot" style={{ width: 50, height: 50 }}><Play size={18} /></span>
-        </button>
-        <div>
-          <div style={{ fontFamily: 'var(--display)', fontSize: 34, lineHeight: 1.05 }}>{w.ko}</div>
-          <Ja>{w.say}</Ja>
-        </div>
-      </div>
-      <h2 style={{ fontSize: 21 }}>무슨 뜻일까요?</h2>
-      <div className="opts">
-        {choices.map((m) => {
-          const mark = state.picked && (m === w.mean ? { background: '#DDF3EF' } : m === state.picked ? { background: '#FFE1DB' } : null);
-          return (
-            <button key={m} className={'opt' + (state.picked === m && !state.ok ? ' shake-' + (state.n % 2) : '')} style={mark || undefined} onClick={() => pick(m)}>{m}</button>
-          );
-        })}
-      </div>
-      {state.picked && (
-        <div className="result">
-          <h3>{state.ok ? '딸깍! 맞아요' : '아쉬워요'}</h3>
-          <BigWord w={{ ...w, variants: [w.say] }} />
-          <p className="small muted">{state.ok ? `${nextDays}일 뒤에 한 번 더 들려 드려요.` : '내일 다시 들려 드려요.'}</p>
-          <button className="ob-btn coral" onClick={() => { setI(i + 1); setState({ ...state, picked: null }); }}><span className="t">{i + 1 < words.length ? '다음 단어' : '복습 마치기'}</span></button>
-        </div>
-      )}
     </div>
   );
 }

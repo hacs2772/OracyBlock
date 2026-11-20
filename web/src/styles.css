@@ -189,6 +189,13 @@ p { margin: 0; }
 .b-stand { transform-origin: 50% 90%; animation: bStand 0.6s both; }
 @keyframes bStand { 0% { transform: translate(5px, -2px) rotate(5deg); } 70% { transform: translate(0, -3px) rotate(-1deg); } 100% { transform: none; } }
 
+/* 금 간 브릭: 살짝 흔들흔들 */
+.b-wobble { transform-origin: 50% 100%; animation: wobble 2.4s infinite ease-in-out; }
+@keyframes wobble { 0%, 60%, 100% { transform: rotate(0); } 70% { transform: rotate(-2.5deg); } 80% { transform: rotate(2deg); } 90% { transform: rotate(-1deg); } }
+.speed-opt { appearance: none; display: flex; align-items: center; gap: 10px; width: 100%; min-height: 56px; padding: 8px 12px; border: 2px solid var(--card-line); border-radius: 12px; background: #fff; text-align: left; cursor: pointer; }
+.speed-opt.on { border-color: var(--navy); box-shadow: 0 3px 0 var(--navy); background: var(--yellow-bg); }
+.speed-opt:disabled { cursor: default; opacity: 0.6; }
+
 /* 고치기 */
 .fix-card { display: flex; gap: 12px; padding: 10px 12px 12px 8px; }
 .ptr { position: absolute; display: flex; align-items: center; gap: 4px; }

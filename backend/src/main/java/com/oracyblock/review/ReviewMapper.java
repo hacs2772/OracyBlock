@@ -22,8 +22,18 @@ public interface ReviewMapper {
     void schedule(@Param("owner") String owner, @Param("key") String key, @Param("stage") int stage,
                   @Param("due") LocalDate due, @Param("missInc") int missInc);
 
-    @Insert("INSERT INTO word_answer (owner, ok) VALUES (#{owner}, #{ok})")
-    void answer(@Param("owner") String owner, @Param("ok") boolean ok);
+    @Insert("INSERT INTO word_answer (owner, ok, word_key, ko, day) SELECT #{owner}, #{ok}, word_key, ko, #{day} FROM word WHERE owner = #{owner} AND word_key = #{key}")
+    void answer(@Param("owner") String owner, @Param("key") String key, @Param("ok") boolean ok, @Param("day") LocalDate day);
+
+    /** 복습 탑: 맞힌 단어 브릭 (최근 것부터 120개) */
+    @Select("""
+        SELECT ko, to_char(day, 'YYYY-MM-DD') AS day FROM word_answer
+        WHERE owner = #{owner} AND ok AND ko IS NOT NULL ORDER BY at DESC LIMIT 120
+        """)
+    List<Map<String, Object>> towerBricks(@Param("owner") String owner);
+
+    @Select("SELECT COUNT(*) FROM word_answer WHERE owner = #{owner} AND ok")
+    int towerTotal(@Param("owner") String owner);
 
     @Select("""
         SELECT f.id, f.play_id AS "playId", f.turn_idx AS "turnIdx", f.kind, f.prev,

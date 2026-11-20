@@ -1,14 +1,15 @@
 // 로그인 · 회원가입 (이메일 + 비밀번호). 가입 없이 둘러보기도 가능
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { api, setLogin } from '../lib/api.js';
+import { api, quiet, setLogin } from '../lib/api.js';
+import { SPEEDS, SPEED_KEYS } from '../lib/speed.js';
 import Brick from '../components/Brick.jsx';
 import { Close, toast } from '../components/ui.jsx';
 
 export default function Auth() {
   const nav = useNavigate();
   const [tab, setTab] = useState('join');
-  const [f, setF] = useState({ nick: '', mail: '', pw: '', agree: false });
+  const [f, setF] = useState({ nick: '', mail: '', pw: '', agree: false, speed: 'normal' });
   const [tried, setTried] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
@@ -30,6 +31,7 @@ export default function Auth() {
         body: join ? { nickname: f.nick.trim(), email: f.mail.trim(), password: f.pw } : { email: f.mail.trim(), password: f.pw },
       });
       setLogin(res);
+      if (join) await quiet('/pref', { method: 'PUT', body: { speed: f.speed } });
       toast(join ? `${res.user.nickname} 님, 환영해요!` : '로그인했어요.');
       nav('/');
     } catch (e2) {
@@ -80,6 +82,20 @@ export default function Auth() {
           <input id="au-pw" type="password" className={'input' + (bad.pw ? ' bad' : '')} value={f.pw} onChange={set('pw')} autoComplete={join ? 'new-password' : 'current-password'} />
           {join ? <p className={bad.pw ? 'err' : 'help'}>{bad.pw ? '8자 이상으로 적어 주세요.' : '8자 이상'}</p> : bad.pw && <p className="err">비밀번호를 적어 주세요.</p>}
         </div>
+        {join && (
+          <fieldset style={{ border: 0, padding: 0, margin: 0 }}>
+            <legend style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>하루에 얼마나 쌓을까요?</legend>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {SPEED_KEYS.map((k) => (
+                <button type="button" key={k} className={'speed-opt' + (f.speed === k ? ' on' : '')} aria-pressed={f.speed === k} onClick={() => setF({ ...f, speed: k })}>
+                  <span style={{ fontFamily: 'var(--display)', fontSize: 18, minWidth: 64 }}>{SPEEDS[k].label}</span>
+                  <span className="small" style={{ flex: 1 }}>하루 브릭 {SPEEDS[k].bricks}개 · 복습 {SPEEDS[k].review}개 · {SPEEDS[k].time}</span>
+                </button>
+              ))}
+            </div>
+            <p className="help">나중에 내 정보에서 바꿀 수 있어요 (3일에 한 번).</p>
+          </fieldset>
+        )}
         {join && (
           <>
             <label className="check"><input type="checkbox" checked={f.agree} onChange={set('agree')} /><span><Link to="/terms">이용약관</Link>과 <Link to="/privacy">개인정보 처리방침</Link>에 동의해요 (필수)</span></label>

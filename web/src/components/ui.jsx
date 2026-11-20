@@ -89,6 +89,13 @@ const TAB_ICONS = {
       <rect x="8" y="3" width="8" height="6" rx="1" />
     </svg>
   ),
+  review: (c) => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="3" y="13" width="18" height="7" rx="1.5" />
+      <path d="M7 13v-2M17 13v-2" />
+      <path d="M8 4h8M12 4v5" />
+    </svg>
+  ),
   me: (c) => (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <circle cx="12" cy="8" r="4" />
@@ -98,14 +105,13 @@ const TAB_ICONS = {
 };
 const TABS = [
   ['/', 'home', '여행 판'],
-  ['/fix', 'fix', '고치기'],
+  ['/review', 'review', '복습'],
   ['/tower', 'tower', '내 탑'],
-  ['/me', 'me', '내 정보'],
 ];
 export function Tabs() {
   const { pathname } = useLocation();
   return (
-    <nav className="tabs" aria-label="메뉴">
+    <nav className="tabs" aria-label="메뉴" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
       {TABS.map(([to, icon, label]) => {
         const on = to === '/' ? pathname === '/' : pathname.startsWith(to);
         return (
@@ -116,6 +122,23 @@ export function Tabs() {
         );
       })}
     </nav>
+  );
+}
+
+/** 맨 위 줄: 로고 + (오른쪽) 더 넣을 버튼 + 내 정보 */
+export function TopBar({ children, me = true }) {
+  return (
+    <div className="top-row">
+      <Logo />
+      <div style={{ display: 'flex', alignItems: 'center' }}>
+        {children}
+        {me && (
+          <Link to="/me" className="icon-btn" aria-label="내 정보와 설정">
+            {TAB_ICONS.me('#24324A')}
+          </Link>
+        )}
+      </div>
+    </div>
   );
 }
 

@@ -24,7 +24,7 @@ export function brickBox({ studs = 4, pitch = 22, h = 26, depth = 12, studH = 6,
   return { w: W + depth + 10 + (sideStud ? 10 : 0), h: h + depth + studH + 10 + 3, lift: 5 + studH + depth + h };
 }
 
-export default function Brick({ tone = 'coral', studs = 4, pitch = 22, h = 26, depth = 12, studH = 6, ghost = false, sideStud = false, shine = false, missing = '', label = '', className = '', style }) {
+export default function Brick({ tone = 'coral', studs = 4, pitch = 22, h = 26, depth = 12, studH = 6, ghost = false, sideStud = false, shine = false, missing = '', label = '', crack = false, className = '', style }) {
   const raw = TONES[tone] || (/^#[0-9a-f]{6}$/i.test(tone) ? tone : TONES.coral);
   const n = Math.max(1, studs);
   const H = h;
@@ -116,6 +116,15 @@ export default function Brick({ tone = 'coral', studs = 4, pitch = 22, h = 26, d
             <polygon points={pts([[gx + 10, gy], [gx + 13, gy], [gx + 3, gy + gh], [gx, gy + gh]])} fill="#FFFFFF" opacity="0.45" />
           </>
         )}
+        {crack && (
+          <polyline
+            points={pts([[ox + W * 0.3, oy + T], [ox + W * 0.38, oy + T + H * 0.35], [ox + W * 0.3, oy + T + H * 0.55], [ox + W * 0.42, oy + T + H]])}
+            fill="none"
+            stroke={NAVY}
+            style={{ strokeWidth: 1.8, strokeLinejoin: 'round', strokeLinecap: 'round' }}
+          />
+        )}
+        {crack && <polyline points={pts([[ox + W * 0.38, oy + T + H * 0.35], [ox + W * 0.5, oy + T + H * 0.3]])} fill="none" stroke={NAVY} style={{ strokeWidth: 1.4, strokeLinecap: 'round' }} />}
       </svg>
       {studList}
       {label && (

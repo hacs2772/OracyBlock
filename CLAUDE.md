@@ -16,7 +16,7 @@
 - 서버: asmrBlock과 같은 구성 (Spring Boot + PostgreSQL + MyBatis, 웹은 React). 사용자의 집 PC + Cloudflare Tunnel, Docker(`docker compose`)로 묶어서 나중에 클라우드로 옮기기 쉽게
 - 웹 먼저(휴대폰에서 앱처럼 쓰는 PWA) → 인기가 생기면 앱(Expo)
 - 브릭 모양은 B(테두리)
-- 휴대폰 아래 탭: 여행 판 · 고치기 · 내 탑 · 내 정보 (`docs/concept.md` 7-1절). 로그인은 asmrBlock처럼 이메일 + 비밀번호, 가입 없이 둘러보기도 가능
+- 휴대폰 아래 탭: 여행 판 · 복습 · 내 탑, 내 정보는 오른쪽 위 (`docs/concept.md` 6절). 고치기는 여행 판 안 (`/fix`). 쌓는 속도 `web/src/lib/speed.js` + 서버 `PrefController.DAY_CAP`. 로그인은 asmrBlock처럼 이메일 + 비밀번호, 가입 없이 둘러보기도 가능
 - 코드: `web/`(React + Vite, 색은 `web/src/styles.css`의 `:root`에만), `backend/`(Spring Boot 4 + MyBatis 어노테이션 매퍼 + Flyway), `docker-compose.yml`, 켜는 법 `docs/deploy.md`
   - 대사 `web/src/content/talks.js`(EarToMouth에서 옮김), 레벨·어긋남(NEAR)·4지선다·판정 `web/src/content/build.js`
   - 기록 주인(owner) = 로그인 `u:아이디` / 둘러보기 `v:방문자번호`(헤더 `X-Visitor-Id`). 가입·로그인하면 `UserService.claim`이 옮겨요

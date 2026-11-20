@@ -23,15 +23,17 @@ public class TowerController {
 
     @GetMapping("/tower")
     public Map<String, Object> tower(@AuthenticationPrincipal Long userId, HttpServletRequest req) {
-        List<Map<String, Object>> bricks = tower.bricks(Who.of(userId, req).owner());
+        String owner = Who.of(userId, req).owner();
+        List<Map<String, Object>> bricks = tower.bricks(owner);
         String today = Who.today().toString();
-        Set<Object> days = new HashSet<>();
         int todayCount = 0;
-        for (Map<String, Object> b : bricks) {
-            days.add(b.get("day"));
-            if (today.equals(b.get("day"))) todayCount++;
-        }
-        return Map.of("bricks", bricks, "days", days.size(), "today", todayCount);
+        for (Map<String, Object> b : bricks) if (today.equals(b.get("day"))) todayCount++;
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("bricks", bricks);
+        m.put("activeDays", tower.activeDays(owner));
+        m.put("todayDate", today);
+        m.put("today", todayCount);
+        return m;
     }
 
     @GetMapping("/ranking")
@@ -43,7 +45,7 @@ public class TowerController {
         Map<String, Object> mine = null;
         for (Map<String, Object> r : all) {
             boolean me = userId != null && userId.equals(((Number) r.get("userId")).longValue());
-            Map<String, Object> row = Map.of("rank", r.get("rank"), "nickname", r.get("nickname"), "bricks", r.get("bricks"), "me", me);
+            Map<String, Object> row = Map.of("rank", r.get("rank"), "nickname", r.get("nickname"), "days", r.get("days"), "me", me);
             if (rows.size() < 50) rows.add(row);
             if (me) mine = row;
         }

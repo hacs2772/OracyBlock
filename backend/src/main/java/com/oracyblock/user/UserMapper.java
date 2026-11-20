@@ -61,6 +61,12 @@ public interface UserMapper {
     @Delete("DELETE FROM word WHERE owner = #{owner}")
     void deleteWords(@Param("owner") String owner);
 
+    @Insert("INSERT INTO owner_pref (owner, speed, changed_at) SELECT #{to}, speed, changed_at FROM owner_pref WHERE owner = #{from} ON CONFLICT (owner) DO NOTHING")
+    void copyPref(@Param("from") String from, @Param("to") String to);
+
+    @Delete("DELETE FROM owner_pref WHERE owner = #{owner}")
+    void deletePref(@Param("owner") String owner);
+
     @Update("UPDATE word_answer SET owner = #{to} WHERE owner = #{from}")
     void moveAnswers(@Param("from") String from, @Param("to") String to);
 

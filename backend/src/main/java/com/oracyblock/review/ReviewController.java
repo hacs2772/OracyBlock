@@ -45,8 +45,16 @@ public class ReviewController {
         int next = body.ok() ? Math.min(DAYS.length - 1, stage + 1) : 0;
         LocalDate due = Who.today().plusDays(body.ok() ? DAYS[next] : 1);
         review.schedule(owner, body.key(), next, due, body.ok() ? 0 : 1);
-        review.answer(owner, body.ok());
+        review.answer(owner, body.key(), body.ok(), Who.today());
         return Map.of("stage", next, "dueDay", due.toString());
+    }
+
+    @GetMapping("/review-tower")
+    public Map<String, Object> reviewTower(@AuthenticationPrincipal Long userId, HttpServletRequest req) {
+        String owner = Who.of(userId, req).owner();
+        List<Map<String, Object>> recent = new ArrayList<>(review.towerBricks(owner));
+        Collections.reverse(recent);
+        return Map.of("bricks", recent, "total", review.towerTotal(owner));
     }
 
     /** 고칠 곳을 대화(구조물)마다 묶어서 */

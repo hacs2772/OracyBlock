@@ -46,6 +46,8 @@ public class UserService {
         users.copyWords(from, to);
         users.deleteWords(from);
         users.moveAnswers(from, to);
+        users.copyPref(from, to);
+        users.deletePref(from);
         users.linkVisit(visitorId, Who.today(), userId);
     }
 
@@ -55,6 +57,7 @@ public class UserService {
         users.deleteWords(owner);
         users.deleteAnswers(owner);
         users.deleteFixes(owner);
+        users.deletePref(owner);
         users.delete(userId); // 대화 기록은 함께 지워짐 (ON DELETE CASCADE)
     }
 

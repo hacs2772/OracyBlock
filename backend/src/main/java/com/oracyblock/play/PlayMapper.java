@@ -19,10 +19,16 @@ public interface PlayMapper {
     @Update("""
         UPDATE play SET finished_at = now(), day = #{day}, crooked = #{f.crooked}, bounces = #{f.bounces}, hints = #{f.hints},
           speak_n = #{f.speakN}, write_n = #{f.writeN}, choose_n = #{f.chooseN}, ok_n = #{f.okN}, near_n = #{f.nearN},
-          rescue_n = #{f.rescueN}, bricks = #{f.bricks}
+          rescue_n = #{f.rescueN}, bricks = #{f.bricks}, day_cap = #{dayCap}
         WHERE id = #{id} AND finished_at IS NULL
         """)
-    int finish(@Param("id") long id, @Param("day") LocalDate day, @Param("f") PlayController.FinishRequest f);
+    int finish(@Param("id") long id, @Param("day") LocalDate day, @Param("dayCap") int dayCap, @Param("f") PlayController.FinishRequest f);
+
+    @Select("SELECT COUNT(*) FROM play WHERE owner = #{owner} AND day = #{today} AND finished_at IS NOT NULL")
+    int finishedOn(@Param("owner") String owner, @Param("today") LocalDate today);
+
+    @Select("SELECT COUNT(*) FROM word_answer WHERE owner = #{owner} AND day = #{today}")
+    int answersOn(@Param("owner") String owner, @Param("today") LocalDate today);
 
     @Insert("INSERT INTO fix_item (owner, play_id, turn_idx, kind, prev) VALUES (#{owner}, #{playId}, #{turnIdx}, #{kind}, #{prev})")
     void insertFix(@Param("owner") String owner, @Param("playId") long playId, @Param("turnIdx") int turnIdx,

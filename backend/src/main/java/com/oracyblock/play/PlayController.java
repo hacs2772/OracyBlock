@@ -2,6 +2,7 @@ package com.oracyblock.play;
 
 import com.oracyblock.common.ApiException;
 import com.oracyblock.common.Who;
+import com.oracyblock.pref.PrefController;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -19,9 +20,11 @@ import java.util.Map;
 public class PlayController {
 
     private final PlayMapper plays;
+    private final PrefController.PrefMapper prefs;
 
-    public PlayController(PlayMapper plays) {
+    public PlayController(PlayMapper plays, PrefController.PrefMapper prefs) {
         this.plays = plays;
+        this.prefs = prefs;
     }
 
     public record StartRequest(String talkId, Integer level) {
@@ -57,8 +60,8 @@ public class PlayController {
         if (Boolean.TRUE.equals(row.get("finished"))) return Map.of("ok", true);
         if (body.bricks() != null && body.bricks().length() > 6000) throw new ApiException(HttpStatus.BAD_REQUEST, "기록이 너무 길어요.");
         LocalDate today = Who.today();
-        plays.finish(id, today, body);
         String owner = who.owner();
+        plays.finish(id, today, PrefController.DAY_CAP.get(PrefController.speedOf(prefs, owner)), body);
         if (body.fixes() != null) {
             body.fixes().stream().limit(40)
                     .filter(f -> "hole".equals(f.kind()) || "tilt".equals(f.kind()))
@@ -78,8 +81,14 @@ public class PlayController {
     @GetMapping("/progress")
     public Map<String, Object> progress(@AuthenticationPrincipal Long userId, HttpServletRequest req) {
         String owner = Who.of(userId, req).owner();
-        Map<String, Object> counts = plays.wordCounts(owner, Who.today());
+        LocalDate today = Who.today();
+        Map<String, Object> counts = plays.wordCounts(owner, today);
+        String speed = PrefController.speedOf(prefs, owner);
         Map<String, Object> m = new LinkedHashMap<>();
+        m.put("speed", speed);
+        m.put("dayCap", PrefController.DAY_CAP.get(speed));
+        m.put("finishedToday", plays.finishedOn(owner, today));
+        m.put("answersToday", plays.answersOn(owner, today));
         m.put("plays", plays.finished(owner));
         m.put("fixesOpen", plays.openFixes(owner));
         m.put("wordsDue", counts.get("due"));

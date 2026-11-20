@@ -1,13 +1,15 @@
 // 내 여행 판: 장소 고르기 · 레벨 · 게임 방법
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { talksAtLevel, READY_LEVELS, ALL_LEVELS, LEVEL_DESC, LEVEL_SCALE, dailyCognate } from '../content/build.js';
+import { talksAtLevel, talkById, READY_LEVELS, ALL_LEVELS, LEVEL_DESC, LEVEL_SCALE } from '../content/build.js';
 import { quiet } from '../lib/api.js';
 import { store, useStore } from '../lib/store.js';
 import { countCorrect, tooHard, latestByTalk, parseBricks } from '../lib/progress.js';
-import { speak, unlock } from '../lib/speech.js';
+import { unlock } from '../lib/speech.js';
+import { speedOf } from '../lib/speed.js';
 import Brick from '../components/Brick.jsx';
-import { Logo, Question, Sheet, Stack, Play, Tabs } from '../components/ui.jsx';
+import { TopBar, Question, Sheet, Stack, Tabs } from '../components/ui.jsx';
+import WordQuiz, { BigWordRow } from '../components/WordQuiz.jsx';
 import { Guide, GAME } from '../components/Guides.jsx';
 
 const MINI = { studs: 4, pitch: 9, h: 11, depth: 6, studH: 3 };
@@ -19,10 +21,14 @@ export default function Home() {
   const [prog, setProg] = useState(null);
   const [lvOpen, setLvOpen] = useState(false);
   const [guide, setGuide] = useState(!st.seenGame && st.seenIntro);
+  const [fixes, setFixes] = useState([]);
+  const [spotSheet, setSpotSheet] = useState(null); // 고칠 곳이 있는 장소를 눌렀을 때
+  const [pre, setPre] = useState(null); // 대화 전 단어 맞혀 보기 { talkId, words, done }
   const level = st.level;
 
   useEffect(() => {
     quiet('/progress').then((p) => p && setProg(p));
+    quiet('/fixes').then((f) => f && setFixes(f));
   }, [st.user?.id]);
   useEffect(() => {
     if (st.seenIntro && !st.seenGame) setGuide(true);
@@ -35,7 +41,11 @@ export default function Home() {
   const hard = tooHard(plays, level);
   const maxReady = Math.max(...READY_LEVELS);
   const next = talks.find((t) => !latest.has(t.id)) || talks.find((t) => latest.get(t.id)?.crooked) || talks[0];
-  const cog = dailyCognate();
+  const fixCount = new Map();
+  for (const g of fixes) fixCount.set(g.talkId, (fixCount.get(g.talkId) || 0) + g.items.length);
+  const openFixes = fixes.reduce((n, g) => n + g.items.length, 0);
+  const sp = speedOf(prog?.speed);
+  const preCount = st.settings.preWords == null ? sp.pre : st.settings.preWords;
   const doneCount = talks.filter((t) => latest.has(t.id)).length;
   const rec = hard && level > 1 ? level - 1 : correct >= 3 && level < maxReady ? level + 1 : null;
 
@@ -43,9 +53,24 @@ export default function Home() {
     ? (level < maxReady ? `올바른 탑 3개 완성 · Lv${level + 1}를 추천해요` : '올바른 탑 3개 완성 · 다음 레벨은 준비 중이에요')
     : level < maxReady ? `올바른 탑 ${correct}/3 · ${3 - correct}개 더 쌓으면 Lv${level + 1} 추천` : `올바른 탑 ${correct}/3`;
 
-  const start = (id) => {
+  const go = (id) => {
     unlock();
     nav('/talk/' + id);
+  };
+  // 대화 전에 복습할 단어가 있으면 먼저 몇 개 맞혀 봐요 (건너뛸 수 있음)
+  const start = async (id) => {
+    unlock();
+    setSpotSheet(null);
+    if (!preCount || !prog?.wordsDue) return go(id);
+    const words = await quiet('/words');
+    const today = new Date().toLocaleDateString('sv-SE');
+    const due = (words || []).filter((w) => w.dueDay <= today).slice(0, preCount);
+    if (!due.length) return go(id);
+    setPre({ talkId: id, words: due, done: null });
+  };
+  const tapSpot = (id) => {
+    if (fixCount.get(id)) setSpotSheet(id);
+    else start(id);
   };
   const setLevel = (n) => {
     store.set({ level: n });
@@ -55,10 +80,9 @@ export default function Home() {
 
   return (
     <div className="page has-tabs">
-      <div className="top-row">
-        <Logo />
+      <TopBar>
         <button className="icon-btn" onClick={() => setGuide(true)} aria-label="게임 방법 보기"><Question /></button>
-      </div>
+      </TopBar>
       <div className="title-row">
         <h1>내 여행 판</h1>
         <span className="small muted">완성 {doneCount}곳 · 남은 곳 {talks.length - doneCount}곳</span>
@@ -101,14 +125,15 @@ export default function Home() {
             const p = latest.get(t.id);
             const bricks = p ? parseBricks(p.bricks) : [{ tone: 'mint', ghost: true }];
             const now = next && t.id === next.id && !p;
-            const status = p ? (p.crooked ? '완성 · 비뚤어진 곳' : '완성 · 올바른 탑') : now ? '다음 차례' : '아직';
+            const status = p ? (p.crooked ? '완성' : '완성 · 올바른 탑') : now ? '다음 차례' : '아직';
             const color = p ? (p.crooked ? '#8A5A1A' : '#1B776C') : now ? '#B9473A' : '#4A566B';
             const show = bricks.slice(-8);
             return (
-              <button key={t.id} className={'spot' + (now ? ' now' : '')} onClick={() => start(t.id)} aria-label={`${t.place}, ${status}`}>
+              <button key={t.id} className={'spot' + (now ? ' now' : '')} onClick={() => tapSpot(t.id)} aria-label={`${t.place}, ${status}${fixCount.get(t.id) ? `, 고칠 곳 ${fixCount.get(t.id)}개` : ''}`}>
                 <Stack bricks={show} size={MINI} x0={28} baseY={96} height={100} width={98} />
                 <span className="spot-name">{t.place}</span>
                 <span className="spot-st" style={{ color, fontWeight: p || now ? 700 : 400 }}>{status}</span>
+                {fixCount.get(t.id) > 0 && <span className="chip" style={{ fontSize: 11, padding: '0 6px', background: '#FFE1DB', borderColor: '#FF7967' }}>고칠 곳 {fixCount.get(t.id)}</span>}
               </button>
             );
           })}
@@ -124,20 +149,15 @@ export default function Home() {
 
       <div className="home-cards">
         <Link className="mini-card" to="/fix">
-          <span style={{ fontFamily: 'var(--display)', fontSize: 17 }}>고치기 · 복습</span>
-          <span className="small">복습할 단어 {prog?.wordsDue ?? 0}개 · 고칠 곳 {prog?.fixesOpen ?? 0}개</span>
-          {(prog?.wordsDue || prog?.fixesOpen) ? <span className="small" style={{ color: '#B9473A', fontWeight: 700 }}>오늘 할 차례예요</span> : <span className="small muted">대화를 하면 생겨요</span>}
+          <span style={{ fontFamily: 'var(--display)', fontSize: 17 }}>고칠 곳 {openFixes}개</span>
+          <span className="small">구멍 난 돌기와 비뚤어진 브릭을 다시 만들어요</span>
+          {openFixes > 0 && <span className="small" style={{ color: '#B9473A', fontWeight: 700 }}>고치러 가기</span>}
         </Link>
-        <button className="mini-card" onClick={() => { unlock(); speak(cog.say, 0.85); }} aria-label={`오늘의 닮은 단어, ${cog.ko}, ${cog.like}, 들어 보기`}>
-          <span style={{ fontFamily: 'var(--display)', fontSize: 17 }}>오늘의 닮은 단어</span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
-            <span style={{ flex: 1, minWidth: 0 }}>
-              <span style={{ display: 'block', fontFamily: 'var(--display)', fontSize: 21, lineHeight: 1.1 }}>{cog.ko}</span>
-              <span className="small">≈ {cog.like}</span>
-            </span>
-            <span className="play-dot"><Play size={13} /></span>
-          </span>
-        </button>
+        <Link className="mini-card" to="/review">
+          <span style={{ fontFamily: 'var(--display)', fontSize: 17 }}>복습할 단어 {prog?.wordsDue ?? 0}개</span>
+          <span className="small">맞히면 복습 탑에 단어 브릭이 쌓여요</span>
+          {(prog?.wordsDue || 0) > 0 && <span className="small" style={{ color: '#B9473A', fontWeight: 700 }}>복습하러 가기</span>}
+        </Link>
       </div>
 
       {lvOpen && (
@@ -169,6 +189,37 @@ export default function Home() {
         </Sheet>
       )}
       <Tabs />
+      {spotSheet && (
+        <Sheet title={talkById(spotSheet)?.place} onClose={() => setSpotSheet(null)} labelId="spot-title">
+          <p className="small muted" style={{ marginTop: 4 }}>이 대화에 고칠 곳이 {fixCount.get(spotSheet)}개 있어요.</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 6 }}>
+            <button className="ob-btn coral" onClick={() => nav('/fix?talk=' + spotSheet)}><span className="t">고치기</span></button>
+            <button className="ob-btn" onClick={() => start(spotSheet)}><span className="t">대화 다시 하기</span></button>
+          </div>
+        </Sheet>
+      )}
+      {pre && (
+        <Sheet title="대화 전에 단어 맞혀 보기" onClose={() => go(pre.talkId)} labelId="pre-title">
+          {!pre.done ? (
+            <>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <p className="small muted">복습할 단어 {pre.words.length}개만 먼저 맞혀 볼까요?</p>
+                <button className="link-btn" onClick={() => go(pre.talkId)}>건너뛰기</button>
+              </div>
+              <WordQuiz words={pre.words} lastLabel="다 맞혀 봤어요" onDone={(r) => (r.wrong.length ? setPre({ ...pre, done: r }) : go(pre.talkId))} />
+            </>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 6 }}>
+              <p style={{ fontSize: 14, lineHeight: 1.55 }}>{pre.done.wrong.length}개를 놓쳤어요. 복습 탭에서 마저 해 보면 대화가 더 잘 들려요.</p>
+              {pre.done.wrong.map((w) => <BigWordRow key={w.key} w={w} />)}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <button className="ob-btn coral" onClick={() => nav('/review')}><span className="t">복습하러 가기</span></button>
+                <button className="ob-btn" onClick={() => go(pre.talkId)}><span className="t">대화 시작</span></button>
+              </div>
+            </div>
+          )}
+        </Sheet>
+      )}
       {guide && <Guide slides={GAME} label="게임 방법" doneLabel="알겠어요" skipLabel="닫기" onDone={() => { setGuide(false); store.set({ seenGame: true }); }} />}
     </div>
   );
