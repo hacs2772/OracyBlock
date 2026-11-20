@@ -10,6 +10,7 @@ import { speedOf } from '../lib/speed.js';
 import Brick from '../components/Brick.jsx';
 import { TopBar, Question, Sheet, Stack, Tabs } from '../components/ui.jsx';
 import WordQuiz, { BigWordRow } from '../components/WordQuiz.jsx';
+import TowerAlert from '../components/TowerAlert.jsx';
 import { Guide, GAME } from '../components/Guides.jsx';
 
 const MINI = { studs: 4, pitch: 9, h: 11, depth: 6, studH: 3 };
@@ -22,6 +23,7 @@ export default function Home() {
   const [lvOpen, setLvOpen] = useState(false);
   const [guide, setGuide] = useState(!st.seenGame && st.seenIntro);
   const [fixes, setFixes] = useState([]);
+  const [tower, setTower] = useState(null);
   const [spotSheet, setSpotSheet] = useState(null); // 고칠 곳이 있는 장소를 눌렀을 때
   const [pre, setPre] = useState(null); // 대화 전 단어 맞혀 보기 { talkId, words, done }
   const level = st.level;
@@ -29,6 +31,7 @@ export default function Home() {
   useEffect(() => {
     quiet('/progress').then((p) => p && setProg(p));
     quiet('/fixes').then((f) => f && setFixes(f));
+    quiet('/tower').then(setTower);
   }, [st.user?.id]);
   useEffect(() => {
     if (st.seenIntro && !st.seenGame) setGuide(true);
@@ -83,6 +86,7 @@ export default function Home() {
       <TopBar>
         <button className="icon-btn" onClick={() => setGuide(true)} aria-label="게임 방법 보기"><Question /></button>
       </TopBar>
+      <TowerAlert tower={tower} speed={prog?.speed} />
       <div className="title-row">
         <h1>내 여행 판</h1>
         <span className="small muted">완성 {doneCount}곳 · 남은 곳 {talks.length - doneCount}곳</span>

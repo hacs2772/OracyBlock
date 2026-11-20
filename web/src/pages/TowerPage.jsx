@@ -5,7 +5,8 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { quiet } from '../lib/api.js';
 import { useStore } from '../lib/store.js';
-import { speedOf, speedByCap, restEffect, crackRule, SPEEDS, SPEED_KEYS } from '../lib/speed.js';
+import { speedOf, speedByCap, restEffect, crackRule, SPEEDS, SPEED_KEYS, MAX_FALL } from '../lib/speed.js';
+import TowerAlert from '../components/TowerAlert.jsx';
 import { LEVEL_SCALE } from '../content/build.js';
 import { dayTone, WEEK_TONE, WEEK_NAME } from '../lib/progress.js';
 import Brick from '../components/Brick.jsx';
@@ -40,14 +41,16 @@ export function buildTower(bricks, activeDays, today, nowSpeed) {
   let rest = 0;
   let cracks = 0;
   let fallIn = null;
+  let capped = false;
   if (prev != null) {
     rest = dayNum(today) - dayNum(prev) - 1; // 마지막으로 공부한 날과 오늘 사이에 통째로 쉰 날
     const e = restEffect(rest, speedOf(nowSpeed));
     drop(e.fallen);
     cracks = Math.min(e.cracks, stack.length);
     fallIn = cracks ? e.fallIn : null;
+    capped = e.capped;
   }
-  return { stack, fallen, rest, cracks, fallIn };
+  return { stack, fallen, rest, cracks, fallIn, capped };
 }
 
 function Pyramid({ stack, cracks }) {
@@ -118,13 +121,14 @@ export default function TowerPage() {
         <button className="link-btn" onClick={() => setInfo(true)}>? 쌓이는 방법</button>
       </div>
       <p className="small muted">오늘 {tower?.today ?? 0}/{sp.bricks}개 · 하루 최대 {sp.bricks}개 ({sp.label})</p>
+      <TowerAlert tower={tower} speed={prog?.speed} />
       {t.cracks > 0 && (
         <p className="note warn">{t.rest}일 쉬어서 브릭 {t.cracks}개에 금이 갔어요. {t.fallIn === 1 ? '오늘 밤' : t.fallIn === 2 ? '내일 밤' : `${t.fallIn - 1}일 뒤 밤`}까지 공부하지 않으면 떨어져요. 대화나 복습 하나만 하면 다시 단단해져요.</p>
       )}
       <div className="plate" style={{ boxShadow: 'none' }}>
         {t.stack.length ? <Pyramid stack={t.stack} cracks={t.cracks} /> : <p className="small" style={{ padding: '30px 0', textAlign: 'center' }}>대화를 하나 끝내면 첫 브릭이 쌓여요.</p>}
       </div>
-      {t.fallen > 0 && <p className="small muted">오래 쉬는 동안 브릭 {t.fallen}개가 떨어졌어요.</p>}
+      {t.fallen > 0 && <p className="small muted">쉬는 동안 브릭 {t.fallen}개가 떨어졌어요. 한 번 쉴 때 떨어지는 건 최대 {MAX_FALL}개까지예요.</p>}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 10px' }} className="small muted" aria-label="요일마다 브릭 색">
         {[1, 2, 3, 4, 5, 6, 0].map((d) => (
           <span key={d} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
