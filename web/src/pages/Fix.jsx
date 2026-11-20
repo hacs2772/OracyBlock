@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { talkById, judge } from '../content/build.js';
 import { api, quiet } from '../lib/api.js';
-import { parseBricks } from '../lib/progress.js';
+import { parseBricks, freshFixes } from '../lib/progress.js';
 import { speak, unlock, sfx, listen, canListen, stopListening } from '../lib/speech.js';
 import { Stack, Play, Back, Mic, Ja, toast } from '../components/ui.jsx';
 import { BigWord } from './Talk.jsx';
@@ -14,7 +14,7 @@ const BIG = { studs: 4, pitch: 14, h: 16, depth: 8, studH: 4 };
 export default function Fix() {
   const [groups, setGroups] = useState(null);
   const [mode, setMode] = useState(null);
-  const load = () => quiet('/fixes').then((f) => setGroups(f || []));
+  const load = () => quiet('/fixes').then((f) => setGroups(freshFixes(f)));
   useEffect(() => {
     load();
   }, []);
@@ -44,8 +44,9 @@ export default function Fix() {
         const t = talkById(g.talkId);
         if (!t) return null;
         const holes = g.items.filter((x) => x.kind === 'hole').length;
-        const skips = g.items.filter((x) => x.kind === 'skip').length;
-        const tilts = g.items.length - holes - skips;
+        const skipThem = g.items.filter((x) => x.kind === 'skip' && t.steps[x.turnIdx]?.type === 'them').length;
+        const skips = g.items.filter((x) => x.kind === 'skip').length - skipThem;
+        const tilts = g.items.length - holes - skips - skipThem;
         const bricks = parseBricks(g.bricks).slice(-9);
         return (
           <div className="card fix-card" key={g.playId}>
@@ -56,6 +57,7 @@ export default function Fix() {
               <span style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
                 {holes > 0 && <span className="chip">놓친 단어 {holes}</span>}
                 {tilts > 0 && <span className="chip">비뚤어진 브릭 {tilts}</span>}
+                {skipThem > 0 && <span className="chip">빠진 뜻 {skipThem}</span>}
                 {skips > 0 && <span className="chip">빠진 대답 {skips}</span>}
               </span>
               <button className="ob-btn sm coral" onClick={() => { unlock(); setMode({ group: g }); }}><span className="t">다시 만들기</span></button>
@@ -75,6 +77,8 @@ function Remake({ group, onExit }) {
   const [ph, setPh] = useState({ fb: '', n: 0, shake: -1, solved: null, listening: false });
   const item = items[k];
   const step = item ? talk.steps[item.turnIdx] : null;
+  // 뜻 맞히기를 두 번 튕겨 빠진 자리(them + skip)는 "무슨 뜻일까요?"로 다시 끼워요
+  const asMean = item && (item.kind === 'hole' || step?.type === 'them');
   const them = step?.type === 'them' ? step : talk.steps[(item?.turnIdx || 1) - 1];
 
   useEffect(() => {
@@ -98,7 +102,7 @@ function Remake({ group, onExit }) {
     const nb = bricks.map((b, i) => {
       if (i !== item.turnIdx) return b;
       if (item.kind === 'hole') return { ...b, missing: '', cls: 'b-pop' };
-      if (item.kind === 'skip') return { tone: 'coral', shine: true, cls: 'b-drop' };
+      if (item.kind === 'skip') return step.type === 'them' ? { tone: 'mint', cls: 'b-drop' } : { tone: 'coral', shine: true, cls: 'b-drop' };
       return { ...b, tilt: false, cls: 'b-stand' };
     });
     setBricks(nb);
@@ -122,7 +126,7 @@ function Remake({ group, onExit }) {
   };
 
   // 대화 화면과 같은 보기 (맞는 대답은 모두 들어 있어요)
-  const options = item.kind === 'hole' ? step.sets[step.answerSet] : step.choose;
+  const options = asMean ? step.sets[step.answerSet] : step.choose;
   const mic = async () => {
     if (ph.listening) return stopListening();
     setPh({ ...ph, listening: true, fb: '' });
@@ -135,7 +139,7 @@ function Remake({ group, onExit }) {
       miss(-1, '소리가 안 들렸어요. 골라서 대답해도 돼요.');
     }
   };
-  const optWords = item.kind !== 'hole' ? step.options[0].words : step.keys;
+  const optWords = asMean ? step.keys : step.options[0].words;
   // 브릭이 많으면 무대(높이 200)에 다 들어가게 얇게
   const vis = bricks.filter((b) => !b.gone).length;
   const h = Math.max(9, Math.min(BIG.h, Math.floor(168 / Math.max(1, vis))));
@@ -158,7 +162,7 @@ function Remake({ group, onExit }) {
         </div>
         <div className="ptr" style={{ left: markLeft, top: Math.max(4, ptrTop), color: ph.solved ? '#1B776C' : '#E0533F' }}>
           <svg width="22" height="14" viewBox="0 0 22 14" aria-hidden="true"><path d="M21 7H3M8 2L3 7l5 5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-          <span>{ph.solved ? { hole: '채워졌어요', tilt: '바로 섰어요', skip: '끼워졌어요' }[item.kind] : { hole: '놓친 단어', tilt: '어긋난 대답', skip: '빠진 대답' }[item.kind]}</span>
+          <span>{ph.solved ? { hole: '채워졌어요', tilt: '바로 섰어요', skip: '끼워졌어요' }[item.kind] : (asMean && item.kind === 'skip' ? '빠진 뜻' : { hole: '놓친 단어', tilt: '어긋난 대답', skip: '빠진 대답' }[item.kind])}</span>
         </div>
       </div>
       <div className="bubble">
@@ -166,33 +170,33 @@ function Remake({ group, onExit }) {
           <div className="small muted">{talk.partner}</div>
           <div className="ko">{them.line.ko}{them.casual && <span className="tag-casual">반말</span>}</div>
           <Ja>{them.line.ja}</Ja>
-          {(item.kind !== 'hole' || ph.solved) && <div className="mean">{them.line.mean}</div>}
+          {(!asMean || ph.solved) && <div className="mean">{them.line.mean}</div>}
         </div>
         <button className="icon-btn" onClick={() => speak(them.line.ja, 0.9)} aria-label="다시 듣기"><span className="play-dot"><Play /></span></button>
       </div>
-      {item.kind !== 'hole' && item.prev && <p className="small muted">{item.kind === 'skip' ? '지난번에 튕긴 대답' : '지난번 내 대답'}: <b style={{ color: '#24324A' }}>{item.prev}</b></p>}
+      {!asMean && item.prev && <p className="small muted">{item.kind === 'skip' ? '지난번에 튕긴 대답' : '지난번 내 대답'}: <b style={{ color: '#24324A' }}>{item.prev}</b></p>}
 
       {!ph.solved && (
         <>
-          <h2 style={{ fontSize: 21 }}>{item.kind === 'hole' ? '무슨 뜻일까요?' : item.kind === 'skip' ? '이번엔 맞는 대답을 골라 볼까요?' : '이번엔 딱 맞게 대답해 볼까요?'}</h2>
+          <h2 style={{ fontSize: 21 }}>{asMean ? '무슨 뜻일까요?' : item.kind === 'skip' ? '이번엔 맞는 대답을 골라 볼까요?' : '이번엔 딱 맞게 대답해 볼까요?'}</h2>
           {ph.fb && <p className="fb">{ph.fb}</p>}
           
           <div className="opts">
             {options.map((o, i) => {
-              const text = item.kind === 'hole' ? o : o.ko;
+              const text = asMean ? o : o.ko;
               return (
                 <div className="opt-row" key={text}>
                   <button
-                    className={'opt ' + (item.kind === 'hole' ? 'mint' : '') + (ph.shake === i ? ' shake-' + (ph.n % 2) : '')}
+                    className={'opt ' + (asMean ? 'mint' : '') + (ph.shake === i ? ' shake-' + (ph.n % 2) : '')}
                     onClick={() => {
-                      if (item.kind === 'hole') return o === them.line.mean ? solve('hear') : miss(i, '아쉬워요. 한 번 더 들어 보고 골라 보세요.');
+                      if (asMean) return o === them.line.mean ? solve('hear') : miss(i, '아쉬워요. 한 번 더 들어 보고 골라 보세요.');
                       if (o.kind === 'ok') return solve('choose');
                       return miss(i, o.kind === 'near' ? '이것도 비뚤게 얹혀요. 다른 걸 골라 보세요.' : '이 대답은 튕겨 나가요. 다시 골라 보세요.');
                     }}
                   >
                     {text}
                   </button>
-                  {item.kind !== 'hole' && <button className="icon-btn" onClick={() => speak(o.ja, 0.9)} aria-label={`${o.ko} 들어 보기`}><span className="play-dot sm"><Play size={10} /></span></button>}
+                  {!asMean && <button className="icon-btn" onClick={() => speak(o.ja, 0.9)} aria-label={`${o.ko} 들어 보기`}><span className="play-dot sm"><Play size={10} /></span></button>}
                 </div>
               );
             })}

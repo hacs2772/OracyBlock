@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { talksAtLevel, talkById, READY_LEVELS, ALL_LEVELS, LEVEL_DESC, LEVEL_SCALE } from '../content/build.js';
 import { quiet } from '../lib/api.js';
 import { store, useStore } from '../lib/store.js';
-import { countCorrect, tooHard, latestByTalk, parseBricks } from '../lib/progress.js';
+import { countCorrect, tooHard, latestByTalk, parseBricks, freshFixes } from '../lib/progress.js';
 import { unlock } from '../lib/speech.js';
 import { speedOf } from '../lib/speed.js';
 import Brick from '../components/Brick.jsx';
@@ -33,7 +33,7 @@ export default function Home() {
 
   useEffect(() => {
     quiet('/progress').then((p) => p && setProg(p));
-    quiet('/fixes').then((f) => f && setFixes(f));
+    quiet('/fixes').then((f) => f && setFixes(freshFixes(f)));
     quiet('/tower').then(setTower);
   }, [st.user?.id]);
 

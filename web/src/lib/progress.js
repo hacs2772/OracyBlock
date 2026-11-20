@@ -1,4 +1,6 @@
-// 서버에서 받은 대화 기록으로 여행 판·레벨 추천을 계산해요
+// 서버에서 받은 대화 기록으로 학습 화면·레벨 추천을 계산해요
+import { talkById } from '../content/build.js';
+
 export const parseBricks = (s) => {
   try {
     return (JSON.parse(s || '[]') || []).map((b) => ({ tone: b.t, shine: !!b.s, tilt: !!b.k, missing: b.m || '', gone: !!b.g }));
@@ -29,3 +31,14 @@ export function latestByTalk(plays) {
 export const WEEK_TONE = ['#F48FB1', '#29B6A5', '#FF7967', '#FFC857', '#5AB0E6', '#A792E0', '#7CC46B']; // 일 월 화 수 목 금 토
 export const WEEK_NAME = ['일', '월', '화', '수', '목', '금', '토'];
 export const dayTone = (day) => WEEK_TONE[new Date(day + 'T00:00:00').getDay()];
+
+/**
+ * 대사를 바꾸기 전(차례 수가 달라지기 전)에 생긴 고칠 곳은 차례 번호가 안 맞아서 빼요.
+ * 브릭 수 = 차례 수 + 꼭대기 1개일 때만 지금 대사와 맞아요
+ */
+export function freshFixes(groups) {
+  return (groups || []).filter((g) => {
+    const t = talkById(g.talkId);
+    return t && parseBricks(g.bricks).length === t.steps.length + 1;
+  });
+}

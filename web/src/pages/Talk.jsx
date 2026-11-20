@@ -227,16 +227,26 @@ export default function Talk() {
       setPh({ ...ph, solved: true, fb: '' });
     } else {
       fly('mint', false);
+      if (ph.wrong + 1 >= 2) return skipMeaning(i);
       setPh({ ...ph, wrong: ph.wrong + 1, shake: i, n: ph.n + 1, fb: '퉁! 튕겨 나갔어요. 한 번 더 들어 보세요.' });
       later(1000, () => say(step.line.ja, rate * 0.8));
     }
+    return null;
+  };
+  // 뜻 맞히기도 두 번 튕기면 뜻을 보여 주고 넘어가요. 이 차례 민트 브릭은 못 쌓아요 (고치기에 "빠진 뜻")
+  const skipMeaning = (i) => {
+    step.keys.forEach((w) => stats.current.missed.set(w.key, w));
+    stats.current.fixes.push({ turnIdx: step.idx, kind: 'skip', prev: '' });
+    setBricks((b) => [...b, { tone: 'mint', gone: true, key: b.length }]);
+    setPh({ ...ph, wrong: ph.wrong + 1, shake: i, n: ph.n + 1, fb: '', solved: true, skipped: true });
   };
   const refreshMeaning = () => {
     if (ph.solved) return;
     if (ph.set === step.answerSet) {
-      setPh({ ...ph, wrong: ph.wrong + 1, shake: 99, n: ph.n + 1, fb: '이 4개 안에 있어요! 다시 들어 보세요.' });
       sfx('thud');
-      return;
+      if (ph.wrong + 1 >= 2) return skipMeaning(99);
+      setPh({ ...ph, wrong: ph.wrong + 1, shake: 99, n: ph.n + 1, fb: '이 4개 안에 있어요! 다시 들어 보세요.' });
+      return null;
     }
     setPh({ ...ph, set: ph.set ? 0 : 1, fb: '', shake: -1 });
   };
@@ -517,8 +527,14 @@ function ThemPanel({ say, talkId, step, ph, setPh, partner, rate, pick, refresh,
   if (ph.solved) {
     return (
       <div className="result">
-        <h3>{ph.wrong ? '딸깍! 다시 듣고 알아들었어요' : ph.hint ? '툭. 힌트로 알아들었어요' : '딸깍! 알아들었어요'}</h3>
-        {ph.wrong > 0 && <p className="small muted">놓친 단어는 구멍 난 돌기로 남아서 고치기에 다시 나와요.</p>}
+        <h3>{ph.skipped ? '퉁. 이번 뜻 브릭은 못 쌓았어요' : ph.wrong ? '딸깍! 다시 듣고 알아들었어요' : ph.hint ? '툭. 힌트로 알아들었어요' : '딸깍! 알아들었어요'}</h3>
+        {ph.skipped && (
+          <>
+            <p className="small muted">두 번 튕겨서 뜻을 보여 드려요. 빠진 자리는 고치기에서 다시 끼울 수 있어요.</p>
+            <div className="skip-ans"><div style={{ flex: 1, minWidth: 0, fontWeight: 700 }}>{step.line.mean}</div></div>
+          </>
+        )}
+        {ph.wrong > 0 && !ph.skipped && <p className="small muted">놓친 단어는 구멍 난 돌기로 남아서 고치기에 다시 나와요.</p>}
         {ph.hint && !ph.wrong && <p className="small muted">힌트를 써서 브릭이 살짝 비뚤게 쌓였어요. 다음엔 힌트 없이 해 봐요!</p>}
         <div className="small" style={{ fontWeight: 700 }}>꼭 들어야 할 단어</div>
         {step.keys.map((w) => <BigWord key={w.key} w={w} />)}

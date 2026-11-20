@@ -45,7 +45,7 @@ const NEAR = {
       say: ['ひとつです', '히또쯔데스', '한 개예요'],
     },
   ],
-  'izakaya:5': [
+  'izakaya:7': [
     {
       words: [['たべます|食べます', '타베마스', '먹어요 (앞으로)']],
       why: '타나카 씨는 "먹어 봤어요?"처럼 지난 일을 물었어요. 타베마스는 "먹어요"라서 때가 안 맞아요. 타베마시따(먹었어요)처럼 말하면 딱 맞아요.',
@@ -108,7 +108,7 @@ const NEAR = {
 
 /** 예/아니오 질문에 "하이(네)"만 해도 통하는 대답 (몇 번째 대답인지). 사용자 피드백: "료꼬-데스까?"에 "하이"가 튕겼음 */
 const YES = {
-  'plane:1': 0, 'plane:5': 0, 'plane:11': 0, 'izakaya:1': 0, 'izakaya:5': 1, 'shinkansen:1': 0, 'shinkansen:7': 1,
+  'plane:1': 0, 'plane:5': 0, 'plane:11': 0, 'izakaya:1': 0, 'izakaya:7': 1, 'shinkansen:1': 0, 'shinkansen:7': 1,
   'park:3': 0, 'park:7': 0, 'festival:5': 0, 'izakaya2:5': 0, 'guesthouse2:7': 0, 'guesthouse2:9': 0,
   'onsen2:1': 0, 'onsen2:5': 0, 'park2:1': 0,
 };
