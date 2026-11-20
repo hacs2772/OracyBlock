@@ -428,3 +428,55 @@ textarea.input { height: 120px; padding: 10px 12px; resize: vertical; line-heigh
   .opts { gap: 12px; }
   .opt { min-height: 42px; padding-top: 4px; padding-bottom: 4px; }
 }
+
+/* 소개 팝업 그림 (LandingSlides.jsx): 310×250 안에 진짜 브릭·얼굴로 */
+.sl-art { position: relative; width: 310px; height: 250px; text-align: left; line-height: 1.35; }
+.sl-bub { position: absolute; padding: 7px 12px; border: 2px solid var(--mint-ink); border-radius: 4px 16px 16px 16px; background: #fff; font-size: 17px; display: flex; flex-direction: column; gap: 1px; }
+.sl-bub.me { border-color: var(--navy); border-radius: 16px 4px 16px 16px; background: var(--pink-bg); }
+.sl-ja { font-size: 12px; color: var(--faint); }
+.sl-sub { font-size: 12px; color: var(--ink2); }
+.sl-q { position: absolute; right: -10px; top: -12px; display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: var(--red); color: #fff; border: 2px solid var(--navy); font-family: var(--display); font-size: 17px; }
+.sl-wave { display: flex; align-items: center; gap: 4px; height: 30px; }
+.sl-wave i { display: block; width: 4px; border-radius: 2px; background: var(--mint); animation: slWave 0.9s ease-in-out infinite alternate both; }
+@keyframes slWave { from { transform: scaleY(0.3); } to { transform: scaleY(1); } }
+.sl-chip { display: inline-block; padding: 2px 8px; border-radius: 8px; border: 1.5px solid var(--yellow-line); background: var(--yellow-bg); font-size: 13px; font-weight: 700; }
+.sl-opt { width: 150px; padding: 6px 10px; border: 2px solid var(--navy); border-radius: 7px; background: #e3f6f3; box-shadow: 0 3px 0 var(--navy); font-size: 14px; font-weight: 700; }
+.sl-opt.pick { outline: 3px solid var(--coral); outline-offset: 2px; }
+.sl-say { font-family: var(--display); font-size: 22px; white-space: nowrap; }
+.sl-note { padding: 6px 10px; border-radius: 10px; background: var(--yellow-bg); border: 2px solid #f1d08a; font-size: 14px; }
+.sl-pop { animation: slPop 0.4s both cubic-bezier(0.3, 1.4, 0.5, 1); transform-origin: 10% 100%; }
+@keyframes slPop { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: none; } }
+.sl-pulse { animation: slPulse 1.6s ease-in-out infinite both; }
+@keyframes slPulse { 0%, 100% { transform: scale(1); } 15% { transform: scale(1.25); } 30% { transform: scale(1); } }
+.sl-fade { animation: giLate 0.35s both ease-out; }
+.sl-drop { animation: lpDrop 0.62s both cubic-bezier(0.32, 0.02, 0.42, 1); transform-origin: 50% 92%; }
+.sl-out { animation: slOut 0.5s both ease-in; }
+@keyframes slOut { from { opacity: 1; } to { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .sl-wave i, .sl-pulse { animation: none; } .sl-pop, .sl-fade, .sl-drop, .sl-out { animation-duration: 1ms !important; animation-delay: 0s !important; } }
+
+/* 소개: 첫 화면 오른쪽 저절로 흘러가는 대화 */
+.lp-live { width: 100%; max-width: 440px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; padding: 16px 14px 14px; border-radius: 28px; border: 3px solid var(--navy); box-shadow: 0 8px 0 var(--navy); background: var(--cream); }
+.lp-live-chat { min-height: 132px; justify-content: flex-start; }
+.lp-live-stage { position: relative; height: 196px; border-radius: 14px; overflow: hidden; padding: 0; box-shadow: none; }
+.lp-live-say { position: absolute; left: 12px; top: 10px; font-family: var(--display); font-size: 18px; animation: giLate 0.35s both ease-out; }
+.lp-hero-grid .lp-live { grid-area: show; align-self: center; }
+.lp-navbtn { appearance: none; border: 0; background: none; padding: 0; font: inherit; color: inherit; cursor: pointer; }
+/* 소개: 처음 안내 6장을 아래로 */
+.lp-intro { display: flex; flex-direction: column; gap: clamp(28px, 5vw, 56px); }
+.lp-intro-row { display: flex; align-items: center; gap: clamp(20px, 5vw, 64px); }
+.lp-intro-row.flip { flex-direction: row-reverse; }
+.lp-intro-art { flex: 0 0 auto; width: 320px; height: 260px; display: flex; align-items: center; justify-content: center; border-radius: 22px; background: #fff; border: 2px solid var(--card-line); }
+.lp-intro-txt { flex: 1; min-width: 0; }
+.lp-intro-txt h3 { font-size: clamp(24px, 2.6vw, 32px); line-height: 1.2; }
+.lp-intro-txt p { margin-top: 8px; font-size: 17px; line-height: 1.6; color: var(--ink2); max-width: 460px; }
+@media (max-width: 700px) {
+  .lp-intro-row, .lp-intro-row.flip { flex-direction: column; align-items: stretch; gap: 12px; }
+  .lp-intro-art { width: 100%; height: 250px; }
+  .lp-intro-art > div { transform: scale(0.94); }
+}
+/* 소개: 팝업 여는 큰 버튼 두 개 */
+.lp-more { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.lp-more-card { appearance: none; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 18px 20px; border: 3px solid var(--navy); border-radius: 18px; background: var(--yellow-bg); box-shadow: 0 6px 0 var(--navy); text-align: left; cursor: pointer; }
+.lp-more-card:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--navy); }
+.lp-more-t { font-family: var(--display); font-size: 24px; line-height: 1.2; }
+.lp-more-s { font-size: 14px; line-height: 1.5; color: var(--ink2); }

@@ -1,193 +1,129 @@
-// 소개 페이지 (웹 시안 Web.dc.html 그대로): 처음 온 사람의 oracyblock.com, 그리고 /about
+// 소개 페이지: 처음 온 사람의 oracyblock.com, 그리고 /about (concept 11-15)
 // 휴대폰과 PC 둘 다. "무료로 시작하기"를 누르면 학습으로 들어가요
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { GAME_TALKS } from '../content/build.js';
-import { speak, sfx, unlock } from '../lib/speech.js';
+import { unlock } from '../lib/speech.js';
 import { store } from '../lib/store.js';
-import { SPEEDS, SPEED_KEYS } from '../lib/speed.js';
-import Brick, { brickBox } from '../components/Brick.jsx';
-import { LogoMark, Play, Refresh, Tabs } from '../components/ui.jsx';
+import { LogoMark, Tabs } from '../components/ui.jsx';
 import { openContact } from '../components/Contact.jsx';
-import { INTRO } from '../components/Guides.jsx';
+import { INTRO, Guide } from '../components/Guides.jsx';
+import { TALK_SLIDES, TOWER_SLIDES } from '../components/LandingSlides.jsx';
+import Face from '../components/Face.jsx';
+import { Stack } from '../components/ui.jsx';
 
-const ANS = '뭐 마시고 있어요?';
-const SETS = [
-  ['혼자 왔어요?', '어디서 왔어요?', ANS, '여기 자주 와요?'],
-  ['뭐 먹고 있어요?', '맥주 좋아해요?', '한 잔 더 할래요?', '여기 맛있죠?'],
+
+/**
+ * 첫 화면 오른쪽: 진짜 대화 화면처럼 저절로 흘러가는 짧은 대화 (concept 11-15)
+ * 상대 말 (?) → 뜻을 알아듣고 민트 브릭 → 내 차례 (?) → 대답하고 코랄 브릭 → 다음 말 … → 꼭대기
+ */
+const LIVE = [
+  { them: { ko: '나니 논데루노?', ja: '何飲んでるの？', mean: '뭐 마시고 있어요?' }, me: '비-루데스!' },
+  { them: { ko: '이-네! 캄빠이 시요-!', ja: 'いいね！乾杯しよう！', mean: '좋네! 건배하자!' }, me: '캄빠이!' },
 ];
-const DEMO = { studs: 4, pitch: 20, h: 22, depth: 11, studH: 5 };
-const DAYC = ['#29B6A5', '#FF7967', '#FFC857', '#6BB8E8', '#A792E0', '#8CCB6E', '#F49AC1'];
-
-/** 첫 화면 오른쪽: 처음 안내 팝업 6장을 그대로 저절로 넘기며 보여 줘요 (우리가 뭘 하는지 = 읽지 않고 듣고 말하기) */
-const SLIDE_MS = [5200, 5200, 6400, 4800, 4400, 5600];
-function IntroShow() {
-  const [i, setI] = useState(0);
-  const [paused, setPaused] = useState(false);
-  const artRef = useRef(null);
-  const [scale, setScale] = useState(1);
+const LIVE_SIZE = { studs: 4, pitch: 20, h: 22, depth: 10, studH: 5 };
+function LiveTalk() {
+  const [n, setN] = useState(0); // 0~9 단계, 한 바퀴 돌면 처음부터
   useEffect(() => {
-    const fit = () => {
-      const el = artRef.current;
-      if (el) setScale(Math.min(1.3, el.clientWidth / 310));
-    };
-    fit();
-    window.addEventListener('resize', fit);
-    return () => window.removeEventListener('resize', fit);
-  }, []);
-  useEffect(() => {
-    if (paused) return undefined;
-    const t = setTimeout(() => setI((n) => (n + 1) % INTRO.length), SLIDE_MS[i] || 5200);
+    const t = setTimeout(() => setN((x) => (x + 1) % 10), n === 9 ? 2600 : 1500);
     return () => clearTimeout(t);
-  }, [i, paused]);
-  const s = INTRO[i];
-  const go = (n) => { setI((n + INTRO.length) % INTRO.length); setPaused(true); };
+  }, [n]);
+  const turn = Math.min(1, Math.floor(n / 4));
+  const k = n - turn * 4; // 0 상대 말(?) · 1 알아들음 · 2 내 차례(?) · 3 대답
+  const L = LIVE[turn];
+  const bricks = [];
+  for (let i = 0; i <= turn; i++) {
+    const kk = i < turn ? 4 : k;
+    if (kk >= 1) bricks.push({ tone: 'mint', key: 'm' + i, cls: i === turn && kk === 1 ? 'b-drop' : '' });
+    if (kk >= 3) bricks.push({ tone: 'coral', shine: true, key: 'c' + i, cls: i === turn && kk === 3 ? 'b-drop' : '' });
+  }
+  if (n >= 8) bricks.push({ tone: 'yellow', key: 'cap', cls: n === 8 ? 'b-drop' : '' });
+  const ghost = n < 8 ? [{ tone: k === 0 || k === 1 ? 'mint' : 'coral', ghost: true, key: 'g' }] : [];
+  const guess = k === 0 && n < 8;
+  const showMe = (k >= 2 && n < 8) || (turn === 1 && k === 0 && n < 8);
+  const meText = k >= 3 || (turn === 1 && k === 0) ? (turn === 1 && k === 0 ? LIVE[0].me : L.me) : null;
   return (
-    <div className="lp-show" aria-roledescription="슬라이드" aria-label="OracyBlock 소개">
-      <div className="lp-show-art" ref={artRef}>
-        <div key={i} style={{ transform: `scale(${scale})`, transformOrigin: '50% 50%', lineHeight: 0 }} dangerouslySetInnerHTML={{ __html: s.art }} />
-      </div>
-      <div key={'t' + i} className="lp-show-txt fade-up" aria-live="polite">
-        <h2>{s.t}</h2>
-        <p>{s.b}</p>
-      </div>
-      <div className="lp-show-foot">
-        <button className="icon-btn" onClick={() => go(i - 1)} aria-label="이전 장"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#24324A" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button>
-        <div className="dots">
-          {INTRO.map((_, j) => <button key={j} className={'lp-dot' + (j === i ? ' on' : '')} onClick={() => go(j)} aria-label={`${j + 1}번째 장`} aria-current={j === i ? 'step' : undefined} />)}
-        </div>
-        <button className="icon-btn" onClick={() => go(i + 1)} aria-label="다음 장"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#24324A" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg></button>
-      </div>
-    </div>
-  );
-}
-
-function Demo() {
-  const [st, setSt] = useState({ set: 0, wrong: [], mode: 'idle', busy: false, done: false, k: 0, note: '', shake: -1 });
-  const box = brickBox(DEMO);
-  const X = 19 + 5 + 3 * DEMO.pitch;
-  const plateTop = 128;
-  const at = (i) => ({ position: 'absolute', left: X - 5, top: plateTop - i * DEMO.h - box.lift });
-  const rows = [{ tone: 'mint' }, { tone: 'coral', shine: true }];
-
-  const pick = (label, i) => {
-    if (st.busy || st.done) return;
-    unlock();
-    const k = st.k ? 0 : 1;
-    if (label === ANS) {
-      sfx('snap', 0.36);
-      setSt({ ...st, mode: 'ok', k, busy: true, note: '' });
-      setTimeout(() => setSt((s) => ({ ...s, busy: false, done: true })), 700);
-    } else {
-      sfx('bounce', 0.4);
-      setSt({ ...st, mode: 'no', k, busy: true, note: '' });
-      setTimeout(() => {
-        setSt((s) => {
-          const wrong = [...s.wrong, s.set + '-' + i];
-          if (wrong.length === 1) speak('何飲んでるの？', 0.7);
-          return { ...s, busy: false, wrong };
-        });
-      }, 1150);
-    }
-  };
-  const refresh = () => {
-    if (st.busy || st.done) return;
-    if (SETS[st.set].includes(ANS)) {
-      sfx('thud');
-      setSt({ ...st, shake: st.shake === 0 ? 1 : 0, note: '이 4개 안에 있어요! 다시 들어 보세요' });
-    } else setSt({ ...st, set: st.set ? 0 : 1, note: '' });
-  };
-  let msg = '무슨 뜻일까요? 맞는 브릭을 끼워 보세요';
-  if (st.note) msg = st.note;
-  else if (st.mode === 'no' && st.busy) msg = '퉁! 저 멀리 튕겨 나갔어요';
-  else if (st.wrong.length === 1 && !st.done) msg = '느리게 한 번 더 들려줄게요';
-  if (st.mode === 'ok') msg = `딸깍! "${ANS}"였어요`;
-  const moving = st.mode === 'ok' || (st.mode === 'no' && st.busy);
-
-  return (
-    <div className="lp-demo">
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-        <span style={{ fontFamily: 'var(--display)', fontSize: 22 }}>직접 끼워 보기</span>
-        <button className="lp-play" onClick={() => { unlock(); speak('何飲んでるの？', 1); }}><span className="play-dot" style={{ width: 32, height: 32 }}><Play /></span>듣기</button>
-      </div>
-      <div className="bubble" style={{ marginTop: 10 }}>
-        <div style={{ flex: 1 }}>
-          <div className="small muted"><b style={{ color: '#24324A' }}>이자카야 옆자리 사람</b> 반말</div>
-          <div className="ko" style={{ fontSize: 18 }}>나니 논데루노?</div>
-          <div lang="ja" className="ja">何飲んでるの？</div>
-        </div>
-      </div>
-      <div style={{ position: 'relative', width: 260, height: 150, margin: '6px auto 0' }} aria-hidden="true">
-        <div style={{ position: 'absolute', left: 19, top: plateTop - (5 + 5 + 11) }}><Brick tone="plate" studs={10} pitch={20} h={11} depth={11} studH={5} /></div>
-        {rows.map((r, i) => <div key={i} style={at(i)}><Brick tone={r.tone} shine={r.shine} {...DEMO} /></div>)}
-        {!moving && !st.done && <div style={at(2)}><Brick tone="mint" ghost {...DEMO} /></div>}
-        {(moving || st.done) && (
-          <div key={st.k + st.mode} className={'lp-a ' + (st.mode === 'ok' ? 'lp-drop' : 'lp-bounce')} style={at(2)}>
-            <Brick tone="mint" {...DEMO} />
+    <div className="lp-live" aria-label="대화 화면 미리 보기: 상대 말을 듣고 뜻을 맞히면 민트 브릭, 대답을 고르면 코랄 브릭이 쌓여요" role="img">
+      <div className="tk-chat lp-live-chat">
+        {turn === 1 && k === 0 && n < 8 && (
+          <div className="tk-row me" key={'pm' + n}>
+            <div className="tk-b me"><div className="tk-main">{LIVE[0].me}</div></div>
+            <Face kind="me" size={40} />
+          </div>
+        )}
+        {n < 8 ? (
+          <div className="tk-row them" key={'t' + turn}>
+            <Face kind="office" size={40} talking={guess} />
+            <div className={'tk-b them' + (guess ? ' guess' : '')}>
+              {k >= 2 ? (
+                <>
+                  <div className="tk-main">{L.them.mean}</div>
+                  <div className="tk-sub">{L.them.ko}</div>
+                </>
+              ) : (
+                <>
+                  <div className="tk-main">{L.them.ko}</div>
+                  <div className="ja">{L.them.ja}</div>
+                  {k === 1 && <div className="tk-mean fade-up">{L.them.mean}</div>}
+                </>
+              )}
+              {guess && <span className="tk-q">?</span>}
+            </div>
+          </div>
+        ) : (
+          <div className="tk-row them" key="end">
+            <Face kind="office" size={40} />
+            <div className="tk-b them"><div className="tk-main">대화 하나 완성!</div><div className="tk-sub">브릭 4개 + 꼭대기 1개</div></div>
+          </div>
+        )}
+        {showMe && !(turn === 1 && k === 0) && (
+          <div className="tk-row me" key={'me' + turn}>
+            <div className={'tk-b me' + (meText == null ? ' ask' : '')}>
+              {meText == null ? <span className="tk-ask">?</span> : <div className="tk-main">{meText}</div>}
+            </div>
+            <Face kind="me" size={40} />
           </div>
         )}
       </div>
-      <p aria-live="polite" style={{ margin: '4px 0 6px', minHeight: 22, textAlign: 'center', fontFamily: 'var(--display)', fontSize: 19 }}>{msg}</p>
-      {!st.done ? (
-        <>
-          <div className={st.note ? 'shake-' + st.shake : ''} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {SETS[st.set].map((label, i) => (
-              <button key={st.set + label} className="lp-opt" disabled={st.wrong.includes(st.set + '-' + i)} onClick={() => pick(label, i)} aria-label={label}>
-                <Brick tone="mint" w={250} studs={5} h={32} depth={10} studH={5} label={label} />
-              </button>
-            ))}
-          </div>
-          <button className="refresh" style={{ width: '100%', marginTop: 8 }} disabled={st.busy} onClick={refresh}><Refresh />{st.set ? '앞 4개 다시 보기' : '여기엔 맞는 뜻이 없어요'}</button>
-        </>
-      ) : (
-        <div style={{ textAlign: 'center' }}>
-          <p style={{ margin: '0 0 8px', fontFamily: 'var(--display)', fontSize: 17 }}>꼭 들어야 할 단어</p>
-          <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 8 }}>
-            {[['논데루', '마시고 있어', 'のんでる'], ['나니', '뭐', 'なに']].map(([ko, mean, ja]) => (
-              <button key={ko} className="lp-play" onClick={() => speak(ja, 0.85)} aria-label={`${ko}, ${mean}, 들어 보기`}>
-                <span className="play-dot" style={{ width: 32, height: 32 }}><Play /></span>{ko}<span style={{ fontWeight: 400 }}>{mean}</span>
-              </button>
-            ))}
-          </div>
-          <p style={{ margin: '12px 0 0', fontSize: 14, lineHeight: 1.6 }}>다음은 내 차례예요. 하고 싶은 대답("비-루데스", "하이보-루데스")을 고르면 브릭이 바로 위에 쌓여요.</p>
-          <button className="lp-play" style={{ marginTop: 8, padding: '0 14px' }} onClick={() => setSt({ set: 0, wrong: [], mode: 'idle', busy: false, done: false, k: 0, note: '', shake: -1 })}>다시 해 보기</button>
+      <div className="lp-live-stage plate">
+        <div style={{ position: 'absolute', left: '50%', top: 0, marginLeft: -(LIVE_SIZE.pitch * 2 + 14) }}>
+          <Stack bricks={[...bricks, ...ghost]} size={LIVE_SIZE} x0={20} baseY={176} height={190} width={160} plate={6} />
         </div>
-      )}
+        <span className="lp-live-say" key={'s' + n}>{k === 0 && n < 8 ? '무슨 뜻일까요?' : k === 1 && n < 8 ? '딸깍! 알아들었어요' : k === 2 && n < 8 ? '하고 싶은 대답을 골라요' : k === 3 && n < 8 ? '딸깍! 딱 맞아요' : ''}</span>
+      </div>
     </div>
   );
 }
 
-function Pyramid() {
-  const lv = [1, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 5, 5];
-  const SC = { 1: 1, 2: 0.82, 3: 0.66, 4: 0.52, 5: 0.42 };
-  let y = 214;
+/** 처음 안내 6장을 아래로 쭉: 화면에 들어올 때마다 그림이 다시 움직여요 */
+function IntroRow({ s, i }) {
+  const ref = useRef(null);
+  const [seen, setSeen] = useState(0);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return setSeen(1);
+    const io = new IntersectionObserver((es) => es.forEach((e) => e.isIntersecting && setSeen((x) => x + 1)), { threshold: 0.4 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
   return (
-    <div style={{ position: 'relative', width: 240, height: 240, borderRadius: 16, border: '2px solid #E2CFA9', background: '#F4E9D2' }} aria-hidden="true">
-      <div style={{ position: 'absolute', left: 120 - (8 * 18 + 9) / 2 - 5, top: 214 - (5 + 4 + 9) }}><Brick tone="plate" studs={8} pitch={18} h={8} depth={9} studH={4} /></div>
-      {lv.map((l, i) => {
-        const s = SC[l];
-        const sz = { studs: 4, pitch: 16 * s, h: 14 * s, depth: 9 * s, studH: Math.max(2, Math.round(4 * s)) };
-        const W = 4 * sz.pitch;
-        const pos = { position: 'absolute', left: 120 - (W + sz.depth) / 2 - 5, top: y - (5 + sz.studH + sz.depth + sz.h) };
-        y -= sz.h;
-        return <div key={i} style={pos}><Brick tone={DAYC[i % 7]} {...sz} /></div>;
-      })}
-      <span style={{ position: 'absolute', right: 12, top: 12, fontFamily: 'var(--display)', fontSize: 16 }}>고수</span>
-      <span style={{ position: 'absolute', right: 12, bottom: 10, fontFamily: 'var(--display)', fontSize: 16 }}>Lv1</span>
+    <div className={'lp-intro-row' + (i % 2 ? ' flip' : '')} ref={ref}>
+      <div className="lp-intro-art">
+        {seen > 0 && <div key={seen} style={{ lineHeight: 0 }} dangerouslySetInnerHTML={{ __html: s.art }} />}
+      </div>
+      <div className="lp-intro-txt">
+        <h3>{s.t}</h3>
+        <p>{s.b}</p>
+      </div>
     </div>
   );
 }
 
-const TIERS = [
-  { name: '딱 맞음', say: '"비-루!" "하이보-루데스"', desc: '핵심 단어가 들어 있으면 딱 맞아요. 바로 위에 일자로 쌓여요.', style: { left: 40, top: 52 } },
-  { name: '어긋남', say: '(가리키며) "코레!" (이거!)', desc: '통하긴 하지만 핵심 단어가 빠졌어요. 비뚤게 얹히고, 이유와 바꿀 단어를 알려 줘요.', style: { left: 50, top: 47, transform: 'rotate(7deg)', transformOrigin: '50% 92%' } },
-  { name: '틀림', say: '"오이시-!" (맛있어요!)', desc: '질문과 상관없는 말이에요. 저 멀리 튕겨 나가요.', style: { left: 112, top: -8, transform: 'rotate(38deg) scale(.8)' }, lines: true },
-];
 const TOPICS = ['#자기소개', '#여행', '#음식·술', '#고향', '#일', '#가족', '#연애', '#취미', '#고민'];
-const RANKS = [['토모', 6], ['곰', 5], ['나', 4, true], ['스시', 3], ['민트', 2]];
 
 export default function Landing() {
   const nav = useNavigate();
+  const [pop, setPop] = useState(null); // 'talk' | 'tower'
   const start = () => {
     unlock();
     store.set({ seenIntro: true });
@@ -204,9 +140,8 @@ export default function Landing() {
           </Link>
           <nav className="lp-nav" aria-label="소개 메뉴">
             <Link className="lp-hide-sm" to="/" onClick={() => store.set({ seenIntro: true })}>학습</Link>
-            <a className="lp-hide-sm" href="#try">대화해 보기</a>
-            <a className="lp-hide-sm" href="#bricks">브릭 이야기</a>
-            <a className="lp-hide-sm" href="#tower">내 탑과 순위</a>
+            <button className="lp-hide-sm lp-navbtn" onClick={() => setPop('talk')}>대화해 보기</button>
+            <button className="lp-hide-sm lp-navbtn" onClick={() => setPop('tower')}>내 탑과 순위</button>
             <Link to="/login">로그인</Link>
             <button className="ob-btn sm coral lp-hide-sm" onClick={start}><span className="t">무료로 시작</span></button>
           </nav>
@@ -217,7 +152,7 @@ export default function Landing() {
             <h1 className="lp-h1">Hear it. Say it.<br />No reading required.</h1>
             <p className="lp-sub">듣고, 말하고, 읽기 공부는 생략.</p>
           </div>
-          <IntroShow />
+          <LiveTalk />
           <div className="lp-hero-bottom">
             <p className="lp-p" style={{ maxWidth: 520, fontSize: 17 }}>일본 여행에서 옆자리 사람이 말을 걸어올 때. 다 알아듣지 못해도 괜찮아요. 들리는 단어로 뜻을 맞히고, 하고 싶은 대답을 골라 쌓으면서 스몰토크를 이어 가요.</p>
             <div style={{ display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap', marginTop: 26 }}>
@@ -228,67 +163,19 @@ export default function Landing() {
           </div>
         </section>
 
-        <section id="try" className="lp-sec lp-row" style={{ alignItems: 'center' }}>
-          <div style={{ flex: '1 1 360px', minWidth: 0 }}>
-            <h2 className="lp-h2">직접 끼워 보기</h2>
-            <p className="lp-p">이자카야 옆자리 사람이 말을 걸어요. 듣기를 누르고, 들리는 단어로 뜻을 맞혀 브릭을 끼워 보세요.</p>
-          </div>
-          <Demo />
+        <section className="lp-sec lp-intro">
+          {INTRO.map((x, i) => <IntroRow key={x.t} s={x} i={i} />)}
         </section>
 
-        <section id="bricks" className="lp-sec">
-          <h2 className="lp-h2">단어 하나면 통해요</h2>
-          <p className="lp-p">문법보다 단어가 먼저예요. 대답은 골라서 해요. 핵심 단어가 들어간 대답을 고르면 브릭이 바로 위에 딱 맞게 쌓여요. 어색하면 비뚤게 얹히고, 왜 그런지 알려 드려요. 상관없는 말이면 저 멀리 튕겨 나가요.</p>
-          <div className="plate" style={{ marginTop: 28, padding: '22px clamp(14px,3vw,32px) 28px' }}>
-            <div className="bubble" style={{ display: 'inline-flex', fontSize: 15 }}><span><b>나니 논데루노?</b> <span className="muted">뭐 마시고 있어요?</span></span></div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, marginTop: 18 }}>
-              {TIERS.map((t) => (
-                <div key={t.name} style={{ flex: '1 1 240px', minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-                  <div style={{ position: 'relative', width: 200, height: 150 }} aria-hidden="true">
-                    <div style={{ position: 'absolute', left: 20, top: 96 }}><Brick tone="plate" studs={6} pitch={20} h={11} depth={11} studH={5} /></div>
-                    <div style={{ position: 'absolute', left: 40, top: 74 }}><Brick tone="mint" {...DEMO} /></div>
-                    <div style={{ position: 'absolute', ...t.style }}><Brick tone="coral" shine {...DEMO} /></div>
-                    {t.lines && (
-                      <svg width="40" height="40" viewBox="0 0 40 40" style={{ position: 'absolute', left: 84, top: 34 }}><path d="M6 30c4-6 4-14 0-20M14 34c6-9 6-21 0-30" fill="none" stroke="#24324A" strokeWidth="2" strokeLinecap="round" /></svg>
-                    )}
-                  </div>
-                  <p style={{ margin: '6px 0 0', fontFamily: 'var(--display)', fontSize: 24 }}>{t.name}</p>
-                  <p style={{ margin: '4px 0 0', fontSize: 16, fontWeight: 700 }}>{t.say}</p>
-                  <p className="muted" style={{ margin: '4px 0 0', fontSize: 14, lineHeight: 1.6, maxWidth: 260 }}>{t.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section id="tower" className="lp-sec lp-row">
-          <div style={{ flex: '1 1 360px', minWidth: 0, maxWidth: 520 }}>
-            <h2 className="lp-h2">매일 쌓는 내 탑</h2>
-            <p className="lp-p">대화를 하나 끝낼 때마다 브릭이 하나씩 쌓여요. 하루에 몇 개까지 쌓을지는 내가 골라요 ({SPEED_KEYS.map((k) => `${SPEEDS[k].label} ${SPEEDS[k].bricks}개`).join(' · ')}). 어려운 대화일수록 브릭이 얇아져서, 얇은 브릭이 높이 쌓일수록 고수예요.</p>
-            <p className="lp-p" style={{ marginTop: 10 }}>빨리 쌓은 탑은 쉬는 날에 빨리 흔들려요. 금이 가도 대화나 복습 하나면 다시 단단해져요. 맞힌 단어는 단어가 적힌 브릭으로 복습 탑에 쌓여요.</p>
-            <p className="lp-p" style={{ marginTop: 10 }}>순위는 브릭 수가 아니라 <b>공부한 날 수</b>로 매겨요. 얼마나 꾸준히 했는지를 겨뤄요.</p>
-          </div>
-          <div style={{ flex: '1 1 360px', minWidth: 0, display: 'flex', flexWrap: 'wrap', gap: 20, justifyContent: 'center' }}>
-            <Pyramid />
-            <div style={{ width: 260, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }} aria-label="순위 예시">
-              <p style={{ margin: '0 0 8px', fontFamily: 'var(--display)', fontSize: 19 }}>이번 주 꾸준함 순위</p>
-              <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 6, height: 130, borderBottom: '3px solid #E2CB9C' }}>
-                {RANKS.map(([name, days, me], i) => (
-                  <div key={name} style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-                    <span style={{ fontSize: 12, fontWeight: 700 }}>{days}일</span>
-                    <div style={{ display: 'flex', flexDirection: 'column-reverse', alignItems: 'center', ...(me ? { outline: '3px solid #FF7967', outlineOffset: 4, borderRadius: 4 } : null) }}>
-                      {Array.from({ length: days }, (_, s) => (
-                        <div key={s} style={{ width: 34, height: 14, background: DAYC[(i * 2 + s) % 7], border: '2px solid #24324A', borderRadius: 3, marginTop: -2 }} />
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 6, marginTop: 4 }}>
-                {RANKS.map(([name, , me]) => <div key={name} style={{ flex: 1, minWidth: 0, textAlign: 'center', fontSize: 12, ...(me ? { fontWeight: 700, color: '#B9473A' } : null) }}>{name}</div>)}
-              </div>
-            </div>
-          </div>
+        <section className="lp-sec lp-more">
+          <button className="lp-more-card" onClick={() => setPop('talk')}>
+            <span className="lp-more-t">대화는 이렇게 해요</span>
+            <span className="lp-more-s">듣고 뜻 맞히기, 단어 하나로 대답하기, 비뚤게·튕기는 브릭</span>
+          </button>
+          <button className="lp-more-card" onClick={() => setPop('tower')}>
+            <span className="lp-more-t">매일 쌓는 내 탑과 순위</span>
+            <span className="lp-more-s">하루에 쌓는 브릭, 쉬면 생기는 금, 꾸준함 순위</span>
+          </button>
         </section>
 
         <section className="lp-sec">
@@ -320,6 +207,8 @@ export default function Landing() {
         </footer>
       </div>
       <Tabs className="lp-tabs" />
+      {pop === 'talk' && <Guide slides={TALK_SLIDES} label="대화해 보기" doneLabel="직접 해 보기" skipLabel="닫기" onSkip={() => setPop(null)} onDone={() => { setPop(null); start(); }} />}
+      {pop === 'tower' && <Guide slides={TOWER_SLIDES} label="내 탑과 순위" doneLabel="알겠어요" skipLabel="닫기" onDone={() => setPop(null)} />}
     </div>
   );
 }

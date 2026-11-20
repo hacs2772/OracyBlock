@@ -1,4 +1,4 @@
-// 안내 팝업 두 가지: 처음 온 사람 안내(6장) · 게임 방법(3장)
+// 안내 팝업: 처음 온 사람 안내(6장) · 게임 방법(3장). art는 SVG 글자(guideArt.js) 또는 그림 부품(LandingSlides.jsx)
 // 그림과 움직임은 시안 그대로 (guideArt.js + styles.css 의 .in-* · .gi-*)
 import { useEffect, useRef, useState } from 'react';
 import { INTRO_ART, GAME_ART } from './guideArt.js';
@@ -17,7 +17,7 @@ export const GAME = [
   { t: '이렇게 해요', b: '상대 말을 듣고 맞는 뜻 브릭을 끼운 다음, 하고 싶은 대답을 골라 쌓아요. 맞는 대답은 여러 개일 수 있어요.', art: GAME_ART[2] },
 ];
 
-export function Guide({ slides, label, doneLabel, onDone, skipLabel = '건너뛰기' }) {
+export function Guide({ slides, label, doneLabel, onDone, onSkip, skipLabel = '건너뛰기' }) {
   const [i, setI] = useState(0);
   const artRef = useRef(null);
   const [scale, setScale] = useState(1);
@@ -41,10 +41,14 @@ export function Guide({ slides, label, doneLabel, onDone, skipLabel = '건너뛰
           <span className="small muted">
             {label} · {i + 1}/{slides.length}
           </span>
-          <button className="link-btn" onClick={onDone}>{skipLabel}</button>
+          <button className="link-btn" onClick={onSkip || onDone}>{skipLabel}</button>
         </div>
         <div className="guide-art" ref={artRef}>
-          <div key={i} style={{ transform: `scale(${scale})`, transformOrigin: '50% 50%', lineHeight: 0 }} dangerouslySetInnerHTML={{ __html: s.art }} />
+          {typeof s.art === 'function' ? (
+            <div key={i} style={{ transform: `scale(${scale})`, transformOrigin: '50% 50%' }}><s.art /></div>
+          ) : (
+            <div key={i} style={{ transform: `scale(${scale})`, transformOrigin: '50% 50%', lineHeight: 0 }} dangerouslySetInnerHTML={{ __html: s.art }} />
+          )}
         </div>
         <h2 id="guide-title">{s.t}</h2>
         <p>{s.b}</p>
