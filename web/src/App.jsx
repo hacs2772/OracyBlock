@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import Home from './pages/Home.jsx';
 import Learn from './pages/Learn.jsx';
+import Shop from './pages/Shop.jsx';
 import Talk from './pages/Talk.jsx';
 import Fix from './pages/Fix.jsx';
 import Review from './pages/Review.jsx';
@@ -44,6 +45,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={firstVisit ? <Navigate to="/about" replace /> : <Home />} />
         <Route path="/learn" element={<Learn />} />
+        <Route path="/shop" element={<Shop />} />
         <Route path="/about" element={<Landing />} />
         <Route path="/talk/:id" element={<Talk />} />
         <Route path="/fix" element={<Fix />} />

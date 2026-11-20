@@ -6,12 +6,18 @@ import { buildTower } from '../pages/TowerPage.jsx';
 
 export default function TowerAlert({ tower, speed }) {
   if (!tower) return null;
-  const t = buildTower(tower.bricks, tower.activeDays, tower.todayDate, speed);
+  const t = buildTower(tower.bricks, tower.activeDays, tower.todayDate, speed, tower.guardDays);
   const w = t.capped ? null : tonight(t.rest, speedOf(speed), t.stack.length);
   if (!w) return null;
+  // 오늘을 쉬어가기권으로 골랐거나, 방어권이 있으면 금은 막혀요 (상점·미션)
+  const restToday = (tower.guardDays || []).some((g) => g.day === tower.todayDate);
+  if (restToday) return <div className="note" role="status">오늘은 <b>쉬어 가는 날</b>이에요. 공부하지 않아도 탑이 그대로예요.</div>;
+  if (w.kind !== 'fall' && tower.shields > 0) {
+    return <div className="note" role="status">오늘 밤 금이 갈 차례지만 <b>브릭 방어권</b>이 막아 줘요 (남은 방어권 {tower.shields}개).</div>;
+  }
   return (
     <div className="note warn" role="status">
-      <b>오늘 밤까지 공부하지 않으면</b> {w.kind === 'fall' ? `내 탑 브릭 ${w.n}개가 떨어져요.` : '내 탑 꼭대기에 금이 가요.'} 복습 하나나 대화 하나면 지킬 수 있어요.
+      <b>오늘 밤까지 공부하지 않으면</b> {w.kind === 'fall' ? `내 탑 ${w.n}층이 떨어져요.` : '내 탑 꼭대기에 금이 가요.'} 복습 하나나 대화 하나면 지킬 수 있어요.
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0 14px', marginTop: 4 }}>
         <Link to="/review" style={{ fontWeight: 700 }}>복습하러 가기</Link>
         {speed !== 'slow' && <Link to="/me">쌓는 속도 낮추기</Link>}

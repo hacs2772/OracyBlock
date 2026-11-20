@@ -1,5 +1,5 @@
 // 홈 (시안 B, concept 11-16): 지금 할 것 하나만 크게
-// 큰 칸 = 다음 대화 + [대화 시작] · 작은 한 줄 = 오늘 탑 브릭 · 복습 단어 · 고칠 곳 · 작은 내 탑 + 이번 주 순위 · 사용 방법 / 내 탑과 순위
+// 큰 칸 = 다음 대화 + [대화 시작] · 작은 한 줄 = 오늘 탑 n층 · 복습 단어 · 고칠 곳 · 미션 보상 · 작은 내 탑 + 이번 주 순위 · 사용 방법 / 내 탑과 순위
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { quiet } from '../lib/api.js';
@@ -25,6 +25,7 @@ export default function Home() {
   const [fixes, setFixes] = useState([]);
   const [tower, setTower] = useState(null);
   const [rank, setRank] = useState(null);
+  const [shop, setShop] = useState(null);
   const [pop, setPop] = useState(null); // 'talk' | 'tower'
   const level = st.level;
 
@@ -32,6 +33,7 @@ export default function Home() {
     quiet('/progress').then((p) => p && setProg(p));
     quiet('/fixes').then((f) => f && setFixes(freshFixes(f)));
     quiet('/tower').then(setTower);
+    quiet('/shop').then(setShop);
     if (st.user) quiet('/ranking?scope=week').then(setRank);
   }, [st.user?.id]);
 
@@ -43,13 +45,14 @@ export default function Home() {
   const fin = Math.min(tower?.today ?? prog?.finishedToday ?? 0, cap);
   const due = prog?.wordsDue || 0;
   const openFixes = fixes.reduce((n, g) => n + g.items.length, 0);
-  const t = tower ? buildTower(tower.bricks, tower.activeDays, tower.todayDate, prog?.speed) : null;
+  const t = tower ? buildTower(tower.bricks, tower.activeDays, tower.todayDate, prog?.speed, tower.guardDays) : null;
   const floors = t?.stack.length || 0;
   const days = tower?.activeDays?.length ?? 0;
   const left = Math.max(0, cap - fin);
   // 작은 탑: 위쪽 7층 + 오늘 더 쌓을 수 있는 만큼 점선
   const mini = [...(t?.stack || []).slice(-7).map((b, i, arr) => ({ tone: dayTone(b.day), key: i, crack: i >= arr.length - (t?.cracks || 0) })), ...Array.from({ length: left }, (_, i) => ({ tone: 'coral', ghost: true, key: 'g' + i }))];
   const myRank = rank?.rows?.find((r) => r.me) || rank?.mine;
+  const ready = (shop?.missions || []).filter((m) => !m.claimed && m.n >= m.target).length;
 
   return (
     <div className="page has-tabs">
@@ -76,13 +79,19 @@ export default function Home() {
       )}
 
       <div className="hm-line">
-        <Link to="/tower">오늘 탑 브릭 <b>{fin}/{cap}</b></Link>
+        <Link to="/tower">오늘 탑 <b>{fin}/{cap}층</b></Link>
         <span aria-hidden="true">·</span>
         <Link to="/review">복습 단어 <b>{due}개</b></Link>
         {openFixes > 0 && (
           <>
             <span aria-hidden="true">·</span>
             <Link to="/fix">고칠 곳 <b>{openFixes}곳</b></Link>
+          </>
+        )}
+        {ready > 0 && (
+          <>
+            <span aria-hidden="true">·</span>
+            <Link to="/shop" className="hm-ready">미션 보상 <b>{ready}개</b> 받기</Link>
           </>
         )}
       </div>

@@ -94,6 +94,13 @@ const TAB_ICONS = {
       <path d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z" />
     </svg>
   ),
+  shop: (c) => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true">
+      <path d="M4 9h16l-1 11H5z" />
+      <path d="M8 9V7a4 4 0 0 1 8 0v2" />
+      <rect x="9" y="13" width="6" height="4" rx="1" />
+    </svg>
+  ),
   intro: (c) => (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M4 6h11a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H9l-4 3v-3H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z" />
@@ -120,6 +127,7 @@ const TABS = [
   ['/learn', 'home', '학습'],
   ['/review', 'review', '복습'],
   ['/tower', 'tower', '내 탑'],
+  ['/shop', 'shop', '상점·미션'],
 ];
 export function Tabs({ className = '' }) {
   const { pathname } = useLocation();

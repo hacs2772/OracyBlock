@@ -2,6 +2,7 @@ package com.oracyblock.user;
 
 import com.oracyblock.common.ApiException;
 import com.oracyblock.common.Who;
+import com.oracyblock.shop.ShopService;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,9 +14,11 @@ import java.util.Map;
 public class UserService {
 
     private final UserMapper users;
+    private final ShopService shop;
 
-    public UserService(UserMapper users) {
+    public UserService(UserMapper users, ShopService shop) {
         this.users = users;
+        this.shop = shop;
     }
 
     /** 화면에 돌려줄 내 정보 (비밀번호는 빼고) */
@@ -49,6 +52,7 @@ public class UserService {
         users.copyPref(from, to);
         users.deletePref(from);
         users.linkVisit(visitorId, Who.today(), userId);
+        shop.claimOwner(from, to);
     }
 
     @Transactional
@@ -58,6 +62,7 @@ public class UserService {
         users.deleteAnswers(owner);
         users.deleteFixes(owner);
         users.deletePref(owner);
+        shop.deleteOwner(owner);
         users.delete(userId); // 대화 기록은 함께 지워짐 (ON DELETE CASCADE)
     }
 

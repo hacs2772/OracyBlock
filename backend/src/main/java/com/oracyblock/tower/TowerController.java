@@ -1,6 +1,7 @@
 package com.oracyblock.tower;
 
 import com.oracyblock.common.Who;
+import com.oracyblock.shop.ShopService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -16,14 +17,17 @@ import java.util.*;
 public class TowerController {
 
     private final TowerMapper tower;
+    private final ShopService shop;
 
-    public TowerController(TowerMapper tower) {
+    public TowerController(TowerMapper tower, ShopService shop) {
         this.tower = tower;
+        this.shop = shop;
     }
 
     @GetMapping("/tower")
     public Map<String, Object> tower(@AuthenticationPrincipal Long userId, HttpServletRequest req) {
         String owner = Who.of(userId, req).owner();
+        shop.applyShields(owner); // 방어권이 있으면 금 가는 날을 먼저 지켜요
         List<Map<String, Object>> bricks = tower.bricks(owner);
         String today = Who.today().toString();
         int todayCount = 0;
@@ -33,6 +37,7 @@ public class TowerController {
         m.put("activeDays", tower.activeDays(owner));
         m.put("todayDate", today);
         m.put("today", todayCount);
+        m.putAll(shop.towerExtras(owner)); // guardDays · looks · shields
         return m;
     }
 

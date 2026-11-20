@@ -515,3 +515,32 @@ textarea.input { height: 120px; padding: 10px 12px; resize: vertical; line-heigh
 .hb-review { background: var(--yellow-bg); }
 .hb-tower { background: var(--sky-bg); }
 @media (max-width: 360px) { .hb-btn.ob-btn.sm .t { font-size: 13px; } }
+
+/* 상점·미션 (concept 11-21) */
+.sp-wallet { display: flex; align-items: center; gap: 12px; padding: 10px 14px; }
+.sp-num { font-family: var(--display); font-size: 28px; line-height: 1; }
+.sp-h { display: flex; align-items: baseline; justify-content: space-between; margin-top: 6px; }
+.sp-h h2 { font-size: 21px; }
+.sp-list { padding: 4px 12px; }
+.sp-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1.5px dashed var(--line); }
+.sp-row:first-child { border-top: 0; }
+.sp-ic { display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; flex-shrink: 0; border: 2px solid var(--navy); border-radius: 9px; }
+.sp-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.sp-txt b { font-family: var(--display); font-weight: 400; font-size: 16px; line-height: 1.2; word-break: keep-all; }
+.sp-fill { display: inline-flex; gap: 3px; vertical-align: middle; }
+.sp-fill i { display: block; width: 14px; height: 9px; border: 1.5px solid var(--navy); border-radius: 2px; background: #fff; }
+.sp-reward { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; font-size: 14px; white-space: nowrap; }
+.sp-got { white-space: nowrap; }
+.sp-get.ob-btn.sm { margin-top: 6px; padding: 4px 10px; }
+.sp-get .t, .sp-buy .t { display: inline-flex; align-items: center; gap: 5px; font-size: 15px; white-space: nowrap; }
+.sp-dot { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; margin-left: 6px; padding: 0 5px; border-radius: 9px; background: var(--coral); color: var(--navy); font-size: 12px; font-weight: 700; border: 1.5px solid var(--navy); }
+.sp-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.sp-item { display: flex; flex-direction: column; gap: 4px; padding: 10px; }
+.sp-item b { font-family: var(--display); font-weight: 400; font-size: 17px; }
+.sp-art { display: flex; justify-content: center; padding: 8px 0; border-radius: 10px; background: var(--cream); }
+.sp-item > .small.muted { flex: 1; }
+.sp-item .sp-buy.ob-btn.sm { margin-top: 14px; }
+.sp-buy.on { background: var(--mint-bg); }
+.sp-days { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 6px; }
+.it-art { position: relative; width: 96px; height: 70px; }
+.hm-line a.hm-ready { color: var(--coral-ink); font-weight: 700; }

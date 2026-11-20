@@ -11,13 +11,17 @@ import { LEVEL_SCALE } from '../content/build.js';
 import { dayTone, WEEK_TONE, WEEK_NAME } from '../lib/progress.js';
 import Brick from '../components/Brick.jsx';
 import { TopBar, Sheet, Tabs, Question } from '../components/ui.jsx';
+import { FlagTop, LanternTop, GOLD_PLATE } from '../components/Looks.jsx';
 import { Guide } from '../components/Guides.jsx';
 import { TOWER_SLIDES } from '../components/LandingSlides.jsx';
 
 const dayNum = (s) => Math.round(new Date(s + 'T00:00:00Z').getTime() / 864e5);
 
-/** 공부한 날을 따라가며 탑을 쌓고, 쉰 날만큼 금 가고 떨어뜨려요. 지난번 쉰 동안은 그때의 속도로, 지금 쉬는 중이면 지금 속도로 */
-export function buildTower(bricks, activeDays, today, nowSpeed) {
+/**
+ * 공부한 날을 따라가며 탑을 쌓고, 쉰 날만큼 금 가고 떨어뜨려요. 지난번 쉰 동안은 그때의 속도로, 지금 쉬는 중이면 지금 속도로.
+ * guardDays(방어권·쉬어가기권으로 지켜진 날)는 공부한 날처럼 쉰 날을 끊어 줘요 (브릭은 안 쌓여요)
+ */
+export function buildTower(bricks, activeDays, today, nowSpeed, guardDays = []) {
   const byDay = new Map();
   for (const b of bricks) {
     if (!byDay.has(b.day)) byDay.set(b.day, []);
@@ -33,7 +37,9 @@ export function buildTower(bricks, activeDays, today, nowSpeed) {
       fallen++;
     }
   };
-  for (const d of activeDays) {
+  const guards = (guardDays || []).map((g) => (typeof g === 'string' ? g : g.day)).filter((g) => g < today);
+  const days = [...new Set([...activeDays, ...guards])].sort();
+  for (const d of days) {
     if (prev != null) drop(restEffect(dayNum(d) - dayNum(prev) - 1, speedOf(thenSpeed || nowSpeed)).fallen);
     const list = byDay.get(d) || [];
     stack.push(...list);
@@ -55,7 +61,7 @@ export function buildTower(bricks, activeDays, today, nowSpeed) {
   return { stack, fallen, rest, cracks, fallIn, capped };
 }
 
-function Pyramid({ stack, cracks }) {
+function Pyramid({ stack, cracks, looks = [] }) {
   let y = 0;
   const placed = stack.map((b, i) => {
     const k = LEVEL_SCALE[b.level] || 1;
@@ -67,7 +73,12 @@ function Pyramid({ stack, cracks }) {
   const height = Math.max(120, y + 40);
   return (
     <div style={{ position: 'relative', height, width: '100%' }} role="img" aria-label={`내 탑, ${stack.length}층${cracks ? `, 브릭 ${cracks}개에 금이 갔어요` : ''}`}>
-      <div style={{ position: 'absolute', left: '50%', bottom: 0, width: 180, height: 10, marginLeft: -90, borderRadius: 3, background: '#E2CB9C', border: '2px solid #24324A' }} />
+      <div style={{ position: 'absolute', left: '50%', bottom: 0, width: 180, height: 10, marginLeft: -90, borderRadius: 3, background: looks.includes('gold') ? GOLD_PLATE : '#E2CB9C', border: '2px solid #24324A' }} />
+      {(looks.includes('flag') || looks.includes('lantern')) && (
+        <div className="tw-top" style={{ position: 'absolute', left: '50%', top: height - 10 - y - (looks.includes('lantern') ? 44 : 40), marginLeft: looks.includes('flag') ? -6 : -14 }}>
+          {looks.includes('lantern') ? <LanternTop size={28} /> : <FlagTop size={40} />}
+        </div>
+      )}
       {placed.map((b) => {
         const w = 4 * b.sz.pitch;
         const lift = 5 + b.sz.studH + b.sz.depth + b.sz.h;
@@ -106,7 +117,7 @@ export default function TowerPage() {
   }, [scope, st.user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const sp = speedOf(prog?.speed);
-  const t = tower ? buildTower(tower.bricks, tower.activeDays, tower.todayDate, prog?.speed) : { stack: [], fallen: 0, rest: 0, cracks: 0, fallIn: null };
+  const t = tower ? buildTower(tower.bricks, tower.activeDays, tower.todayDate, prog?.speed, tower.guardDays) : { stack: [], fallen: 0, rest: 0, cracks: 0, fallIn: null };
   const days = tower?.activeDays?.length ?? 0;
 
   return (
@@ -137,7 +148,7 @@ export default function TowerPage() {
         <p className="note warn">{t.rest}일 쉬어서 브릭 {t.cracks}개에 금이 갔어요. {t.fallIn === 1 ? '오늘 밤' : t.fallIn === 2 ? '내일 밤' : `${t.fallIn - 1}일 뒤 밤`}까지 공부하지 않으면 떨어져요. 대화나 복습 하나만 하면 다시 단단해져요.</p>
       )}
       <div className="plate" style={{ boxShadow: 'none' }}>
-        {t.stack.length ? <Pyramid stack={t.stack} cracks={t.cracks} /> : <p className="small" style={{ padding: '30px 0', textAlign: 'center' }}>대화를 하나 끝내면 첫 브릭이 쌓여요.</p>}
+        {t.stack.length ? <Pyramid stack={t.stack} cracks={t.cracks} looks={tower?.looks || []} /> : <p className="small" style={{ padding: '30px 0', textAlign: 'center' }}>대화를 하나 끝내면 첫 브릭이 쌓여요.</p>}
       </div>
       {t.fallen > 0 && <p className="small muted">쉬는 동안 브릭 {t.fallen}개가 떨어졌어요. 한 번 쉴 때 떨어지는 건 최대 {MAX_FALL}개까지예요.</p>}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 10px' }} className="small muted" aria-label="요일마다 브릭 색">
