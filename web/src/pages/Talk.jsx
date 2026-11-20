@@ -465,7 +465,7 @@ export default function Talk() {
       {!done && needTap && <p className="small" style={{ color: '#B9473A', fontWeight: 700, marginTop: -4 }}>소리가 안 나오면 말풍선의 재생 버튼을 눌러 들어 보세요.</p>}
       {resumeAsk && (
         <Sheet title="이어서 할까요?" onClose={restart} labelId="resume-title">
-          <p style={{ fontSize: 14, lineHeight: 1.6, marginTop: 6 }}>지난번에 {partner}와 하던 대화가 있어요. 브릭 {resumeAsk.bricks.length}개를 쌓았어요.</p>
+          <p style={{ fontSize: 14, lineHeight: 1.6, marginTop: 6 }}>지난번에 {partner}{josa(partner, '과', '와')} 하던 대화가 있어요. 브릭 {resumeAsk.bricks.length}개를 쌓았어요.</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 6 }}>
             <button className="ob-btn coral" onClick={() => { unlock(); resume(); }}><span className="t">이어서 하기</span></button>
             <button className="ob-btn" onClick={() => { unlock(); restart(); }}><span className="t">처음부터</span></button>
@@ -486,7 +486,7 @@ export default function Talk() {
           <div style={{ textAlign: 'center' }}>
             <h1 style={{ fontSize: 30 }}>대화 하나 완성!</h1>
             <p className="muted" style={{ fontSize: 14, marginTop: 4 }}>
-              {partner}와 {(stats.current.path || []).filter((i) => steps[i]?.type === 'me').length}번 주고받았어요.{' '}
+              {partner}{josa(partner, '과', '와')} {(stats.current.path || []).filter((i) => steps[i]?.type === 'me').length}번 주고받았어요.{' '}
               {correctNow ? '비뚤어진 브릭 없는 올바른 탑이에요.' : '비뚤어지거나 빠진 곳은 고치기에서 다시 세울 수 있어요.'}
             </p>
           </div>
@@ -546,7 +546,7 @@ function ThemPanel({ say, talkId, step, ph, setPh, partner, rate, pick, refresh,
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       {ph.hint && <div className="hint-box">힌트 단어: {step.keys.map((w) => `${w.ko}(${w.mean})`).join(' · ')} <span className="small muted">(브릭이 살짝 비뚤게 쌓여요)</span></div>}
-      <h2 style={{ fontSize: 21, marginTop: 2 }}>{partner}가 뭐라고 했을까요?</h2>
+      <h2 style={{ fontSize: 21, marginTop: 2 }}>{partner}{josa(partner, '이', '가')} 뭐라고 했을까요?</h2>
       {ph.fb && <p className="fb" aria-live="polite">{ph.fb}</p>}
       <div className={'opts' + (ph.shake === 99 ? ' shake-' + (ph.n % 2) : '')}>
         {opts.map((m, i) => (

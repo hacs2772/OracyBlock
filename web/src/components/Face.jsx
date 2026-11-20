@@ -19,6 +19,11 @@ const FACES = {
   master: { hair: 'slick', hc: '#3B2E2A', bg: '#FFF3D6', beard: true },
   driver: { hair: 'short', hc: '#2E2A33', bg: '#E4EEF8', cap: true },
   host: { hair: 'towel', hc: '#5A5A5A', bg: '#DDF3EF' },
+  clerk: { hair: 'short', hc: '#5A3B2B', bg: '#FFF3D6' },
+  chef: { hair: 'towel', hc: '#2E2A33', bg: '#FFE1DB', beard: true },
+  auntie3: { hair: 'bun', hc: '#4A3426', bg: '#DDF3EF', glasses: true },
+  staff: { hair: 'pony', hc: '#2E2A33', bg: '#E4EEF8' },
+  student: { hair: 'long', hc: '#5A3B2B', bg: '#FFE1DB' },
   me: { hair: 'me', hc: N, bg: '#FFE1DB' },
 };
 
@@ -26,6 +31,7 @@ export const FACE_OF = {
   plane: 'auntie', guesthouse: 'youngW', izakaya: 'office', onsen: 'grandma', shinkansen: 'youngM', park: 'grandpa',
   bar: 'master', taxi: 'driver', festival: 'auntie2', farewell: 'host',
   izakaya2: 'office', guesthouse2: 'youngW2', onsen2: 'grandpa', bar2: 'bob', shinkansen2: 'office2', park2: 'youngW',
+  konbini: 'clerk', photo: 'youngM', ramen: 'chef', busstop: 'auntie3', hotel: 'staff', laundry: 'student',
 };
 
 function hairBack(f) {
