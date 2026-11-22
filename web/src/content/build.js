@@ -289,14 +289,17 @@ const jac = (a, b) => {
 };
 // 말 줄기 규칙으로 못 잡는 같은 뜻 (직접 적어 둬요)
 const ALSO_SIMILAR = [
+  // 뜻이 사실상 같은 말 묶음 (사람이 읽고 고름). 같은 묶음끼리는 서로 틀린 보기로 나오지 않아요
   ['다음엔 뭐 부를래?', '한 곡 더 가자! 뭐가 좋아?'],
   ['뭘로 하시겠어요?', '어서 와요! 뭘로 할래요?'],
+  ['그럼 좋은 여행 하세요!', '좋네요. 즐거운 여행 되세요!', '즐겁게 다녀와요!', '아, 곧 나고야네. 그럼 좋은 여행 해요!'],
+  ['감사합니다. 또 오세요!', '수고하셨어요. 또 오세요!', '좋네요. 또 오세요', '또 일본에 오세요', '또 일본 와. 기다릴게', '오사카 즐겨! 또 와!'],
 ];
 /** 뜻이 사실상 같아서 틀린 보기로 쓰면 안 되는 말 */
 export function similar(a, b) {
   if (!a || !b) return false;
   if (a.mean === b.mean) return true;
-  if (ALSO_SIMILAR.some(([x, y]) => (a.mean === x && b.mean === y) || (a.mean === y && b.mean === x))) return true;
+  if (ALSO_SIMILAR.some((g) => g.includes(a.mean) && g.includes(b.mean))) return true;
   if (jac(heads(a.mean), heads(b.mean)) >= 0.6) return true;
   // 한쪽 뜻이 다른 쪽에 거의 다 들어 있으면("그럼 좋은 여행 하세요!" ⊂ "곧 나고야네. 그럼 좋은 여행 해요!") 같은 말
   const x = bigrams(a.mean), y = bigrams(b.mean);
