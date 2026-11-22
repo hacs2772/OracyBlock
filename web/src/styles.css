@@ -544,3 +544,17 @@ textarea.input { height: 120px; padding: 10px 12px; resize: vertical; line-heigh
 .sp-days { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 6px; }
 .it-art { position: relative; width: 96px; height: 70px; }
 .hm-line a.hm-ready { color: var(--coral-ink); font-weight: 700; }
+
+/* 다시 만나기 (concept 11-23): 홈 "다시 만날 사람" 줄 · 만난 횟수 브릭 · 대화 끝 알림 */
+.mt-meets { display: inline-flex; gap: 3px; vertical-align: middle; margin-left: 4px; flex: none; }
+.mt-meets i { width: 12px; height: 8px; border-radius: 2px; border: 1.5px solid var(--navy); background: var(--cream); }
+.mt-meets i.on { background: var(--mint); }
+.mt-again { padding: 10px 12px; }
+.mt-again-h { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+.mt-again-h h2 { font-size: 17px; }
+.mt-row { appearance: none; display: flex; align-items: center; gap: 10px; width: 100%; min-height: 52px; padding: 8px 2px; border: 0; border-top: 1.5px solid var(--line); background: none; text-align: left; cursor: pointer; font: inherit; color: inherit; }
+.mt-row-t { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.mt-row-t .small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tk-meet { display: flex; align-items: center; gap: 12px; padding: 12px 14px; }
+.tk-meet b { display: block; font-family: var(--display); font-size: 19px; font-weight: 400; }
+.tk-meet .mt-meets { margin: 4px 0 0; }

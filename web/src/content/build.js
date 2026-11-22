@@ -369,7 +369,15 @@ function meaningSets(talk, idx, line) {
       pool.push(c.line);
     }
   }
-  return { meanings: shuffle([line.mean, ...pool.map((p) => p.mean)], rnd) };
+  // 내가 놓친 단어가 들어간 말을 대화 화면에서 바꿔 끼울 수 있게 몇 개 더 (concept 11-23)
+  const spareMeanings = [];
+  for (const c of cands) {
+    if (spareMeanings.length >= 8) break;
+    if (!fits(c.g, 1) || pool.includes(c.line) || !c.line.keys?.length) continue;
+    if ([...pool, ...spareMeanings.map((x) => x.line)].some((p) => similar(p, c.line))) continue;
+    spareMeanings.push({ line: c.line, mean: c.line.mean, keys: c.line.keys.map((k) => k.key) });
+  }
+  return { meanings: shuffle([line.mean, ...pool.map((p) => p.mean)], rnd), spareMeanings: spareMeanings.map(({ mean, keys }) => ({ mean, keys })) };
 }
 
 /**
@@ -443,8 +451,16 @@ function chooseSets(talk, idx, options, near, q) {
       offs.push({ kind: 'off', ja: x.o.natural.ja, ko: x.o.natural.ko, mean: x.o.natural.mean });
     }
   }
+  const spares = [];
+  for (const { x, g } of cands) {
+    if (spares.length >= 8) break;
+    if (!fits(g, 1) || used.has(x.o.natural.ko) || tooClose(x.o.natural.ko) || meansRight(x.o.natural.mean)) continue;
+    used.add(x.o.natural.ko);
+    shown.push(x.o.natural.ko);
+    spares.push({ kind: 'off', ja: x.o.natural.ja, ko: x.o.natural.ko, mean: x.o.natural.mean, keys: x.o.words.map((w) => w.key) });
+  }
   const picked = [...ok, ...nearOpts.slice(0, Math.max(0, 4 - ok.length))];
-  return shuffle([...picked, ...offs].slice(0, Math.max(5, picked.length + 1)), rnd);
+  return { choose: shuffle([...picked, ...offs].slice(0, Math.max(5, picked.length + 1)), rnd), spares };
 }
 
 function buildTalk(t) {
@@ -467,7 +483,7 @@ function buildTalk(t) {
       steps.push({
         type: 'me', idx, options, near, yes: yes != null, when: turn.when || null,
         hintWords: options.flatMap((o) => o.words.slice(0, 1)),
-        choose: chooseSets(t, idx, options, near, [...t.turns.slice(0, idx)].reverse().find((y) => y.them)?.them),
+        ...chooseSets(t, idx, options, near, [...t.turns.slice(0, idx)].reverse().find((y) => y.them)?.them),
       });
     }
   });
@@ -532,4 +548,27 @@ export function wordChoices(w, salt = '') {
 export function dailyCognate(d = new Date()) {
   const day = Math.floor(new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() / 864e5);
   return COGNATES[day % COGNATES.length];
+}
+
+/**
+ * 내가 놓친 단어 섞기 (concept 11-23): 틀린 보기 하나를 "내가 놓친 단어가 들어간 말"로 바꿔요.
+ * 정답·어긋난 대답은 그대로. 놓친 단어가 없거나 바꿀 말이 없으면 그대로 둬요
+ */
+export function mixMissed(step, missedKeys) {
+  if (!step || !missedKeys?.size) return step;
+  if (step.type === 'them') {
+    const sp = (step.spareMeanings || []).find((x) => x.keys.some((k) => missedKeys.has(k)) && !step.meanings.includes(x.mean));
+    if (!sp) return step;
+    const out = [...step.meanings];
+    const i = out.findIndex((m) => m !== step.line.mean);
+    out[i] = sp.mean;
+    return { ...step, meanings: out, mixed: sp.keys.find((k) => missedKeys.has(k)) };
+  }
+  const sp = (step.spares || []).find((x) => x.keys.some((k) => missedKeys.has(k)) && !step.choose.some((c) => c.ko === x.ko));
+  if (!sp) return step;
+  const out = [...step.choose];
+  const i = out.findIndex((c) => c.kind === 'off');
+  if (i < 0) return step;
+  out[i] = sp;
+  return { ...step, choose: out, mixed: sp.keys.find((k) => missedKeys.has(k)) };
 }

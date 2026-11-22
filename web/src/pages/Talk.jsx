@@ -1,14 +1,14 @@
 // 대화 화면: 상대 말 뜻 맞히기 → 내 차례(말하기 → 쓰기 → 고르기) → 대화 끝
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
-import { talkById, judge, talkWords, isReviewWord, isCasual, LEVEL_SCALE, LEVEL_RATE, RESCUE_LINES, ASK_AGAIN, READY_LEVELS } from '../content/build.js';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { talkById, mixMissed, judge, talkWords, isReviewWord, isCasual, LEVEL_SCALE, LEVEL_RATE, RESCUE_LINES, ASK_AGAIN, READY_LEVELS } from '../content/build.js';
 import { speak, stopSpeaking, listen, stopListening, canListen, MIC_ERRORS, sfx, unlock } from '../lib/speech.js';
 import { api, quiet } from '../lib/api.js';
 import { store, useStore } from '../lib/store.js';
 import Brick from '../components/Brick.jsx';
-import { Stack, Play, Close, Mic, Ja, Sheet, Question } from '../components/ui.jsx';
+import { Stack, Play, Close, Mic, Ja, Sheet, Question, Meets } from '../components/ui.jsx';
 import { Guide, GAME } from '../components/Guides.jsx';
-import { countCorrect } from '../lib/progress.js';
+import { countCorrect, MEET_GAP } from '../lib/progress.js';
 import { loadResume, saveResume, clearResume } from '../lib/resume.js';
 import LineReport from '../components/LineReport.jsx';
 import Face, { FACE_OF } from '../components/Face.jsx';
@@ -75,6 +75,8 @@ export default function Talk() {
   const nav = useNavigate();
   const st = useStore();
   const talk = useMemo(() => talkById(id), [id]);
+  const again = Number(new URLSearchParams(useLocation().search).get('again')) || 0; // 다시 만나기 몇 번째 (concept 11-23)
+  const [missedKeys, setMissedKeys] = useState(null); // 내가 놓친 단어: 틀린 보기에 하나씩 섞어요
   const level = talk?.level || 1;
   const rate = LEVEL_RATE[level] || 1;
 
@@ -100,6 +102,7 @@ export default function Talk() {
 
   const newPlay = () => {
     playId.current = null;
+    stats.current.again = again; // 이어 하기에서도 다시 만나기인 걸 기억해요
     api('/plays', { method: 'POST', body: { talkId: talk.id, level } })
       .then((r) => { playId.current = r?.id || null; })
       .catch(() => {});
@@ -121,6 +124,9 @@ export default function Talk() {
   };
 
   useEffect(() => {
+    quiet('/words').then((w) => setMissedKeys(new Set((w || []).filter((x) => x.missed > 0 || x.stage === 0).map((x) => x.key))));
+  }, []);
+  useEffect(() => {
     if (!talk) return undefined;
     if (!resumeAsk) newPlay();
     return () => {
@@ -131,10 +137,16 @@ export default function Talk() {
   }, [talk, level]);
 
   // 변주: 상대 말마다 이번 판에 들려줄 말투를 하나 골라 기억해요 (0 = 기본, 1~ = alt)
-  const eff = (s) => {
+  // 다시 만날 때는 지난번과 다르게 들리도록 다른 말투(alt)를 먼저 골라요
+  const eff = (s0) => {
+    if (!s0) return s0;
+    // 놓친 단어 섞기는 그 차례를 처음 볼 때 정해서 끝까지 같게 (보기가 바뀌어 보이지 않게)
+    const mmap = stats.current.mix || (stats.current.mix = {});
+    if (!(s0.idx in mmap)) mmap[s0.idx] = mixMissed(s0, missedKeys);
+    const s = mmap[s0.idx];
     if (!s || s.type !== 'them' || !s.alts?.length) return s;
     const vmap = stats.current.variant || (stats.current.variant = {});
-    if (!(s.idx in vmap)) vmap[s.idx] = Math.floor(Math.random() * (s.alts.length + 1));
+    if (!(s.idx in vmap)) vmap[s.idx] = (stats.current.again || again) ? 1 + Math.floor(Math.random() * s.alts.length) : Math.floor(Math.random() * (s.alts.length + 1));
     const v = vmap[s.idx];
     if (!v) return s;
     const a = s.alts[v - 1];
@@ -396,6 +408,7 @@ export default function Talk() {
       chat.push({ key: 'm' + step.idx, side: 'me', text: r?.kind === 'skip' ? null : r?.placed ? r.picked : null, skipped: r?.kind === 'skip' });
     }
   }
+  const meetN = stats.current.again || again;
   const correctNow = done && !bricks.some((b) => b.tilt || (b.gone && !b.path));
 
   return (
@@ -490,6 +503,18 @@ export default function Talk() {
               {correctNow ? '비뚤어진 브릭 없는 올바른 탑이에요.' : '비뚤어지거나 빠진 곳은 고치기에서 다시 세울 수 있어요.'}
             </p>
           </div>
+          {meetN > 0 && (
+            <div className="card tk-meet">
+              <Face kind={FACE_OF[talk.id]} size={44} />
+              <div style={{ minWidth: 0 }}>
+                <b>{correctNow ? '다시 만나서 통했어요' : '이번엔 조금 놓쳤어요'}</b>
+                <Meets n={correctNow ? meetN : meetN - 1} />
+                <p className="small muted" style={{ marginTop: 2 }}>
+                  {!correctNow ? '내일 한 번 더 만나요.' : meetN >= MEET_GAP.length ? `세 번 다 만났어요. 이제 ${partner}${josa(partner, '과', '와')} 단골이에요.` : `다음 만남은 ${MEET_GAP[meetN]}일 뒤예요.`}
+                </p>
+              </div>
+            </div>
+          )}
           {capNote && (
             <div className="note">
               오늘 브릭은 다 쌓았어요 (하루 {capNote.cap}개). 대화 연습과 단어는 그대로 남아요.

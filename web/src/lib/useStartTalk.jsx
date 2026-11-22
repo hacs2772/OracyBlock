@@ -1,6 +1,6 @@
 // 대화 시작하기 (홈의 큰 버튼, 학습의 장소 칸이 같이 써요)
 // 처음 "시작": 게임 방법 3장 → 소리 확인 → (복습할 단어가 있으면) 단어 맞혀 보기 → 대화. 하던 대화는 바로 이어서
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { quiet } from './api.js';
 import { store, useStore } from './store.js';
@@ -21,12 +21,15 @@ export function useStartTalk(prog) {
   const sp = speedOf(prog?.speed);
   const preCount = st.settings.preWords == null ? sp.pre : st.settings.preWords;
 
+  // again = 다시 만나기 몇 번째인지 (0 = 그냥 대화). 대화 화면이 상대 말투를 바꾸고 끝에 다음 만남을 알려 줘요
+  const againRef = useRef(0);
   const go = (id) => {
     unlock();
-    nav('/talk/' + id);
+    nav('/talk/' + id + (againRef.current ? '?again=' + againRef.current : ''));
   };
-  const start = async (id) => {
+  const start = async (id, again) => {
     unlock();
+    if (again !== undefined) againRef.current = again;
     if (!store.s.seenGame) return setGuide({ next: id });
     if (!store.s.seenCheck) return setCheck({ next: id });
     if (loadResume(id)) return go(id);

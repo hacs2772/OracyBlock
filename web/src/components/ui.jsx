@@ -243,3 +243,12 @@ export function Ja({ children }) {
     </div>
   );
 }
+
+/** 다시 만난 횟수: 작은 브릭 칸 (1일 · 3일 · 7일 뒤 만남, concept 11-23) */
+export function Meets({ n, of = 3 }) {
+  return (
+    <span className="mt-meets" role="img" aria-label={`다시 만남 ${n}번 / ${of}번`}>
+      {Array.from({ length: of }, (_, i) => <i key={i} className={i < n ? 'on' : ''} />)}
+    </span>
+  );
+}

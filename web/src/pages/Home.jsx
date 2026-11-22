@@ -4,11 +4,12 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { quiet } from '../lib/api.js';
 import { useStore } from '../lib/store.js';
-import { freshFixes, nextTalk, dayTone } from '../lib/progress.js';
+import { freshFixes, nextTalk, dayTone, dueMeets } from '../lib/progress.js';
+import { talkWords } from '../content/build.js';
 import { speedOf } from '../lib/speed.js';
 import { loadResume } from '../lib/resume.js';
 import { useStartTalk } from '../lib/useStartTalk.jsx';
-import { TopBar, Question, Stack, Tabs } from '../components/ui.jsx';
+import { TopBar, Question, Stack, Tabs, Meets } from '../components/ui.jsx';
 import Face, { FACE_OF } from '../components/Face.jsx';
 import TowerAlert from '../components/TowerAlert.jsx';
 import { Guide } from '../components/Guides.jsx';
@@ -19,6 +20,13 @@ import { josa } from './Talk.jsx';
 
 const MINI = { studs: 4, pitch: 9, h: 11, depth: 6, studH: 3 };
 
+/** 이 대화에서 놓친 단어 (복습 기록에서 가장 많이 놓친 것). 없으면 첫 핵심 단어 */
+function missedWord(talk, words) {
+  const keys = new Map(talkWords(talk).map((w) => [w.key, w]));
+  const hit = (words || []).filter((w) => keys.has(w.key) && w.missed > 0).sort((a, b) => b.missed - a.missed)[0];
+  return hit ? { w: keys.get(hit.key), missed: true } : { w: talkWords(talk)[0], missed: false };
+}
+
 export default function Home() {
   const st = useStore();
   const [prog, setProg] = useState(null);
@@ -27,6 +35,7 @@ export default function Home() {
   const [rank, setRank] = useState(null);
   const [shop, setShop] = useState(null);
   const [pop, setPop] = useState(null); // 'talk' | 'tower'
+  const [words, setWords] = useState(null);
   const level = st.level;
 
   useEffect(() => {
@@ -34,6 +43,7 @@ export default function Home() {
     quiet('/fixes').then((f) => f && setFixes(freshFixes(f)));
     quiet('/tower').then(setTower);
     quiet('/shop').then(setShop);
+    quiet('/words').then((w) => setWords(w || []));
     if (st.user) quiet('/ranking?scope=week').then(setRank);
   }, [st.user?.id]);
 
@@ -52,6 +62,7 @@ export default function Home() {
   // 작은 탑: 위쪽 7층 + 오늘 더 쌓을 수 있는 만큼 점선
   const mini = [...(t?.stack || []).slice(-7).map((b, i, arr) => ({ tone: dayTone(b.day), key: i, crack: i >= arr.length - (t?.cracks || 0) })), ...Array.from({ length: left }, (_, i) => ({ tone: 'coral', ghost: true, key: 'g' + i }))];
   const myRank = rank?.rows?.find((r) => r.me) || rank?.mine;
+  const meets = prog ? dueMeets(prog.plays, undefined, next ? [next.id] : []).slice(0, 3) : [];
   const ready = (shop?.missions || []).filter((m) => !m.claimed && m.n >= m.target).length;
 
   return (
@@ -72,9 +83,28 @@ export default function Home() {
               <div className="small">{next.partner}{josa(next.partner, '이', '가')} 말을 걸어요</div>
             </div>
           </div>
-          <button className="ob-btn coral wide" style={{ minHeight: 60, marginTop: 14 }} onClick={() => start(next.id)}>
+          <button className="ob-btn coral wide" style={{ minHeight: 60, marginTop: 14 }} onClick={() => start(next.id, 0)}>
             <span className="t">{resuming ? '이어서 하기' : '대화 시작'}</span>
           </button>
+        </div>
+      )}
+
+      {meets.length > 0 && (
+        <div className="card mt-again">
+          <div className="mt-again-h"><h2>다시 만날 사람</h2><span className="small muted">오늘 {meets.length}명</span></div>
+          {meets.map((m) => {
+            const mw = missedWord(m.talk, words);
+            return (
+              <button key={m.talk.id} className="mt-row" onClick={() => start(m.talk.id, m.meets + 1)} aria-label={`${m.talk.place} 다시 만나기, ${m.ago}일 만`}>
+                <Face kind={FACE_OF[m.talk.id]} size={36} />
+                <span className="mt-row-t">
+                  <b>{m.talk.place}</b>
+                  <span className="small muted">{m.ago}일 만{mw.w ? ` · ${mw.missed ? '놓친 단어' : '단어'} ${mw.w.ko}` : ''}</span>
+                </span>
+                <Meets n={m.meets} />
+              </button>
+            );
+          })}
         </div>
       )}
 
