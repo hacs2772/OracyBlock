@@ -558,3 +558,10 @@ textarea.input { height: 120px; padding: 10px 12px; resize: vertical; line-heigh
 .tk-meet { display: flex; align-items: center; gap: 12px; padding: 12px 14px; }
 .tk-meet b { display: block; font-family: var(--display); font-size: 19px; font-weight: 400; }
 .tk-meet .mt-meets { margin: 4px 0 0; }
+
+/* 목소리 고르기 (concept 11-24) */
+.vp-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.vp-row { appearance: none; display: flex; align-items: center; gap: 10px; width: 100%; min-height: 48px; padding: 6px 10px; border: 1.5px solid var(--line); border-radius: 10px; background: #fff; text-align: left; cursor: pointer; font: inherit; color: inherit; }
+.vp-row.on { border: 2px solid var(--navy); }
+.vp-t { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.vp-t b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

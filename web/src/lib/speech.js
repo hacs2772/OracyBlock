@@ -5,12 +5,37 @@ const synth = typeof window !== 'undefined' ? window.speechSynthesis : null;
 export const canSpeak = !!synth && typeof window.SpeechSynthesisUtterance === 'function';
 
 const SPEED = { slow: 0.75, normal: 1, fast: 1.15 };
-const PREFERRED = [/google/i, /kyoko/i, /o-?ren/i, /nanami/i, /keita/i, /haruka/i, /ayumi/i, /otoya/i];
+
+/**
+ * 목소리 고르기 (concept 11-24): 휴대폰·브라우저마다 일본어 목소리가 달라요. 자연스러운 것부터 점수를 매겨요.
+ * 신경망(Natural·Online) > 구글 > 향상된(Enhanced·Premium) > 기본 이름 있는 목소리 > 그 밖. 장난 목소리(Eddy·Grandma 등)는 빼요
+ */
+const NOVELTY = /^(eddy|flo|grandma|grandpa|reed|rocko|sandy|shelley|bad news|bahh|bells|boing|bubbles|cellos|good news|jester|organ|superstar|trinoids|whisper|wobble|zarvox|albert|fred|junior|ralph|kathy)\b/i;
+export function voiceScore(v) {
+  const n = `${v.name} ${v.voiceURI}`;
+  if (NOVELTY.test(v.name)) return -100;
+  let s = 0;
+  if (/natural|online|neural|wavenet/i.test(n)) s += 100;
+  if (/google/i.test(n)) s += 80;
+  if (/enhanced|premium|향상|고품질/i.test(n)) s += 70;
+  if (/kyoko|o-?ren|hattori|nanami|keita|haruka|ayumi|ichiro|sayaka|mizuki|takumi/i.test(n)) s += 40;
+  if (/ja-jp-x-/i.test(n)) s += 30; // 안드로이드 기기 안 목소리
+  if (/^ja[-_]jp$/i.test(v.lang)) s += 5;
+  if (v.localService) s += 3; // 인터넷 없이도 나요
+  return s;
+}
+const listeners = new Set();
+/** 목소리 목록이 늦게 오는 브라우저(아이폰·크롬)를 위해 바뀌면 알려 줘요 */
+export const onVoices = (fn) => {
+  listeners.add(fn);
+  return () => listeners.delete(fn);
+};
 
 let voices = [];
 function loadVoices() {
   if (!canSpeak) return;
   voices = synth.getVoices().filter((v) => /^ja([-_]|$)/i.test(v.lang));
+  listeners.forEach((fn) => fn());
 }
 if (canSpeak) {
   loadVoices();
@@ -20,14 +45,32 @@ if (canSpeak) {
     synth.onvoiceschanged = loadVoices;
   }
 }
-function pickVoice() {
+/** 일본어 목소리, 좋은 것부터 */
+export function jaVoices() {
   if (!voices.length) loadVoices();
-  for (const re of PREFERRED) {
-    const v = voices.find((x) => re.test(x.name));
-    if (v) return v;
-  }
-  return voices.find((v) => v.localService) || voices[0] || null;
+  return [...voices].filter((v) => voiceScore(v) > -100).sort((a, b) => voiceScore(b) - voiceScore(a));
 }
+/** 화면에 보일 이름과 꼬리표: "Nanami" · 자연스러움 */
+export function voiceInfo(v) {
+  const n = `${v.name} ${v.voiceURI}`;
+  let name = v.name.replace(/^(microsoft|google|apple)\s+/i, '').replace(/\s+[-–]\s.*$/, '').replace(/\s*\(.*$/, '').trim() || v.name;
+  if (/google/i.test(v.name) && !/[a-z]/i.test(name)) name = '구글';
+  else if (!/[a-z]/i.test(name)) name = '기기 목소리'; // "日本語 日本" 같은 이름
+  let tag = /natural|online|neural|wavenet/i.test(n) ? '자연스러움' : /enhanced|premium|향상|고품질/i.test(n) ? '고음질' : '';
+  if (tag === '자연스러움') name = name.replace(/\s*online$/i, '');
+  return { name, tag, online: !v.localService };
+}
+// 인터넷 목소리가 한 번 실패하면 한동안 기기 안 목소리로 바로 읽어요 (매번 실패하고 다시 읽으면 늦으니까). 인터넷이 돌아오면 다시
+let onlineBad = false;
+if (typeof window !== 'undefined') window.addEventListener('online', () => { onlineBad = false; });
+function pickVoice() {
+  const list = jaVoices().filter((v) => !onlineBad || v.localService);
+  const want = store.s.settings.voice;
+  return (want && list.find((v) => v.voiceURI === want)) || list[0] || null;
+}
+/** 아이폰인데 고음질 목소리가 없으면, 받는 방법을 알려 줘요 */
+export const iosNeedsBetterVoice = () =>
+  typeof navigator !== 'undefined' && /iP(hone|ad|od)/.test(navigator.userAgent) && !jaVoices().some((v) => voiceScore(v) >= 70);
 export const hasJaVoice = () => {
   if (!voices.length) loadVoices();
   return voices.length > 0;
@@ -68,14 +111,14 @@ export const toReading = (text) => READ_KEYS.reduce((t, k) => (t.includes(k) ? t
 
 let seq = 0;
 /** 일본어를 읽어요. rate는 1이 보통 (설정의 빠르기를 곱해요) */
-export function speak(text, rate = 1) {
+export function speak(text, rate = 1, voice = null, retried = false) {
   if (!canSpeak || !text) return Promise.resolve(false);
   const my = ++seq;
   synth.cancel();
   return new Promise((resolve) => {
     const u = new SpeechSynthesisUtterance(toReading(text));
     u.lang = 'ja-JP';
-    const v = pickVoice();
+    const v = voice || pickVoice();
     if (v) u.voice = v;
     u.rate = Math.max(0.5, Math.min(1.6, rate * (SPEED[store.s.settings.speed] || 1)));
     let done = false;
@@ -86,7 +129,18 @@ export function speak(text, rate = 1) {
       resolve(ok && my === seq);
     };
     u.onend = () => fin(true);
-    u.onerror = () => fin(false);
+    u.onerror = (e) => {
+      // 인터넷이 필요한 목소리(구글 등)가 실패하면 기기 안 목소리로 한 번 더
+      const local = !retried && v && !v.localService && e?.error !== 'interrupted' && e?.error !== 'canceled' && jaVoices().find((x) => x.localService);
+      if (local && my === seq && !done) {
+        done = true;
+        onlineBad = true;
+        clearTimeout(guard);
+        speak(text, rate, local, true).then(resolve);
+        return;
+      }
+      fin(false);
+    };
     const guard = setTimeout(() => fin(true), 1800 + (text.length * 300) / u.rate);
     synth.speak(u);
     if (synth.paused) synth.resume();

@@ -10,6 +10,7 @@ import { SPEEDS, SPEED_KEYS, speedOf, crackRule } from '../lib/speed.js';
 import { Guide, INTRO, GAME } from '../components/Guides.jsx';
 import { openContact } from '../components/Contact.jsx';
 import SoundCheck from '../components/SoundCheck.jsx';
+import VoicePick from '../components/VoicePick.jsx';
 
 function Switch({ on, label, onClick }) {
   return (
@@ -166,6 +167,7 @@ export default function Me() {
           <span className="set-name" id="set-speed">말 빠르기</span>
           <Segs labelId="set-speed" value={s.speed} options={[['slow', '느리게'], ['normal', '보통'], ['fast', '빠르게']]} onPick={(v) => { store.setSettings({ speed: v }); unlock(); speak('こんにちは'); }} />
         </div>
+        <VoicePick />
         <div className="set-row">
           <span className="set-name">한글 발음 보기<small>상대 말에 한글로 소리를 적어 줘요</small></span>
           <Switch on={s.kana} label="한글 발음 보기" onClick={() => store.setSettings({ kana: !s.kana })} />

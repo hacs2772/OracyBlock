@@ -16,6 +16,7 @@ const DEFAULTS = {
   seenHelp: {}, // 탭에 처음 들어올 때 설명 팝업을 봤는지 { learn, review, tower } (concept 11-20)
   settings: {
     speed: 'normal', // slow | normal | fast
+    voice: '', // 고른 일본어 목소리 (voiceURI). 비우면 가장 좋은 것 자동
     kana: true, // 한글 발음 보기
     ja: 'faint', // faint | clear | hide
     quiet: false, // 내 차례를 글자로 시작
