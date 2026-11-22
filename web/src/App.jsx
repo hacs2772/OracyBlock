@@ -1,21 +1,22 @@
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import Home from './pages/Home.jsx';
-import Learn from './pages/Learn.jsx';
-import Shop from './pages/Shop.jsx';
+const Learn = lazy(() => import('./pages/Learn.jsx'));
+const Shop = lazy(() => import('./pages/Shop.jsx'));
 import Talk from './pages/Talk.jsx';
-import Fix from './pages/Fix.jsx';
-import Review from './pages/Review.jsx';
+const Fix = lazy(() => import('./pages/Fix.jsx'));
+const Review = lazy(() => import('./pages/Review.jsx'));
 import TowerPage from './pages/TowerPage.jsx';
-import Me from './pages/Me.jsx';
-import Auth from './pages/Auth.jsx';
-import Admin from './pages/Admin.jsx';
-import Legal from './pages/Legal.jsx';
+const Me = lazy(() => import('./pages/Me.jsx'));
+const Auth = lazy(() => import('./pages/Auth.jsx'));
+const Admin = lazy(() => import('./pages/Admin.jsx'));
+const Legal = lazy(() => import('./pages/Legal.jsx'));
 import Landing from './pages/Landing.jsx';
 import { Guide, INTRO } from './components/Guides.jsx';
 import { Toaster } from './components/ui.jsx';
 import Contact from './components/Contact.jsx';
 import InAppBanner from './components/InAppBanner.jsx';
+import OfflineBar from './components/OfflineBar.jsx';
 import { store, useStore } from './lib/store.js';
 import { quiet } from './lib/api.js';
 import { unlock } from './lib/speech.js';
@@ -42,6 +43,9 @@ export default function App() {
   return (
     <div className={isLanding ? 'app-wide' : 'app'} onPointerDown={unlock}>
       <InAppBanner />
+      <OfflineBar />
+      {/* 자주 안 여는 화면은 열 때 받아요 (첫 화면을 빨리, concept 11-27). 받는 동안은 빈 바탕 */}
+      <Suspense fallback={<div className="page" />}>
       <Routes>
         <Route path="/" element={firstVisit ? <Navigate to="/about" replace /> : <Home />} />
         <Route path="/learn" element={<Learn />} />
@@ -58,6 +62,7 @@ export default function App() {
         <Route path="/privacy" element={<Legal kind="privacy" />} />
         <Route path="*" element={<Home />} />
       </Routes>
+      </Suspense>
       {showTour && <Guide slides={INTRO} label="처음 오셨나요" doneLabel={isLanding ? '알겠어요' : '시작하기'} onDone={() => store.set({ seenTour: true })} />}
       <Contact />
       <Toaster />

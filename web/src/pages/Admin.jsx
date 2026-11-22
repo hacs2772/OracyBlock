@@ -27,6 +27,8 @@ export default function Admin() {
   const [onlyOpen, setOnlyOpen] = useState(false);
   const [reps, setReps] = useState([]);
   const [turns, setTurns] = useState([]);
+  const [errs, setErrs] = useState([]);
+  const [openErr, setOpenErr] = useState(null);
   const repDone = (x) => {
     setReps((list) => list.filter((y) => !(y.talkId === x.talkId && y.turnIdx === x.turnIdx)));
     api('/admin/line-reports/done', { method: 'PUT', body: { talkId: x.talkId, turnIdx: x.turnIdx } }).catch((e) => setErr(e.message));
@@ -38,8 +40,8 @@ export default function Admin() {
   const [err, setErr] = useState('');
   const load = () => {
     setErr('');
-    Promise.all([api('/admin/stats'), api('/admin/users'), api('/admin/feedback'), api('/admin/line-reports'), api('/admin/turns')])
-      .then(([a, b, c, r, tt]) => { setD(a); setUsers(b); setFb(c); setReps(r); setTurns(tt); })
+    Promise.all([api('/admin/stats'), api('/admin/users'), api('/admin/feedback'), api('/admin/line-reports'), api('/admin/turns'), api('/admin/errors')])
+      .then(([a, b, c, r, tt, ee]) => { setD(a); setUsers(b); setFb(c); setReps(r); setTurns(tt); setErrs(ee); })
       .catch((e) => setErr(e.status === 403 || e.status === 401 ? '관리자 계정으로 로그인해야 볼 수 있어요.' : e.message));
   };
   useEffect(load, [st.user?.id]);
@@ -64,6 +66,7 @@ export default function Admin() {
       {d && (
         <>
           <p className="small muted">날짜는 한국 시간이에요. 관리자 계정은 숫자에서 뺐어요. 방문자 = 기기 하나(브라우저 하나)를 한 명으로 세요.</p>
+          {d.openErrors > 0 && <a className="note warn" href="#errors" style={{ display: 'block', textDecoration: 'none' }}>확인 안 한 화면 오류가 <b>{d.openErrors}개</b> 있어요.</a>}
           {d.openReports > 0 && <a className="note warn" href="#reports" style={{ display: 'block', textDecoration: 'none' }}>신고된 대사가 <b>{d.openReports}개</b> 있어요.</a>}
           {d.openFeedback > 0 && <a className="note warn" href="#contact" style={{ display: 'block', textDecoration: 'none' }}>처리 안 한 문의가 <b>{d.openFeedback}개</b> 있어요. 맨 아래에서 볼 수 있어요.</a>}
           <h2 style={{ fontSize: 20 }}>사람</h2>
@@ -198,6 +201,28 @@ export default function Admin() {
         )}
       </div>
 
+      <div id="errors">
+        <h2 style={{ fontSize: 20 }}>화면 오류 · 확인 안 한 것 {errs.length}개</h2>
+        <p className="small muted">사용자 화면에서 난 오류가 저절로 모여요 (최근 14일, 같은 오류는 한 줄). "멈춤"은 하얀 화면 대신 "다시 열기"가 뜬 경우예요. 고쳐서 올린 다음 "확인했어요"를 눌러요.</p>
+      </div>
+      {errs.map((x) => {
+        const key = x.message + x.page;
+        return (
+          <div key={key} className="card">
+            <div className="small muted">
+              <span className={'chip' + (x.kind === 'crash' ? ' er-crash' : '')}>{x.kind === 'crash' ? '멈춤' : x.kind === 'promise' ? '불러오기' : '오류'}</span> {x.page} · {x.people}명 ({x.n}번) · 마지막 {x.last}{x.build ? ` · 판 ${x.build}` : ''}
+            </div>
+            <p className="er-msg">{x.message}</p>
+            {x.ua && <p className="small muted" style={{ marginTop: 4 }}>{phoneOf(x.ua)}</p>}
+            {x.stack && (
+              <button className="link-btn" onClick={() => setOpenErr(openErr === key ? null : key)} aria-expanded={openErr === key}>{openErr === key ? '자세히 닫기' : '자세히'}</button>
+            )}
+            {openErr === key && <pre className="er-stack">{x.stack}</pre>}
+            <button className="ob-btn sm" onClick={() => { setErrs(errs.filter((y) => y !== x)); api('/admin/errors/done', { method: 'PUT', body: { message: x.message, page: x.page } }).catch((e) => setErr(e.message)); }}><span className="t">확인했어요</span></button>
+          </div>
+        );
+      })}
+
       <div id="reports">
         <h2 style={{ fontSize: 20 }}>대사 신고 · 처리 안 한 대사 {reps.length}개</h2>
         <p className="small muted">"이 문장 이상해요"로 들어온 신고를 대사마다 모았어요. 대사를 고쳐서 올린 다음 "고쳤어요"를 눌러요.</p>
@@ -272,4 +297,11 @@ function Funnel({ f }) {
       <p className="small muted" style={{ marginTop: 6 }}>소개 웹·게임 방법·소리 확인은 이번에 새로 센 단계라, 그 전에 온 사람은 비어 있어요. 링크로 바로 들어온 사람은 소개 웹을 건너뛸 수 있어요.</p>
     </div>
   );
+}
+
+/** 기기 이름만 짧게: 아이폰 iOS 17 · 사파리 / 안드로이드 · 크롬 */
+function phoneOf(ua) {
+  const os = /iPhone|iPad/.test(ua) ? `아이폰 iOS ${(ua.match(/OS (\d+)/) || [])[1] || ''}` : /Android/.test(ua) ? `안드로이드 ${(ua.match(/Android (\d+)/) || [])[1] || ''}` : /Windows/.test(ua) ? '윈도우' : /Mac OS/.test(ua) ? '맥' : '기타';
+  const br = /KAKAOTALK/i.test(ua) ? '카카오톡 안' : /NAVER/i.test(ua) ? '네이버 앱 안' : /Instagram/i.test(ua) ? '인스타그램 안' : /SamsungBrowser/.test(ua) ? '삼성 인터넷' : /Edg\//.test(ua) ? '엣지' : /CriOS|Chrome/.test(ua) ? '크롬' : /Safari/.test(ua) ? '사파리' : '';
+  return [os.trim(), br].filter(Boolean).join(' · ');
 }

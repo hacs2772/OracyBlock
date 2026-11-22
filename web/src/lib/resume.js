@@ -18,7 +18,8 @@ function write(obj) {
 }
 export function loadResume(talkId) {
   const r = all()[talkId];
-  if (!r || Date.now() - r.at > KEEP || !r.si) return null;
+  // 망가진 기록(다른 판에서 남은 것 등)은 이어 하지 않아요. 화면이 멈추지 않게
+  if (!r || Date.now() - r.at > KEEP || !r.si || !Array.isArray(r.bricks) || !r.stats || typeof r.stats !== 'object') return null;
   return r;
 }
 export function saveResume(talkId, data) {

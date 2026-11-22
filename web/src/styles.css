@@ -576,3 +576,9 @@ textarea.input { height: 120px; padding: 10px 12px; resize: vertical; line-heigh
 .fn-row.worst .fn-drop { color: var(--coral-ink); font-weight: 700; }
 .fn-num { white-space: nowrap; text-align: right; }
 .fn-drop { text-align: right; color: var(--faint); }
+
+/* 관리자 "화면 오류" (concept 11-26) */
+.er-msg { font-size: 14px; line-height: 1.5; margin-top: 6px; font-weight: 700; word-break: break-word; }
+.er-stack { margin: 6px 0 0; padding: 8px; max-height: 240px; overflow: auto; font-size: 11px; line-height: 1.45; white-space: pre-wrap; word-break: break-all; background: var(--cream); border: 1.5px solid var(--line); border-radius: 8px; }
+.chip.er-crash { background: var(--pink-bg); border-color: var(--coral); color: var(--coral-ink); font-weight: 700; }
+.ol-bar { margin: 8px 16px 0; font-size: 13px; } /* 인터넷 끊김 한 줄 (concept 11-27) */

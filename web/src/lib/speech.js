@@ -35,14 +35,18 @@ let voices = [];
 function loadVoices() {
   if (!canSpeak) return;
   voices = synth.getVoices().filter((v) => /^ja([-_]|$)/i.test(v.lang));
-  listeners.forEach((fn) => fn());
 }
+// 목록이 바뀌었다고 브라우저가 알려 줄 때만 화면에 알려요 (일본어 목소리가 없는 기기에서 끝없이 다시 부르지 않게)
+const changed = () => {
+  loadVoices();
+  listeners.forEach((fn) => fn());
+};
 if (canSpeak) {
   loadVoices();
   try {
-    synth.addEventListener('voiceschanged', loadVoices);
+    synth.addEventListener('voiceschanged', changed);
   } catch {
-    synth.onvoiceschanged = loadVoices;
+    synth.onvoiceschanged = changed;
   }
 }
 /** 일본어 목소리, 좋은 것부터 */

@@ -17,6 +17,11 @@ public class RateLimiter {
         if (count(key, windowMillis) >= max) throw new ApiException(HttpStatus.TOO_MANY_REQUESTS, message);
     }
 
+    /** 막지 않고 되는지만 알려 줘요 (조용히 버릴 때) */
+    public boolean allow(String key, int max, long windowMillis) {
+        return count(key, windowMillis) < max;
+    }
+
     public void record(String key) {
         hits.computeIfAbsent(key, k -> new ArrayDeque<>()).addLast(System.currentTimeMillis());
     }

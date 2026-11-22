@@ -18,8 +18,10 @@ public class AdminController {
     private final AdminMapper admin;
     private final UserMapper users;
     private final ReportMapper reports;
+    private final com.oracyblock.error.ErrorController.ErrorMapper errors;
 
-    public AdminController(AdminMapper admin, UserMapper users, ReportMapper reports) {
+    public AdminController(AdminMapper admin, UserMapper users, ReportMapper reports, com.oracyblock.error.ErrorController.ErrorMapper errors) {
+        this.errors = errors;
         this.admin = admin;
         this.users = users;
         this.reports = reports;
@@ -40,6 +42,7 @@ public class AdminController {
         m.put("talks", admin.talks());
         m.put("openFeedback", admin.openFeedback());
         m.put("openReports", reports.openCount());
+        m.put("openErrors", errors.openCount());
         return m;
     }
 
