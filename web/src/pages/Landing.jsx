@@ -11,6 +11,7 @@ import { INTRO, Guide } from '../components/Guides.jsx';
 import { TALK_SLIDES, TOWER_SLIDES, REVIEW_SLIDES } from '../components/LandingSlides.jsx';
 import Face from '../components/Face.jsx';
 import { Stack } from '../components/ui.jsx';
+import { markStep } from '../lib/steps.js';
 
 
 /**
@@ -136,8 +137,12 @@ export default function Landing() {
   const nav = useNavigate();
   const [pop, setPop] = useState(null); // 'talk' | 'review' | 'tower'
   const st = useStore();
+  useEffect(() => {
+    markStep('about');
+  }, []);
   const start = () => {
     unlock();
+    markStep('cta');
     store.set({ seenIntro: true });
     nav('/');
     window.scrollTo(0, 0);

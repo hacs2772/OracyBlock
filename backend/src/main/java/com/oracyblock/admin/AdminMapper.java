@@ -60,17 +60,36 @@ public interface AdminMapper {
         """)
     List<Map<String, Object>> days(@Param("today") LocalDate today);
 
+    /** 어디서 그만두나요 (concept 11-25): 최근 14일에 처음 온 기기가 단계마다 몇 명 지나갔는지 */
     @Select("""
         WITH f AS (SELECT visitor_id, MIN(day) AS first FROM s_visit GROUP BY visitor_id HAVING MIN(day) > #{today} - 14)
         SELECT COUNT(*) AS came,
+          COUNT(*) FILTER (WHERE EXISTS (SELECT 1 FROM s_step s WHERE s.visitor_id = f.visitor_id AND s.step = 'about')) AS about,
+          COUNT(*) FILTER (WHERE EXISTS (SELECT 1 FROM s_step s WHERE s.visitor_id = f.visitor_id AND s.step = 'cta')) AS cta,
+          COUNT(*) FILTER (WHERE EXISTS (SELECT 1 FROM s_step s WHERE s.visitor_id = f.visitor_id AND s.step = 'guide')) AS guide,
+          COUNT(*) FILTER (WHERE EXISTS (SELECT 1 FROM s_step s WHERE s.visitor_id = f.visitor_id AND s.step = 'sound')) AS sound,
           COUNT(*) FILTER (WHERE EXISTS (SELECT 1 FROM s_play p WHERE p.visitor_id = f.visitor_id)) AS started,
           COUNT(*) FILTER (WHERE EXISTS (SELECT 1 FROM s_play p WHERE p.visitor_id = f.visitor_id AND p.finished_at IS NOT NULL)) AS finished,
+          COUNT(*) FILTER (WHERE (SELECT COUNT(*) FROM s_play p WHERE p.visitor_id = f.visitor_id AND p.finished_at IS NOT NULL) >= 2) AS "finished2",
           COUNT(*) FILTER (WHERE EXISTS (SELECT 1 FROM s_visit v WHERE v.visitor_id = f.visitor_id AND v.user_id IS NOT NULL)
             OR EXISTS (SELECT 1 FROM s_play p WHERE p.visitor_id = f.visitor_id AND p.user_id IS NOT NULL)) AS joined,
+          COUNT(*) FILTER (WHERE f.first < #{today}) AS "canComeBack",
           COUNT(*) FILTER (WHERE EXISTS (SELECT 1 FROM s_visit v WHERE v.visitor_id = f.visitor_id AND v.day > f.first)) AS "cameBack"
         FROM f
         """)
     Map<String, Object> funnel(@Param("today") LocalDate today);
+
+    /** 첫 대화를 끝내지 못한 사람이 멈춘 곳: 처음 시작한 대화의 마지막 차례 (최근 14일에 처음 온 기기) */
+    @Select("""
+        WITH f AS (SELECT visitor_id FROM s_visit GROUP BY visitor_id HAVING MIN(day) > #{today} - 14)
+        SELECT p.talk_id AS "talkId", COALESCE(p.last_turn, -1) AS "turnIdx", COUNT(*) AS n
+        FROM f JOIN LATERAL (SELECT * FROM s_play q WHERE q.visitor_id = f.visitor_id ORDER BY q.started_at LIMIT 1) p ON true
+        WHERE p.finished_at IS NULL
+          AND NOT EXISTS (SELECT 1 FROM s_play d WHERE d.visitor_id = f.visitor_id AND d.finished_at IS NOT NULL)
+        GROUP BY p.talk_id, COALESCE(p.last_turn, -1)
+        ORDER BY n DESC, "turnIdx" LIMIT 15
+        """)
+    List<Map<String, Object>> stuck(@Param("today") LocalDate today);
 
     @Select("""
         SELECT talk_id AS "talkId", COUNT(*) AS started,

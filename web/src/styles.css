@@ -565,3 +565,14 @@ textarea.input { height: 120px; padding: 10px 12px; resize: vertical; line-heigh
 .vp-row.on { border: 2px solid var(--navy); }
 .vp-t { display: flex; flex-direction: column; flex: 1; min-width: 0; }
 .vp-t b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* 관리자 "어디서 그만두나요" 막대 (concept 11-25) */
+.fn-card { padding: 10px 12px; }
+.fn-row { display: grid; grid-template-columns: minmax(0, 8.5em) 1fr 5.6em 2.6em; align-items: center; gap: 8px; min-height: 34px; font-size: 13px; }
+.fn-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fn-bar { height: 12px; border: 1.5px solid var(--navy); border-radius: 3px; background: var(--cream); overflow: hidden; }
+.fn-bar i { display: block; height: 100%; background: var(--mint); }
+.fn-row.worst .fn-bar i { background: var(--coral); }
+.fn-row.worst .fn-drop { color: var(--coral-ink); font-weight: 700; }
+.fn-num { white-space: nowrap; text-align: right; }
+.fn-drop { text-align: right; color: var(--faint); }

@@ -101,20 +101,32 @@ export default function Admin() {
           </div>
 
           <h2 style={{ fontSize: 20 }}>어디서 그만두나요 (최근 14일에 처음 온 사람)</h2>
-          <div className="card" style={{ padding: '4px 12px' }}>
-            {[
-              ['처음 들어옴', d.funnel.came],
-              ['대화를 시작함', d.funnel.started],
-              ['대화 하나를 끝냄', d.funnel.finished],
-              ['가입함', d.funnel.joined],
-              ['다음 날 이후 다시 옴', d.funnel.cameBack],
-            ].map(([l, v]) => (
-              <div key={l} className="set-row" style={{ minHeight: 40 }}>
-                <span>{l}</span>
-                <span><b>{v}</b> <span className="small muted">{pct(v, d.funnel.came)}</span></span>
+          <Funnel f={d.funnel} />
+          {d.stuck?.length > 0 && (
+            <>
+              <h2 style={{ fontSize: 20 }}>첫 대화를 못 끝낸 사람이 멈춘 곳</h2>
+              <div className="card adm-scroll" style={{ padding: '4px 12px' }}>
+                <table className="adm-table">
+                  <thead><tr><th>대화</th><th>차례</th><th>그 차례</th><th>명</th></tr></thead>
+                  <tbody>
+                    {d.stuck.map((x) => {
+                      const t = talkById(x.talkId);
+                      const s0 = t?.steps[x.turnIdx];
+                      const what = x.turnIdx < 0 ? '첫 말을 듣기 전' : !s0 ? '-' : s0.type === 'them' ? `상대: ${s0.line.ko} (${s0.line.mean})` : `내 대답: ${s0.options.map((o) => o.natural.ko).join(' / ')}`;
+                      return (
+                        <tr key={x.talkId + ':' + x.turnIdx}>
+                          <td>{t?.place || x.talkId}</td>
+                          <td>{x.turnIdx < 0 ? '-' : x.turnIdx + 1}</td>
+                          <td style={{ minWidth: 180 }}>{what}</td>
+                          <td>{x.n}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
-            ))}
-          </div>
+            </>
+          )}
 
           <h2 style={{ fontSize: 20 }}>대화별</h2>
           <div className="card adm-scroll" style={{ padding: '4px 12px' }}>
@@ -222,6 +234,42 @@ export default function Admin() {
           </label>
         </div>
       ))}
+    </div>
+  );
+}
+
+/** 단계마다 몇 명 지나갔는지 막대로. 앞 단계보다 가장 많이 줄어든 곳을 붉게 (concept 11-25) */
+function Funnel({ f }) {
+  const rows = [
+    ['처음 들어옴', f.came],
+    ['소개 웹을 봄', f.about],
+    ['시작 버튼을 누름', f.cta],
+    ['게임 방법을 봄', f.guide],
+    ['소리 확인을 끝냄', f.sound],
+    ['대화를 시작함', f.started],
+    ['대화 하나를 끝냄', f.finished],
+    ['대화 두 개를 끝냄', f.finished2],
+    ['가입함', f.joined],
+  ];
+  const drops = rows.map(([, v], i) => (i ? Math.max(0, rows[i - 1][1] - v) : 0));
+  const worst = Math.max(...drops);
+  const base = Math.max(1, f.came);
+  return (
+    <div className="card fn-card">
+      {rows.map(([label, v], i) => (
+        <div key={label} className={'fn-row' + (worst > 0 && drops[i] === worst ? ' worst' : '')}>
+          <span className="fn-label">{label}</span>
+          <span className="fn-bar"><i style={{ width: `${Math.round((100 * v) / base)}%` }} /></span>
+          <span className="fn-num"><b>{v}</b> <span className="small muted">{Math.round((100 * v) / base)}%</span></span>
+          {drops[i] > 0 && <span className="fn-drop small">-{drops[i]}</span>}
+        </div>
+      ))}
+      <div className="fn-row">
+        <span className="fn-label">다음 날 다시 옴</span>
+        <span className="fn-bar"><i style={{ width: `${Math.round((100 * f.cameBack) / Math.max(1, f.canComeBack))}%` }} /></span>
+        <span className="fn-num"><b>{f.cameBack}</b> <span className="small muted">/{f.canComeBack}</span></span>
+      </div>
+      <p className="small muted" style={{ marginTop: 6 }}>소개 웹·게임 방법·소리 확인은 이번에 새로 센 단계라, 그 전에 온 사람은 비어 있어요. 링크로 바로 들어온 사람은 소개 웹을 건너뛸 수 있어요.</p>
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { store, useStore } from './store.js';
 import { unlock } from './speech.js';
 import { speedOf } from './speed.js';
 import { loadResume } from './resume.js';
+import { markStep } from './steps.js';
 import { Sheet } from '../components/ui.jsx';
 import WordQuiz, { BigWordRow } from '../components/WordQuiz.jsx';
 import SoundCheck from '../components/SoundCheck.jsx';
@@ -69,6 +70,7 @@ export function useStartTalk(prog) {
       {check && (
         <SoundCheck
           onDone={() => {
+            markStep('sound');
             const next = check.next;
             setCheck(null);
             if (next) start(next);
@@ -86,6 +88,7 @@ export function useStartTalk(prog) {
             const next = guide.next;
             setGuide(null);
             store.set({ seenGame: true });
+            markStep('guide');
             if (next) start(next);
           }}
         />

@@ -173,6 +173,7 @@ export default function Talk() {
   useEffect(() => {
     if (!talk || done || resumeAsk || si === 0) return;
     const s = stats.current;
+    if (playId.current && si > 0) quiet(`/plays/${playId.current}/at`, { method: 'POST', body: { i: si } }); // 어디서 멈췄는지 (concept 11-25)
     saveResume(talk.id, {
       playId: playId.current,
       si,

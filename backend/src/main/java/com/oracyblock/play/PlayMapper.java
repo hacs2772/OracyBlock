@@ -24,6 +24,9 @@ public interface PlayMapper {
         """)
     int finish(@Param("id") long id, @Param("day") LocalDate day, @Param("dayCap") int dayCap, @Param("f") PlayController.FinishRequest f);
 
+    @Update("UPDATE play SET last_turn = GREATEST(COALESCE(last_turn, -1), #{turn}) WHERE id = #{id} AND owner = #{owner} AND finished_at IS NULL")
+    void reach(@Param("id") long id, @Param("owner") String owner, @Param("turn") int turn);
+
     @Select("SELECT COUNT(*) FROM play WHERE owner = #{owner} AND day = #{today} AND finished_at IS NOT NULL")
     int finishedOn(@Param("owner") String owner, @Param("today") LocalDate today);
 

@@ -55,6 +55,16 @@ public class PlayController {
         return Map.of("id", p.id);
     }
 
+    public record TurnAt(int i) {}
+
+    /** 대화 중 지금 몇 번째 차례인지 (끝내지 못한 대화가 어디서 멈췄는지 보려고, concept 11-25) */
+    @PostMapping("/plays/{id}/at")
+    public Map<String, Object> at(@AuthenticationPrincipal Long userId, @PathVariable long id, @RequestBody TurnAt body, HttpServletRequest req) {
+        Who who = Who.of(userId, req);
+        if (body != null) plays.reach(id, who.owner(), Math.max(0, Math.min(60, body.i())));
+        return Map.of("ok", true);
+    }
+
     @PostMapping("/plays/{id}/finish")
     @Transactional
     public Map<String, Object> finish(@AuthenticationPrincipal Long userId, @PathVariable long id,

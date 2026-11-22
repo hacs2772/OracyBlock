@@ -11,6 +11,7 @@ import { loadResume, resumeIds } from '../lib/resume.js';
 import { useStartTalk } from '../lib/useStartTalk.jsx';
 import { Guide } from '../components/Guides.jsx';
 import { TALK_SLIDES } from '../components/LandingSlides.jsx';
+import { markStep } from '../lib/steps.js';
 
 const MINI = { studs: 4, pitch: 9, h: 11, depth: 6, studH: 3 };
 const LV_TONE = ['#29B6A5', '#FF7967', '#FFC857', '#6BB8E8', '#A792E0'];
@@ -43,6 +44,7 @@ export default function Learn() {
   const closeHelp = () => {
     setHelp(false);
     store.set({ seenHelp: { ...(store.s.seenHelp || {}), learn: true }, seenGame: true });
+    markStep('guide');
   };
   const fixCount = new Map();
   for (const g of fixes) fixCount.set(g.talkId, (fixCount.get(g.talkId) || 0) + g.items.length);

@@ -36,6 +36,7 @@ public class AdminController {
         m.put("review", admin.review());
         m.put("days", admin.days(today));
         m.put("funnel", admin.funnel(today));
+        m.put("stuck", admin.stuck(today));
         m.put("talks", admin.talks());
         m.put("openFeedback", admin.openFeedback());
         m.put("openReports", reports.openCount());
