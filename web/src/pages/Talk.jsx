@@ -161,7 +161,7 @@ export default function Talk() {
   const step = eff(talk?.steps[si]);
   const steps = talk?.steps || [];
   // 화면이 낮은 휴대폰(아이폰 SE 등)은 무대를 조금 낮게
-  const stageH = typeof window !== 'undefined' && window.innerHeight < 700 ? 118 : 200;
+  const stageH = typeof window === 'undefined' ? 200 : window.innerHeight < 600 ? 100 : window.innerHeight < 700 ? 118 : 200; // 아주 낮은 화면(SE 1세대)은 탑 무대를 더 낮게
   const small = stageH < 200;
   // 탑 높이는 실제로 지나갈 차례 수로 (가지는 가장 긴 쪽 하나만)
   const branchLen = {};
@@ -572,7 +572,7 @@ function ThemPanel({ say, talkId, step, ph, setPh, partner, rate, pick, next, on
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       {ph.hint && <div className="hint-box">힌트 단어: {step.keys.map((w) => `${w.ko}(${w.mean})`).join(' · ')} <span className="small muted">(브릭이 살짝 비뚤게 쌓여요)</span></div>}
-      <h2 style={{ fontSize: 21, marginTop: 2 }}>{partner}{josa(partner, '이', '가')} 뭐라고 했을까요?</h2>
+      <h2 className="tk-qh" style={{ fontSize: 21, marginTop: 2 }}>{partner}{josa(partner, '이', '가')} 뭐라고 했을까요?</h2>
       {ph.fb && <p className="fb" aria-live="polite">{ph.fb}</p>}
       <div className={'opts' + (ph.shake === 99 ? ' shake-' + (ph.n % 2) : '')}>
         {opts.map((m, i) => (

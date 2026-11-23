@@ -34,6 +34,7 @@ export const FACE_OF = {
   konbini: 'clerk', photo: 'youngM', ramen: 'chef', busstop: 'auntie3', hotel: 'staff', laundry: 'student',
   gate: 'office2', cafe: 'youngW2', hairsalon: 'bob', platform: 'office',
   izakaya3: 'youngM', karaoke: 'student', skilift: 'clerk', baseball: 'master', osaka: 'auntie', nomikai: 'office2', guesthouse3: 'youngW',
+  drugstore: 'staff', sushi: 'chef', hanami: 'office2', lost: 'student', ryokan: 'auntie3', shrine: 'grandpa',
 };
 
 function hairBack(f) {
