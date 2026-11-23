@@ -586,3 +586,22 @@ textarea.input { height: 120px; padding: 10px 12px; resize: vertical; line-heigh
 .er-stack { margin: 6px 0 0; padding: 8px; max-height: 240px; overflow: auto; font-size: 11px; line-height: 1.45; white-space: pre-wrap; word-break: break-all; background: var(--cream); border: 1.5px solid var(--line); border-radius: 8px; }
 .chip.er-crash { background: var(--pink-bg); border-color: var(--coral); color: var(--coral-ink); font-weight: 700; }
 .ol-bar { margin: 8px 16px 0; font-size: 13px; } /* 인터넷 끊김 한 줄 (concept 11-27) */
+
+/* 내 탑 자랑하기 카드 (시안 B, concept 11-30). 360×360 고정, 사진은 3배 */
+.sc-preview { display: flex; justify-content: center; margin-top: 10px; overflow: hidden; }
+.sc-card { position: relative; width: 360px; height: 360px; flex: none; display: grid; grid-template-columns: 150px 1fr; grid-template-rows: 1fr auto; gap: 0 12px; padding: 18px; border: 3px solid var(--navy); border-radius: 18px; background: var(--cream); color: var(--navy); overflow: hidden; }
+.sc-tower { position: relative; height: 100%; min-height: 0; border-radius: 12px; border: 2px solid var(--plate-line); background-color: var(--plate); background-image: radial-gradient(var(--plate-line) 1.4px, transparent 1.5px); background-size: 15px 15px; overflow: hidden; }
+.sc-side { display: flex; flex-direction: column; justify-content: center; min-width: 0; }
+.sc-big { font-family: var(--display); font-size: 40px; line-height: 1.1; }
+.sc-sub { margin-top: 4px; font-size: 14px; line-height: 1.4; color: var(--ink2); }
+.sc-chips { display: flex; flex-direction: column; align-items: flex-start; gap: 7px; margin-top: 12px; }
+.sc-chip { padding: 4px 10px; border: 2px solid var(--navy); border-radius: 6px; font-size: 14px; font-weight: 700; white-space: nowrap; }
+.sc-chip.mint { background: var(--mint-bg); }
+.sc-chip.coral { background: var(--pink-bg); }
+.sc-chip.yellow { background: var(--yellow-bg); }
+.sc-brand { grid-column: 1 / 3; display: flex; align-items: center; gap: 6px; margin-top: 10px; }
+.sc-brand-t { font-family: var(--display); font-size: 17px; }
+.sc-brand-t b { color: var(--coral-ink); font-weight: 400; }
+.sc-url { margin-left: auto; font-size: 12px; color: var(--faint); }
+@media (max-width: 400px) { .sc-preview { height: 288px; } .sc-scale { transform: scale(0.8); transform-origin: top center; } }
+@media (max-width: 340px) { .sc-preview { height: 252px; } .sc-scale { transform: scale(0.7); } }

@@ -14,6 +14,7 @@ import { TopBar, Sheet, Tabs, Question } from '../components/ui.jsx';
 import { FlagTop, LanternTop, GOLD_PLATE } from '../components/Looks.jsx';
 import { Guide } from '../components/Guides.jsx';
 import { TOWER_SLIDES } from '../components/LandingSlides.jsx';
+import ShareSheet from '../components/ShareCard.jsx';
 
 const dayNum = (s) => Math.round(new Date(s + 'T00:00:00Z').getTime() / 864e5);
 
@@ -106,6 +107,7 @@ export default function TowerPage() {
   const [scope, setScope] = useState('week');
   const [rank, setRank] = useState(null);
   const [info, setInfo] = useState(false);
+  const [sharing, setSharing] = useState(false);
   useEffect(() => {
     quiet('/tower').then(setTower);
     quiet('/progress').then(setProg);
@@ -150,6 +152,9 @@ export default function TowerPage() {
       <div className="plate" style={{ boxShadow: 'none' }}>
         {t.stack.length ? <Pyramid stack={t.stack} cracks={t.cracks} looks={tower?.looks || []} /> : <p className="small" style={{ padding: '30px 0', textAlign: 'center' }}>대화를 하나 끝내면 첫 브릭이 쌓여요.</p>}
       </div>
+      {t.stack.length > 0 && (
+        <button className="ob-btn wide" onClick={() => setSharing(true)}><span className="t">내 탑 자랑하기</span></button>
+      )}
       {t.fallen > 0 && <p className="small muted">쉬는 동안 브릭 {t.fallen}개가 떨어졌어요. 한 번 쉴 때 떨어지는 건 최대 {MAX_FALL}개까지예요.</p>}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 10px' }} className="small muted" aria-label="요일마다 브릭 색">
         {[1, 2, 3, 4, 5, 6, 0].map((d) => (
@@ -189,6 +194,16 @@ export default function TowerPage() {
       )}
 
       <Tabs />
+      {sharing && (
+        <ShareSheet
+          onClose={() => setSharing(false)}
+          stack={t.stack}
+          looks={tower?.looks || []}
+          days={days}
+          talks={(prog?.plays || []).length}
+          third={rank?.mine || rank?.rows?.find((r) => r.me) ? `${scope === 'week' ? '이번 주' : '전체'} ${(rank.rows.find((r) => r.me) || rank.mine).rank}등` : `Lv${st.level}`}
+        />
+      )}
       {info && (
         <Sheet title="탑은 이렇게 쌓여요" onClose={() => setInfo(false)} labelId="tw-info">
           <p style={{ fontSize: 14, lineHeight: 1.6, marginTop: 8 }}>대화 하나를 끝낼 때마다 브릭이 1개 쌓여요. 하루에 쌓을 수 있는 수는 쌓는 속도에 따라 달라요. 더 많이 하면 레벨이 높은 대화부터 쌓여요.</p>
