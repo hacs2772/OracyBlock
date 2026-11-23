@@ -24,6 +24,13 @@ for (const t of GAME_TALKS) {
       for (const a of s.alts || []) {
         if (!a.ja || !a.ko) errors.push(`${at} 다른 말투에 일본어·한글 발음이 비었어요`);
         for (const k of a.keys) if (!has(a.ko, k.ko)) errors.push(`${at} 다른 말투의 핵심 단어 "${k.ko}"가 "${a.ko}" 안에 없어요`);
+        if (a.ownMean) {
+          // 자기 뜻을 가진 다른 말투: 뜻 보기 5개에 그 뜻이 있어야 해요
+          if (!a.meanings?.includes(a.mean)) errors.push(`${at} 다른 말투 "${a.ko}"의 뜻 보기에 정답이 없어요`);
+          if (a.meanings?.length !== 5 || new Set(a.meanings).size !== 5) errors.push(`${at} 다른 말투 "${a.ko}"의 뜻 보기가 5개가 아니거나 겹쳐요`);
+          const sibs = [l.mean, ...s.alts.map((b) => b.mean)].filter((m) => m !== a.mean);
+          if (a.meanings?.some((m) => sibs.includes(m))) errors.push(`${at} 다른 말투 "${a.ko}"의 틀린 보기에 같은 차례의 뜻이 섞였어요`);
+        }
       }
       if (!s.meanings.includes(l.mean)) errors.push(`${at} 뜻 보기에 정답이 없어요`);
       if (s.meanings.length !== 5) errors.push(`${at} 뜻 보기가 5개가 아니에요 (${s.meanings.length})`);

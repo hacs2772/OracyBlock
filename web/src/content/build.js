@@ -292,12 +292,12 @@ const jac = (a, b) => {
 const ALSO_SIMILAR = [
   // 뜻이 사실상 같은 말 묶음 (사람이 읽고 고름). 같은 묶음끼리는 서로 틀린 보기로 나오지 않아요
   ['다음엔 뭐 부를래?', '한 곡 더 가자! 뭐가 좋아?'],
-  ['뭘로 하시겠어요?', '어서 와요! 뭘로 할래요?', '어서 와요! 뭐부터 쥘까요?'],
-  ['그럼 좋은 여행 하세요!', '좋네요. 즐거운 여행 되세요!', '즐겁게 다녀와요!', '아, 곧 나고야네. 그럼 좋은 여행 해요!', '좋은 여행 되길 바라. 조심히 가거라', '오늘 만나서 다행이야! 즐겁게 보내!'],
-  ['감사합니다. 또 오세요!', '수고하셨어요. 또 오세요!', '좋네요. 또 오세요', '또 일본에 오세요', '또 일본 와. 기다릴게', '오사카 즐겨! 또 와!', '고마워요! 또 와요'],
-  ['좋아, 건배하자!', '좋았어, 건배하자!', '슬슬 다시 건배할까!'],
+  ['뭘로 하시겠어요?', '어서 와! 뭘로 할래?', '어서 와요! 뭐부터 쥘까요?'],
+  ['그럼 좋은 여행 하세요!', '좋네요. 즐거운 여행 되세요!', '즐겁게 다녀와!', '아, 곧 나고야네. 그럼 좋은 여행 되세요!', '좋은 여행 되길 바라. 조심히 가거라', '오늘 만나서 좋았어! 즐겁게 보내!', '그럼 즐겁게 보내세요!', '교토, 즐겁게 다녀와!', '만나서 좋았어! 여행 즐겁게 해!', '즐거운 여행이 되면 좋겠네요', '좋은 여행 하거라. 조심히 가', '슬슬 나고야네. 그럼 좋은 여행 되세요!'],
+  ['감사합니다. 또 오세요!', '수고하셨어요. 또 오세요!', '좋네요. 또 오세요', '또 일본에 오세요', '또 일본 와. 기다릴게', '오사카 즐겨! 또 와!', '고마워! 또 와', '또 놀러 와. 기다릴게', '또 놀러 오세요', '감사합니다! 또 기다릴게요', '고마워! 또 와!', '또 들러! 조심히 가!'],
+  ['좋아, 건배하자!', '좋았어, 건배하자!', '슬슬 다시 건배할까!', '좋아, 한 번 더 건배하자!', '그럼 건배할까!', '자, 다시 한 번 건배!'],
   ['자, 도착했어요', '자, 도착! 여기야'],
-  ['조심히 가!', '됐어! 그럼 조심히 가~', '그럼 조심해! 아래에서 또 봐!', '좋은 여행 되길 바라. 조심히 가거라'],
+  ['조심히 가!', '됐어! 그럼 조심히 가~', '그럼 조심해! 아래에서 또 봐!', '좋은 여행 되길 바라. 조심히 가거라', '수고하셨어요. 조심히 가세요!', '그럼 조심히 가세요', '괜찮아 괜찮아! 조심히 가~', '또 들러! 조심히 가!'],
   ['그럼 편히 지내세요', '부디 편히 쉬세요'],
 ];
 /** 뜻이 사실상 같아서 틀린 보기로 쓰면 안 되는 말 */
@@ -361,9 +361,10 @@ const fits = (g, level) =>
   !g.end && (level >= 3 || !g.polite) && (level >= 2 || (!g.n && !g.marks)) && g.ratio <= (level === 0 ? 1.5 : level === 1 ? 1.9 : 2.4);
 
 /** 상대 말 뜻 맞히기: 보기 5개 = 정답 1 + 모양이 같고 헷갈리는 말 4 (뜻이 같은 말은 빼고) */
-function meaningSets(talk, idx, line) {
-  const rnd = seeded(talk.id + ':' + idx);
-  const cands = ALL_THEM.filter((x) => x.line !== line && !similar(line, x.line))
+function meaningSets(talk, idx, line, exclude = []) {
+  const rnd = seeded(talk.id + ':' + idx + (exclude.length ? ':' + line.mean : ''));
+  // exclude = 같은 차례의 원래 뜻·다른 말투 뜻 (사실상 같은 말이라 틀린 보기로 쓰면 안 돼요)
+  const cands = ALL_THEM.filter((x) => x.line !== line && !similar(line, x.line) && !exclude.includes(x.line.mean) && !exclude.some((m) => similar({ mean: m }, x.line)))
     .map((x) => {
       const g = shapeGap(line.mean, x.line.mean);
       return { line: x.line, g, score: confusable(line, x.line, x.talk === talk.id) - g.ratio + rnd() * 1.2 };
@@ -486,7 +487,8 @@ function buildTalk(t) {
       const line = turn.them;
       steps.push({
         type: 'them', idx, line, when: turn.when || null,
-        alts: line.alt || [],
+        // 다른 말투가 자기 뜻을 가지면 뜻 보기도 따로 만들어요 (concept 11-31)
+        alts: (line.alt || []).map((a) => (a.ownMean ? { ...a, ...meaningSets(t, idx, { ...line, ja: a.ja, ko: a.ko, mean: a.mean, keys: a.keys }, [line.mean, ...(line.alt || []).map((b) => b.mean)]) } : a)),
         casual: isCasual(line.ja),
         keys: line.keys,
         ...meaningSets(t, idx, line),

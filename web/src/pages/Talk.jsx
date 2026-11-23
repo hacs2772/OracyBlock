@@ -142,15 +142,18 @@ export default function Talk() {
     if (!s0) return s0;
     // 놓친 단어 섞기는 그 차례를 처음 볼 때 정해서 끝까지 같게 (보기가 바뀌어 보이지 않게)
     const mmap = stats.current.mix || (stats.current.mix = {});
-    if (!(s0.idx in mmap)) mmap[s0.idx] = mixMissed(s0, missedKeys);
-    const s = mmap[s0.idx];
-    if (!s || s.type !== 'them' || !s.alts?.length) return s;
-    const vmap = stats.current.variant || (stats.current.variant = {});
-    if (!(s.idx in vmap)) vmap[s.idx] = (stats.current.again || again) ? 1 + Math.floor(Math.random() * s.alts.length) : Math.floor(Math.random() * (s.alts.length + 1));
-    const v = vmap[s.idx];
-    if (!v) return s;
-    const a = s.alts[v - 1];
-    return { ...s, line: { ...s.line, ja: a.ja, ko: a.ko }, keys: a.keys, casual: isCasual(a.ja) };
+    if (!(s0.idx in mmap)) {
+      // 말투를 먼저 고르고(다른 말투는 자기 뜻·뜻 보기를 가져요), 그다음 놓친 단어 섞기
+      let s1 = s0;
+      if (s0.type === 'them' && s0.alts?.length) {
+        const vmap = stats.current.variant || (stats.current.variant = {});
+        if (!(s0.idx in vmap)) vmap[s0.idx] = (stats.current.again || again) ? 1 + Math.floor(Math.random() * s0.alts.length) : Math.floor(Math.random() * (s0.alts.length + 1));
+        const a = vmap[s0.idx] ? s0.alts[vmap[s0.idx] - 1] : null;
+        if (a) s1 = { ...s0, line: { ...s0.line, ja: a.ja, ko: a.ko, mean: a.mean }, keys: a.keys, casual: isCasual(a.ja), meanings: a.meanings || s0.meanings, spareMeanings: a.spareMeanings || s0.spareMeanings };
+      }
+      mmap[s0.idx] = mixMissed(s1, missedKeys);
+    }
+    return mmap[s0.idx];
   };
   // 가지: 고른 대답의 꼬리표(go)에 맞는 차례만 지나가요
   const nextIdx = (from, tags = stats.current.tags || []) => {

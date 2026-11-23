@@ -18,7 +18,7 @@ for (const t of GAME_TALKS) {
     const br = s.when || '';
     if (s.type === 'them') {
       rows.push([++n, t.level, t.place, turn, t.partner, '상대 말', s.line.ja, s.line.ko, s.line.mean, br, '', '']);
-      for (const a of s.alts || []) rows.push([++n, t.level, t.place, turn, t.partner, '상대 말 (다른 말투)', a.ja, a.ko, s.line.mean, br, '', '']);
+      for (const a of s.alts || []) rows.push([++n, t.level, t.place, turn, t.partner, '상대 말 (다른 말투)', a.ja, a.ko, a.mean || s.line.mean, br, '', '']);
     } else {
       for (const o of s.options) {
         rows.push([++n, t.level, t.place, turn, '나', '맞는 대답', o.natural.ja, o.natural.ko, o.natural.mean, br, '', '']);
