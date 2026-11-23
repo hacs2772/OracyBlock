@@ -11,4 +11,5 @@
 - `ai/part-01.txt` ~ `ai/part-11.txt`: 질문 + 대사 약 100줄씩. **파일 하나를 통째로 복사**해서 무료 AI 채팅(Gemini, ChatGPT 등)에 붙여 넣으면 돼요
 - AI가 준 표(번호 · 문제 · 고칠 말 · 이유)를 그대로 Claude에게 붙여 주면, 하나씩 다시 확인한 다음 고쳐요 (AI도 틀릴 수 있어서 바로 반영하지 않아요)
 - 두 AI 이상에게 같은 파일을 보내서, 둘 다 어색하다고 한 줄을 일본 사람에게 물어보면 가장 확실해요
+- 링크를 못 읽는 AI(Gemini 등)는 `ai/gemini-1of3.csv` ~ `3of3.csv`를 하나씩 올리고, `ai/gemini-prompt.txt` 글을 붙여 넣어요
 - `npm run export:review` 할 때 같이 다시 만들어져요

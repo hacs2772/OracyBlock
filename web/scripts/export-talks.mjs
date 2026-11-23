@@ -72,3 +72,18 @@ parts.forEach((part, i) => {
   writeFileSync(resolve(aiDir, `part-${String(i + 1).padStart(2, '0')}.txt`), PROMPT + body + '\n');
 });
 console.log(`AI 검수용: ${aiDir} (${parts.length}개 파일)`);
+
+// 파일을 올리는 AI(Gemini 등)용: 대화 단위로 3개 CSV + 질문 글 (링크를 못 읽는 AI용)
+const CSV_HEAD = ['번호', '장소', '상황', '누가', '종류', '일본어', '한글 발음', '한국어 뜻', '문제 (일본어/뜻/대답/발음)', '고칠 말', '이유'];
+const per = Math.ceil(rows.length / 3);
+const csvParts = [[]];
+for (const g of ai) {
+  if (csvParts[csvParts.length - 1].reduce((m, x) => m + x.rows.length, 0) + g.rows.length > per && csvParts.length < 3) csvParts.push([]);
+  csvParts[csvParts.length - 1].push(g);
+}
+csvParts.forEach((part, i) => {
+  const lines = [CSV_HEAD, ...part.flatMap((g) => g.rows.map((r) => [r[0], g.t.place, `${g.t.partnerDesc}. ${g.t.scene || ''}`, r[4], r[5] + (r[9] ? ` (가지:${r[9]})` : ''), r[6], r[7], r[8], '', '', '']))];
+  writeFileSync(resolve(aiDir, `gemini-${i + 1}of${csvParts.length}.csv`), '\uFEFF' + lines.map((r) => r.map(q).join(',')).join('\r\n') + '\r\n');
+});
+writeFileSync(resolve(aiDir, 'gemini-prompt.txt'), PROMPT.replace('각 줄: 번호 | 누가 | 종류 | 일본어 | 한글 발음 | 한국어 뜻', '첨부한 CSV 파일의 모든 줄을 처음부터 끝까지 빠짐없이 봐 줘. 줄마다: 번호 · 장소 · 상황 · 누가 · 종류 · 일본어 · 한글 발음 · 한국어 뜻').replace('답은 문제가 있는 줄만, 아래 표로 적어 줘.', '"맞는 대답"은 같은 장소에서 바로 위에 있는 상대 말에 대한 대답이야.\n\n답은 문제가 있는 줄만, 아래 표로 적어 줘. 파일 마지막 번호까지 다 봤는지 마지막에 "끝 번호: ○○"로 적어 줘.'));
+console.log(`Gemini용: ${csvParts.length}개 CSV + gemini-prompt.txt`);
