@@ -1,0 +1,8 @@
+# OracyBlock - 검색 엔진 안내
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /me
+Disallow: /talk/
+
+Sitemap: https://oracyblock.com/sitemap.xml
