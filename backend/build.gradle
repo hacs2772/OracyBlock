@@ -34,6 +34,10 @@ dependencies {
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.13.0'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.13.0'
 
+    // 휴대폰 알림(웹 푸시, 무료): 브라우저 기본 기능 + VAPID (concept 11-32)
+    implementation 'nl.martijndwars:web-push:5.1.1'
+    implementation 'org.bouncycastle:bcprov-jdk18on:1.78.1'
+
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }

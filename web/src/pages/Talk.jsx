@@ -6,9 +6,10 @@ import { speak, stopSpeaking, listen, stopListening, canListen, MIC_ERRORS, sfx,
 import { api, quiet } from '../lib/api.js';
 import { store, useStore } from '../lib/store.js';
 import Brick from '../components/Brick.jsx';
-import { Stack, Play, Close, Mic, Ja, Sheet, Question, Meets } from '../components/ui.jsx';
+import { Stack, Play, Close, Mic, Ja, Sheet, Question, Meets, toast } from '../components/ui.jsx';
 import { Guide, GAME } from '../components/Guides.jsx';
 import { countCorrect, MEET_GAP } from '../lib/progress.js';
+import { pushState, enablePush, shouldAskPush } from '../lib/push.js';
 import { loadResume, saveResume, clearResume } from '../lib/resume.js';
 import LineReport from '../components/LineReport.jsx';
 import Face, { FACE_OF } from '../components/Face.jsx';
@@ -91,6 +92,7 @@ export default function Talk() {
   const later = (ms, fn) => timers.current.push(setTimeout(fn, ms));
   const [levelUp, setLevelUp] = useState(null);
   const [capNote, setCapNote] = useState(null);
+  const [askPush, setAskPush] = useState(() => shouldAskPush()); // 대화 끝 "알림 받기" (시안 B, concept 11-32)
   const [resumeAsk, setResumeAsk] = useState(() => loadResume(id)); // 중간에 나갔던 대화면 이어 할지 물어봐요
   const [needTap, setNeedTap] = useState(false); // 아이폰처럼 소리가 저절로 안 나면 "눌러서 들어 보세요"
   const [help, setHelp] = useState(false); // ? → 게임 방법 다시 보기
@@ -519,6 +521,7 @@ export default function Talk() {
               </div>
             </div>
           )}
+          {askPush && <PushAsk partner={partner} face={FACE_OF[talk.id]} gap={!correctNow ? 1 : meetN >= MEET_GAP.length ? 0 : meetN ? MEET_GAP[meetN] : MEET_GAP[0]} onClose={() => setAskPush(false)} />}
           {capNote && (
             <div className="note">
               오늘 브릭은 다 쌓았어요 (하루 {capNote.cap}개). 대화 연습과 단어는 그대로 남아요.
@@ -686,3 +689,46 @@ export { WordChip, BigWord };
 // 쓰지 않는 값 경고 막기
 void RESCUE_LINES;
 void ASK_AGAIN;
+
+/** 대화를 끝낸 화면의 "알림 받기" 카드 (시안 B, concept 11-32): 다시 만날 날을 이유로 묻고, 하루 한 번 저녁 9시 */
+function PushAsk({ partner, face, gap, onClose }) {
+  const [busy, setBusy] = useState(false);
+  const ios = pushState() === 'ios-home';
+  const later = () => {
+    store.set({ pushLater: Date.now() });
+    onClose();
+  };
+  const on = async () => {
+    setBusy(true);
+    try {
+      await enablePush();
+      toast('저녁 9시에 알려 드릴게요. 내 정보에서 바꿀 수 있어요');
+      onClose();
+    } catch (e) {
+      toast(e.message);
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="card tk-push">
+      <div className="tk-push-h">
+        <Face kind={face} size={40} />
+        <b>{gap ? `${gap === 1 ? '내일' : gap + '일 뒤'} 이 ${partner}${josa(partner, '을', '를')} 다시 만나요` : '저녁에 한 번 알려 드릴까요?'}</b>
+      </div>
+      {ios ? (
+        <>
+          <p className="small">아이폰은 이 사이트를 홈 화면에 추가하면 알림을 받을 수 있어요. (아래 공유 버튼 › 홈 화면에 추가)</p>
+          <button className="ob-btn sm wide" style={{ marginTop: 10 }} onClick={later}><span className="t">알겠어요</span></button>
+        </>
+      ) : (
+        <>
+          <p className="small">날이 되면 휴대폰으로 알려 드릴까요? 하루 한 번, 저녁 9시에만요.</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 10 }}>
+            <button className="ob-btn sm" onClick={later} disabled={busy}><span className="t">나중에</span></button>
+            <button className="ob-btn sm coral" onClick={on} disabled={busy}><span className="t">알림 받기</span></button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}

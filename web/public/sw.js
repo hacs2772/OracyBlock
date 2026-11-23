@@ -60,3 +60,29 @@ self.addEventListener('fetch', (e) => {
   if (req.mode === 'navigate') return e.respondWith(page(req));
   if (url.pathname.startsWith('/assets/') || url.pathname.startsWith('/icons/')) return e.respondWith(asset(req));
 });
+
+// 휴대폰 알림 (concept 11-32): 서버가 보낸 제목·내용을 그대로 보여 주고, 누르면 사이트를 열어요
+self.addEventListener('push', (e) => {
+  let d = {};
+  try {
+    d = e.data ? e.data.json() : {};
+  } catch {
+    d = { title: 'OracyBlock', body: e.data ? e.data.text() : '' };
+  }
+  e.waitUntil(self.registration.showNotification(d.title || 'OracyBlock', {
+    body: d.body || '',
+    icon: '/icons/icon-192.png',
+    badge: '/icons/icon-192.png',
+    tag: 'oracy-daily', // 하루 하나: 새 알림이 오면 예전 것을 바꿔요
+    data: { url: d.url || '/' },
+  }));
+});
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || '/';
+  e.waitUntil((async () => {
+    const all = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const c of all) if ('focus' in c) { await c.navigate(url).catch(() => {}); return c.focus(); }
+    return self.clients.openWindow(url);
+  })());
+});

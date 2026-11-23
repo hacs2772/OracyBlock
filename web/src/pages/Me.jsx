@@ -11,6 +11,7 @@ import { Guide, INTRO, GAME } from '../components/Guides.jsx';
 import { openContact } from '../components/Contact.jsx';
 import SoundCheck from '../components/SoundCheck.jsx';
 import VoicePick from '../components/VoicePick.jsx';
+import PushSettings from '../components/PushSettings.jsx';
 
 function Switch({ on, label, onClick }) {
   return (
@@ -178,6 +179,8 @@ export default function Me() {
         </div>
         {canSpeak && !hasJaVoice() && <p className="small" style={{ padding: '0 0 10px', color: '#B9473A' }}>이 기기에 일본어 목소리가 없을 수 있어요. 휴대폰 설정에서 일본어 음성을 받아 주세요.</p>}
       </div>
+
+      <PushSettings />
 
       <h2 className="set-h2">소리와 진동</h2>
       <div className="set-card">
