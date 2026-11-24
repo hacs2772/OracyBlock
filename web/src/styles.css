@@ -611,3 +611,14 @@ textarea.input { height: 120px; padding: 10px 12px; resize: vertical; line-heigh
 .tk-push-h { display: flex; align-items: center; gap: 10px; font-size: 16px; }
 .tk-push p { margin-top: 6px; line-height: 1.5; }
 .ps-kinds { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; font-size: 14px; } /* 알림 종류 (concept 11-32) */
+
+/* 상점·미션 안내 그림 (concept 11-33) */
+.sl-mrow { display: flex; align-items: center; gap: 8px; width: 290px; padding: 8px 10px; border: 2px solid var(--navy); border-radius: 8px; background: #fff; font-size: 13px; }
+.sl-mrow b { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sl-mfill { display: inline-flex; gap: 2px; }
+.sl-mfill i { width: 10px; height: 10px; border: 1.5px solid var(--navy); border-radius: 2px; background: var(--cream); }
+.sl-mget { display: inline-flex; align-items: center; gap: 3px; padding: 1px 6px; border-radius: 6px; border: 1.5px solid var(--line); font-weight: 700; }
+.sl-mget.on { background: var(--coral); border-color: var(--navy); }
+.sl-item { box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: 4px; width: 136px; padding: 10px 6px; border: 2px solid var(--navy); border-radius: 10px; background: #fff; text-align: center; font-size: 12px; line-height: 1.35; }
+.sl-item b { font-size: 14px; }
+.sl-item.small { width: 98px; }

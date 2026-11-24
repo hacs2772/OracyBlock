@@ -2,8 +2,10 @@
 // 미션을 다 하면 [받기] → 브릭. 브릭으로 방어권 · 쉬어가기권 · 꾸미기를 사요
 import { useEffect, useState } from 'react';
 import { quiet, api } from '../lib/api.js';
-import { useStore } from '../lib/store.js';
-import { TopBar, Tabs, Sheet, toast } from '../components/ui.jsx';
+import { TopBar, Tabs, Sheet, toast, Question } from '../components/ui.jsx';
+import { store, useStore } from '../lib/store.js';
+import { Guide } from '../components/Guides.jsx';
+import { SHOP_SLIDES } from '../components/LandingSlides.jsx';
 import Brick from '../components/Brick.jsx';
 import { BrickCoin, ItemArt } from '../components/Looks.jsx';
 
@@ -54,6 +56,12 @@ export default function Shop() {
   const [busy, setBusy] = useState(false);
   const [buying, setBuying] = useState(null); // 살 물건 확인
   const [resting, setResting] = useState(false); // 쉬어가기권 날짜 고르기
+  // 처음 들어오면 상점·미션 안내 팝업 (concept 11-33)
+  const [help, setHelp] = useState(() => !st.seenHelp?.shop);
+  const closeHelp = () => {
+    setHelp(false);
+    store.set({ seenHelp: { ...(store.s.seenHelp || {}), shop: true } });
+  };
 
   const load = () => quiet('/shop').then((x) => x && setD(x));
   useEffect(() => {
@@ -89,7 +97,10 @@ export default function Shop() {
 
   return (
     <div className="page has-tabs">
-      <TopBar />
+      <TopBar>
+        <button className="icon-btn" onClick={() => setHelp(true)} aria-label="상점·미션 안내 보기"><Question /></button>
+      </TopBar>
+      {help && <Guide slides={SHOP_SLIDES} label="상점·미션" doneLabel="알겠어요" skipLabel="닫기" onDone={closeHelp} />}
       <h1 className="learn-h1">상점·미션</h1>
 
       <div className="card strong sp-wallet">

@@ -5,6 +5,7 @@
 import Brick from './Brick.jsx';
 import Face from './Face.jsx';
 import { GAME } from './Guides.jsx';
+import { BrickCoin, ItemArt } from './Looks.jsx';
 import { SPEEDS, SPEED_KEYS } from '../lib/speed.js';
 
 const B = { studs: 4, pitch: 24, h: 26, depth: 12, studH: 6 };
@@ -288,4 +289,45 @@ export const REVIEW_SLIDES = [
   { t: '맞히면 복습 탑이 올라가요', b: '맞힌 단어는 단어가 적힌 브릭으로 복습 탑에 쌓여요. 날마다 색이 달라요.', art: ArtWordTower },
   { t: '잊을 때쯤 다시 들려줘요', b: '맞힐수록 더 나중에, 틀리면 내일 다시 나와요. 하루에 몇 개 할지는 쌓는 속도에 따라 달라요.', art: ArtAgain },
   { t: '따라 말해 봐도 좋아요', b: '뜻을 고른 다음 마이크를 누르고 따라 말하면, 원어민 소리와 내 소리를 번갈아 들려줘요. 점수는 없어요.', art: ArtShadow },
+];
+
+// ---------- 상점·미션 (처음 들어오면, concept 11-33) ----------
+function ArtMission() {
+  const rows = [['대화 1개 끝내기', 1, 1, '#FF7967', '+10'], ['단어 5개 복습하기', 3, 5, '#FFC857', '+10'], ['처음 가 보는 장소', 0, 1, '#A792E0', '+15']];
+  return (
+    <div className="sl-art">
+      {rows.map(([t, n, of, c, r], i) => (
+        <div key={t} className="sl-mrow sl-fade" style={{ ...at(10, 14 + i * 62), ...delay(0.15 + i * 0.25) }}>
+          <b>{t}</b>
+          <span className="sl-mfill">{Array.from({ length: of }, (_, k) => <i key={k} style={k < n ? { background: c } : null} />)}</span>
+          <span className={'sl-mget' + (n >= of ? ' on' : '')}><BrickCoin size={14} /> {r}</span>
+        </div>
+      ))}
+      <span className="sl-say sl-fade" style={{ ...at(0, 206, { width: 310, textAlign: 'center' }), ...delay(1.2), color: '#1B776C' }}>받기 → 브릭</span>
+    </div>
+  );
+}
+function ArtGuard() {
+  return (
+    <div className="sl-art">
+      <div className="sl-item sl-pop" style={{ ...at(14, 20), ...delay(0.1) }}><ItemArt id="shield" /><b>방어권</b><span>금 가려는 날 1번 막아요</span></div>
+      <div className="sl-item sl-pop" style={{ ...at(162, 20), ...delay(0.5) }}><ItemArt id="rest" /><b>쉬어가기권</b><span>고른 하루는 쉬어도 그대로</span></div>
+      <span className="sl-say sl-fade" style={{ ...at(0, 214, { width: 310, textAlign: 'center' }), ...delay(1.2) }}>여행 가는 날, 바쁜 날에</span>
+    </div>
+  );
+}
+function ArtDecor() {
+  return (
+    <div className="sl-art">
+      {['flag', 'lantern', 'gold'].map((id, i) => (
+        <div key={id} className="sl-item small sl-pop" style={{ ...at(4 + i * 104, 40), ...delay(0.15 + i * 0.3) }}><ItemArt id={id} /></div>
+      ))}
+      <span className="sl-say sl-fade" style={{ ...at(0, 200, { width: 310, textAlign: 'center' }), ...delay(1.2) }}>내 탑 맨 위와 받침판을 꾸며요</span>
+    </div>
+  );
+}
+export const SHOP_SLIDES = [
+  { t: '미션을 하면 브릭을 받아요', b: '날마다 바뀌는 오늘의 미션과 이번 주 미션이 있어요. 다 하면 [받기]를 눌러 브릭을 모아요.', art: ArtMission },
+  { t: '브릭으로 탑을 지켜요', b: '방어권은 쉬다가 금이 가려는 날 저절로 한 번 막아 줘요. 쉬어가기권은 미리 고른 하루를 쉬어도 탑이 그대로예요.', art: ArtGuard },
+  { t: '탑을 꾸며도 돼요', b: '깃발, 초롱, 금빛 받침판으로 내 탑을 꾸며요. 공유 카드에도 같이 나와요.', art: ArtDecor },
 ];
