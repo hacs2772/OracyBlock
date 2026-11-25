@@ -50,6 +50,9 @@ if errorlevel 1 (
     exit /b 1
 )
 
+rem 백업 스크립트가 바뀌었을 수 있어서 백업만 다시 켜요 (몇 초)
+docker compose --env-file .env restart backup >nul 2>&1
+
 echo.
 echo  켜졌어요!  https://oracyblock.com
 echo  (내 PC 확인용: http://localhost:8090)

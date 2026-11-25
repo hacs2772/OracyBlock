@@ -126,4 +126,30 @@ docker compose --profile public --env-file .env logs --tail 30 tunnel
 
 `OracyBlock\backups\db` 폴더에 하루 한 번 DB가 저장돼요 (14일치). 가끔 USB나 클라우드 드라이브에도 복사해 두세요.
 
+- 서버를 켤 때 한 번, 그 뒤 하루에 한 번. 실패하면 10분 뒤에 다시 해요
+- 파일 크기가 몇 KB 이상이면 정상이에요. 1KB도 안 되는 파일은 실패한 것이라 다음 성공 때 저절로 지워져요
+- 잘 되는지 보기: `docker compose --env-file .env logs --tail 5 backup` → `DB 백업: ... (204KB)`처럼 크기가 나오면 정상
+
+### 백업에서 되살리기
+
+DB가 망가졌거나 기록이 사라졌을 때만 써요. 그 백업 뒤에 생긴 기록은 없어져요.
+
+1. `restore.bat` 더블클릭 → 가장 최근 백업을 보여 줘요
+2. `Y`를 누르면: 지금 상태를 한 번 더 백업 → 서버 잠깐 멈춤 → 되살리기 → 서버 다시 켜기
+3. 다른 날 백업을 쓰려면 PowerShell에서 `.\restore.bat oracyblock-20261125-1308.sql.gz`
+
+(2026-11-25 시험 서버에서 기록을 지운 뒤 되살려 봤어요: 대화 596판·브릭 705개가 모두 돌아왔어요)
+
+## 사이트가 꺼지면 알림
+
+집 PC가 꺼지거나 인터넷·터널이 끊기면 사이트가 멈춰요. 무료 감시 서비스가 5분마다 확인하고, 멈추면 메일·휴대폰으로 알려 줘요.
+
+1. UptimeRobot(uptimerobot.com)에 무료 가입
+2. **Add New Monitor** → 종류 **HTTP(s)**
+3. 주소: `https://oracyblock.com/api/v1/ping` (서버와 DB가 모두 살아 있어야 `{"ok":true}`)
+4. 확인 간격 5분, 알림 받을 곳(가입한 메일)을 고르고 저장
+5. 휴대폰에 UptimeRobot 앱을 깔고 로그인하면 앱 알림도 와요
+
+꺼졌다는 알림이 오면: PC가 켜져 있는지 → Docker Desktop이 켜져 있는지 → `start.bat` 다시 실행
+
 ⚠ `docker compose down -v`는 DB(가입자·기록)를 지워요. 쓰지 마세요.
