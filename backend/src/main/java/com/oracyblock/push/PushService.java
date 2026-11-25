@@ -41,6 +41,7 @@ public class PushService {
             "slow", new Speed(3, 1, 4), "normal", new Speed(2, 2, 2), "fast", new Speed(1, 2, 1));
     static final int MAX_FALL = 5;
     static final int[] MEET_GAP = {1, 3, 7};
+    static final int MAX_FAIL_DAYS = 7;
 
     private final PushMapper push;
     private final TowerMapper tower;
@@ -173,7 +174,8 @@ public class PushService {
                 push.removeId(id); // 휴대폰에서 알림을 끄거나 지운 경우
             } catch (Exception e) {
                 log.warn("알림 보내기 실패 {}: {}", id, e.getMessage());
-                push.failed(id);
+                push.failed(id, today);
+                if (push.dropDead(id, MAX_FAIL_DAYS) > 0) log.info("알림 {}: {}일 계속 실패해서 지웠어요", id, MAX_FAIL_DAYS);
             }
         }
     }

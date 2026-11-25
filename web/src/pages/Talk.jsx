@@ -11,6 +11,7 @@ import { Guide, GAME } from '../components/Guides.jsx';
 import { countCorrect, MEET_GAP } from '../lib/progress.js';
 import { pushState, enablePush, shouldAskPush } from '../lib/push.js';
 import { loadResume, saveResume, clearResume } from '../lib/resume.js';
+import { finishPlay } from '../lib/outbox.js';
 import LineReport from '../components/LineReport.jsx';
 import Face, { FACE_OF } from '../components/Face.jsx';
 
@@ -111,8 +112,9 @@ export default function Talk() {
   };
   const resume = () => {
     const r = resumeAsk;
+    if (r.si >= talk.steps.length) return restart(); // 그사이 대사가 바뀌어 차례가 없어졌으면 처음부터
     playId.current = r.playId || null;
-    stats.current = { ...r.stats, missed: new Map((r.stats.missed || []).map((w) => [w.key, w])) };
+    stats.current = { ...r.stats, mix: undefined, missed: new Map((r.stats.missed || []).map((w) => [w.key, w])) };
     setBricks(r.bricks.map((b, i) => ({ ...b, cls: '', key: i })));
     setResumeAsk(null);
     setSi(r.si);
@@ -183,7 +185,8 @@ export default function Talk() {
       playId: playId.current,
       si,
       bricks: bricks.map((b) => ({ tone: b.tone, shine: b.shine, tilt: b.tilt, missing: b.missing, gone: b.gone, path: b.path })),
-      stats: { ...s, missed: [...s.missed.values()] },
+      // mix(차례마다 섞은 보기)는 크고, 대사가 바뀌면 낡아서 빼요. 이어 할 때 다시 만들어요
+      stats: { ...s, mix: undefined, missed: [...s.missed.values()] },
     });
   }, [si]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -366,8 +369,8 @@ export default function Talk() {
       fixes: s.fixes,
       turns: Object.entries(s.turns || {}).map(([i, v]) => ({ i: Number(i), w: v.w || 0, s: v.s || 0, h: v.h || 0, n: v.n || 0 })),
     };
-    if (playId.current) {
-      await quiet(`/plays/${playId.current}/finish`, { method: 'POST', body });
+    // 인터넷이 끊겨 못 보냈으면 기기에 두었다가 다시 이어지면 보내요 (lib/outbox.js)
+    if (await finishPlay({ playId: playId.current, talkId: talk.id, level, body })) {
       const prog = await quiet('/progress');
       if (prog) {
         if (prog.finishedToday > prog.dayCap) setCapNote({ cap: prog.dayCap, fast: prog.speed === 'fast' });

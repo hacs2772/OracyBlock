@@ -13,12 +13,13 @@ const Admin = lazy(() => import('./pages/Admin.jsx'));
 const Legal = lazy(() => import('./pages/Legal.jsx'));
 import Landing from './pages/Landing.jsx';
 import { Guide, INTRO } from './components/Guides.jsx';
-import { Toaster } from './components/ui.jsx';
+import { Toaster, toast } from './components/ui.jsx';
 import Contact from './components/Contact.jsx';
 import InAppBanner from './components/InAppBanner.jsx';
 import OfflineBar from './components/OfflineBar.jsx';
 import { store, useStore } from './lib/store.js';
 import { quiet } from './lib/api.js';
+import { flushOutbox } from './lib/outbox.js';
 import { unlock } from './lib/speech.js';
 
 export default function App() {
@@ -39,6 +40,14 @@ export default function App() {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [pathname]);
+
+  // 인터넷이 끊겨 못 보낸 대화가 있으면, 앱을 열 때와 다시 이어질 때 보내요
+  useEffect(() => {
+    const go = () => flushOutbox().then((sent) => sent && toast('끊겼을 때 끝낸 대화를 저장했어요'));
+    go();
+    window.addEventListener('online', go);
+    return () => window.removeEventListener('online', go);
+  }, []);
 
   return (
     <div className={isLanding ? 'app-wide' : 'app'} onPointerDown={unlock}>

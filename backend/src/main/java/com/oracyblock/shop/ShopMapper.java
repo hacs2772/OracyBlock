@@ -12,6 +12,10 @@ public interface ShopMapper {
     @Select("SELECT COALESCE((SELECT bricks FROM wallet WHERE owner = #{owner}), 0)")
     int balance(@Param("owner") String owner);
 
+    /** 사기·쓰기 전에 그 사람 지갑을 잠가요 (두 번 동시에 눌러도 브릭이 0 밑으로 안 가게). 지갑이 없으면 0 */
+    @Select("SELECT COALESCE((SELECT bricks FROM wallet WHERE owner = #{owner} FOR UPDATE), 0)")
+    int lockBalance(@Param("owner") String owner);
+
     @Insert("""
         INSERT INTO wallet (owner, bricks) VALUES (#{owner}, #{delta})
         ON CONFLICT (owner) DO UPDATE SET bricks = wallet.bricks + #{delta}, updated_at = now()

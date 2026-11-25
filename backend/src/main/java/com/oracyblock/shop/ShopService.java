@@ -138,10 +138,11 @@ public class ShopService {
     public Map<String, Object> buy(String owner, String id) {
         Item it = ITEMS.stream().filter(x -> x.id().equals(id)).findFirst()
                 .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, "물건을 찾지 못했어요."));
+        int bricks = shop.lockBalance(owner);
         if (it.look() && shop.inventory(owner).stream().anyMatch(r -> it.id().equals(r.get("item")) && ((Number) r.get("qty")).intValue() > 0)) {
             throw new ApiException(HttpStatus.CONFLICT, "이미 가지고 있어요.");
         }
-        if (shop.balance(owner) < it.price()) throw new ApiException(HttpStatus.BAD_REQUEST, "브릭이 모자라요.");
+        if (bricks < it.price()) throw new ApiException(HttpStatus.BAD_REQUEST, "브릭이 모자라요.");
         shop.addBricks(owner, -it.price());
         shop.log(owner, -it.price(), "buy:" + it.id());
         shop.addItem(owner, it.id(), 1, it.look());

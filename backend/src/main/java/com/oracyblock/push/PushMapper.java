@@ -36,14 +36,19 @@ public interface PushMapper {
     Map<String, Object> mine(@Param("owner") String owner, @Param("endpoint") String endpoint);
 
     /** 지금 시각(한국)에 보낼 차례인 기기: 오늘 아직 안 본 것만 */
-    @Select("SELECT id, owner, endpoint, p256dh, auth, kinds FROM push_sub WHERE hour = #{hour} AND (last_day IS NULL OR last_day < #{today}) AND fails < 5")
+    @Select("SELECT id, owner, endpoint, p256dh, auth, kinds FROM push_sub WHERE hour = #{hour} AND (last_day IS NULL OR last_day < #{today})")
     List<Map<String, Object>> due(@Param("hour") int hour, @Param("today") LocalDate today);
 
     @Update("UPDATE push_sub SET last_day = #{today}, fails = 0 WHERE id = #{id}")
     void done(@Param("id") long id, @Param("today") LocalDate today);
 
-    @Update("UPDATE push_sub SET fails = fails + 1 WHERE id = #{id}")
-    void failed(@Param("id") long id);
+    /** 보내기 실패: 그날은 다시 안 보내요(5분마다 되풀이하지 않게). 다음 날 다시 해 봐요 */
+    @Update("UPDATE push_sub SET fails = fails + 1, last_day = #{today} WHERE id = #{id}")
+    void failed(@Param("id") long id, @Param("today") LocalDate today);
+
+    /** 여러 날 계속 실패한 기기는 지워요 (알림 서버가 더는 받지 않는 기기) */
+    @Delete("DELETE FROM push_sub WHERE id = #{id} AND fails >= #{max}")
+    int dropDead(@Param("id") long id, @Param("max") int max);
 
     @Update("UPDATE push_sub SET owner = #{to} WHERE owner = #{from}")
     void claimOwner(@Param("from") String from, @Param("to") String to);

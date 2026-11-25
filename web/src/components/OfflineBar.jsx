@@ -14,5 +14,5 @@ export default function OfflineBar() {
     };
   }, []);
   if (!off) return null;
-  return <div className="note warn ol-bar" role="status">인터넷이 끊겼어요. 연습은 되지만, 지금 쌓는 브릭과 기록은 저장되지 않을 수 있어요.</div>;
+  return <div className="note warn ol-bar" role="status">인터넷이 끊겼어요. 연습은 그대로 돼요. 끝낸 대화는 오늘 안에 다시 이어지면 저장해요.</div>;
 }

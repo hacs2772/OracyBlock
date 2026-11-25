@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { talkById, judge } from '../content/build.js';
 import { api, quiet } from '../lib/api.js';
 import { parseBricks, freshFixes } from '../lib/progress.js';
-import { speak, unlock, sfx, listen, canListen, stopListening } from '../lib/speech.js';
+import { speak, unlock, sfx, listen, canListen, stopListening, stopSpeaking } from '../lib/speech.js';
 import { Stack, Play, Back, Mic, Ja, toast } from '../components/ui.jsx';
 import { BigWord } from './Talk.jsx';
 
@@ -82,9 +82,10 @@ function Remake({ group, onExit }) {
   const them = step?.type === 'them' ? step : talk.steps[(item?.turnIdx || 1) - 1];
 
   useEffect(() => {
-    if (them) setTimeout(() => speak(them.line.ja, 0.9), 300);
-    return () => stopListening();
+    const t = them ? setTimeout(() => speak(them.line.ja, 0.9), 300) : null;
+    return () => { clearTimeout(t); stopListening(); };
   }, [k]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => stopSpeaking(), []); // 고치기에서 나가면 읽던 소리를 멈춰요
 
   if (!item) {
     return (

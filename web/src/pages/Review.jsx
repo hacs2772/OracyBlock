@@ -5,7 +5,7 @@ import { store, useStore } from '../lib/store.js';
 import { speedOf } from '../lib/speed.js';
 import { dayTone } from '../lib/progress.js';
 import { dailyCognate } from '../content/build.js';
-import { speak, unlock } from '../lib/speech.js';
+import { speak, unlock, stopSpeaking } from '../lib/speech.js';
 import Brick, { brickBox } from '../components/Brick.jsx';
 import WordQuiz, { WORD_BRICK } from '../components/WordQuiz.jsx';
 import { TopBar, Tabs, Play, Back, Sheet, Question } from '../components/ui.jsx';
@@ -55,6 +55,7 @@ export default function Review() {
     quiet('/progress').then(setProg);
   };
   useEffect(load, [st.user?.id]);
+  useEffect(() => () => stopSpeaking(), []); // 복습에서 나가면 읽던 소리를 멈춰요
 
   const sp = speedOf(prog?.speed);
   const today = new Date().toLocaleDateString('sv-SE');
