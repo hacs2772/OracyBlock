@@ -1,4 +1,5 @@
-// 문의하기 (asmrBlock처럼): 오른쪽 아래 작은 버튼 + 어디서든 여는 문의 창
+// 문의하기 (asmrBlock처럼): 어디서든 여는 문의 창. 위쪽 머리줄(TopBar)의 말풍선 아이콘으로 열고,
+// 머리줄이 없는 화면(소개 웹·고치기 등)에만 오른쪽 아래 작은 버튼이 떠요 (아래 탭 화면에서 글자를 가리지 않게)
 // 열기: openContact() / 관리자 화면 맨 아래 "문의"에서 보고 처리 완료 표시
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
@@ -6,11 +7,12 @@ import { quiet } from '../lib/api.js';
 import { useStore } from '../lib/store.js';
 import { Sheet, toast } from './ui.jsx';
 
-let setOpenRef = null;
-export const openContact = () => setOpenRef?.(true);
+import { setContactOpener, openContact } from '../lib/contact.js';
 
-const Bubble = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#24324A" strokeWidth="2" strokeLinejoin="round" aria-hidden="true">
+export { openContact };
+
+const Bubble = ({ size = 22 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#24324A" strokeWidth="2" strokeLinejoin="round" aria-hidden="true">
     <path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H10l-5 4v-4H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z" fill="#FFC857" />
     <path d="M8 10h8M8 13h5" strokeLinecap="round" />
   </svg>
@@ -24,17 +26,17 @@ export default function Contact() {
   const [contact, setContact] = useState('');
   const [sending, setSending] = useState(false);
   useEffect(() => {
-    setOpenRef = setOpen;
-    return () => {
-      setOpenRef = null;
-    };
+    setContactOpener(setOpen);
+    return () => setContactOpener(null);
   }, []);
   useEffect(() => {
     if (open && st.user?.email && !contact) setContact(st.user.email);
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 대화하는 중·관리자 화면에서는 버튼을 숨겨요 (대화에 집중)
-  const hideFab = pathname.startsWith('/talk') || pathname.startsWith('/admin') || pathname.startsWith('/login');
+  // 머리줄이 있는 화면(홈·학습·복습·내 탑·상점·내 정보)은 머리줄의 말풍선 아이콘으로 열어요
+  const topBar = ['/', '/learn', '/review', '/tower', '/shop', '/me'].includes(pathname);
+  const hideFab = topBar || pathname.startsWith('/talk') || pathname.startsWith('/admin') || pathname.startsWith('/login');
   const withTabs = ['/', '/learn', '/about', '/review', '/tower', '/shop', '/me'].includes(pathname);
 
   const send = async () => {

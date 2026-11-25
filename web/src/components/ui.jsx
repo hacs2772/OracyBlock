@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import Brick, { brickBox } from './Brick.jsx';
 import { store } from '../lib/store.js';
+import { openContact } from '../lib/contact.js';
 
 export function LogoMark({ size = 34 }) {
   return (
@@ -122,6 +123,13 @@ const TAB_ICONS = {
     </svg>
   ),
 };
+/** 머리줄의 문의 아이콘 (말풍선, 다른 머리줄 아이콘과 같은 선 굵기) */
+const ContactIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#24324A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H10l-5 4v-4H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z" />
+    <path d="M8 10h8M8 13h5" />
+  </svg>
+);
 const TABS = [
   ['/', 'house', '홈'],
   ['/learn', 'home', '학습'],
@@ -153,6 +161,9 @@ export function TopBar({ children, me = true }) {
       <Logo />
       <div style={{ display: 'flex', alignItems: 'center' }}>
         {children}
+        <button className="icon-btn" onClick={openContact} aria-label="문의하기 · 의견 보내기">
+          <ContactIcon />
+        </button>
         {me && (
           <Link to="/me" className="icon-btn" aria-label="내 정보와 설정">
             {TAB_ICONS.me('#24324A')}

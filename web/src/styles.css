@@ -42,6 +42,8 @@ p { margin: 0; }
 @media (min-width: 481px) { .app { box-shadow: 0 0 0 2px var(--line); } }
 
 .top-row { display: flex; align-items: center; justify-content: space-between; min-height: 48px; }
+/* 아이폰 SE(320px): 머리줄 아이콘 3개(도움말·문의·내 정보)가 로고 옆에 들어가게 폭만 조금 줄여요 */
+@media (max-width: 360px) { .top-row .icon-btn { width: 40px; } }
 .logo { display: flex; align-items: center; gap: 8px; text-decoration: none; }
 .logo-text { font-family: var(--display); font-size: 25px; line-height: 1; }
 .logo-text b { font-weight: 400; color: var(--red); }
