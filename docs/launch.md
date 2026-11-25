@@ -11,6 +11,7 @@
 | 대학 커뮤니티 | `https://oracyblock.com/?from=univ` |
 | 친구·지인 카톡 | `https://oracyblock.com/?from=kakao` |
 | 오픈채팅방 | `https://oracyblock.com/?from=openchat` |
+| 블로그 | `https://oracyblock.com/?from=blog` |
 
 - 이름은 영어 소문자·숫자로 (대문자는 소문자로 합쳐져요)
 - 한 기기에 처음 온 곳 하나만 남아요. 이미 와 본 사람이 다른 링크로 다시 와도 바뀌지 않아요
