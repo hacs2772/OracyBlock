@@ -6,8 +6,10 @@ import './styles.css';
 import App from './App.jsx';
 import Crash from './components/Crash.jsx';
 import { watchErrors } from './lib/errors.js';
+import { catchSource } from './lib/source.js';
 
 watchErrors();
+catchSource();
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>

@@ -20,6 +20,7 @@ import OfflineBar from './components/OfflineBar.jsx';
 import { store, useStore } from './lib/store.js';
 import { quiet } from './lib/api.js';
 import { flushOutbox } from './lib/outbox.js';
+import { sendSource } from './lib/source.js';
 import { unlock } from './lib/speech.js';
 
 export default function App() {
@@ -33,7 +34,7 @@ export default function App() {
 
   // 하루에 한 번 "왔어요" 남기기 (관리자 통계) + 로그인 정보 새로 받기
   useEffect(() => {
-    quiet('/visit', { method: 'POST', body: {} });
+    quiet('/visit', { method: 'POST', body: {} }).then(sendSource);
     if (st.token) quiet('/me').then((u) => u && store.set({ user: u, level: u.level || st.level }));
   }, [st.token]); // eslint-disable-line react-hooks/exhaustive-deps
 

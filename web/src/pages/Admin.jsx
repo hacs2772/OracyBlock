@@ -103,6 +103,25 @@ export default function Admin() {
             </table>
           </div>
 
+          <h2 style={{ fontSize: 20 }}>어디서 왔나요 (최근 30일에 처음 온 사람)</h2>
+          <p className="small muted" style={{ marginTop: -4 }}>글을 올릴 때 링크 끝에 <b>?from=이름</b>을 붙이면 그 이름으로 나와요 (예: oracyblock.com/?from=cafe1)</p>
+          <div className="card adm-scroll" style={{ padding: '4px 12px' }}>
+            <table className="adm-table">
+              <thead><tr><th>온 곳</th><th>들어옴</th><th>대화 끝냄</th><th>다음에 또 옴</th></tr></thead>
+              <tbody>
+                {(d.sources || []).map((x) => (
+                  <tr key={x.src || '-'}>
+                    <td>{x.src || '주소로 바로 (또는 모름)'}</td>
+                    <td>{x.came}</td>
+                    <td>{x.finished}</td>
+                    <td>{x.cameBack}</td>
+                  </tr>
+                ))}
+                {!d.sources?.length && <tr><td colSpan={4} className="muted">아직 없어요</td></tr>}
+              </tbody>
+            </table>
+          </div>
+
           <h2 style={{ fontSize: 20 }}>어디서 그만두나요 (최근 14일에 처음 온 사람)</h2>
           <Funnel f={d.funnel} />
           {d.stuck?.length > 0 && (

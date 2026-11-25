@@ -79,6 +79,17 @@ public interface AdminMapper {
         """)
     Map<String, Object> funnel(@Param("today") LocalDate today);
 
+    /** 어디서 왔나요: 최근 30일에 처음 온 기기를 온 곳(링크 이름 > 눌러 온 사이트)별로. 이름도 사이트도 없으면 "" */
+    @Select("""
+        WITH f AS (SELECT visitor_id, MIN(day) AS first FROM s_visit GROUP BY visitor_id HAVING MIN(day) > #{today} - 30)
+        SELECT COALESCE(s.src, s.ref, '') AS src, COUNT(*) AS came,
+          COUNT(*) FILTER (WHERE EXISTS (SELECT 1 FROM s_play p WHERE p.visitor_id = f.visitor_id AND p.finished_at IS NOT NULL)) AS finished,
+          COUNT(*) FILTER (WHERE EXISTS (SELECT 1 FROM s_visit v WHERE v.visitor_id = f.visitor_id AND v.day > f.first)) AS "cameBack"
+        FROM f LEFT JOIN s_source s ON s.visitor_id = f.visitor_id
+        GROUP BY 1 ORDER BY came DESC LIMIT 20
+        """)
+    List<Map<String, Object>> sources(@Param("today") LocalDate today);
+
     /** 첫 대화를 끝내지 못한 사람이 멈춘 곳: 처음 시작한 대화의 마지막 차례 (최근 14일에 처음 온 기기) */
     @Select("""
         WITH f AS (SELECT visitor_id FROM s_visit GROUP BY visitor_id HAVING MIN(day) > #{today} - 14)

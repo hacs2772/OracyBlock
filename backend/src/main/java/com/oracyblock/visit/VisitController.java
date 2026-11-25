@@ -27,6 +27,9 @@ public class VisitController {
         @Insert("INSERT INTO visit_step (visitor_id, step) VALUES (#{visitorId}, #{step}) ON CONFLICT DO NOTHING")
         void step(@Param("visitorId") String visitorId, @Param("step") String step);
 
+        @Insert("INSERT INTO visit_source (visitor_id, src, ref) VALUES (#{visitorId}, #{src}, #{ref}) ON CONFLICT DO NOTHING")
+        void source(@Param("visitorId") String visitorId, @Param("src") String src, @Param("ref") String ref);
+
         @Update("UPDATE users SET last_seen_at = now() WHERE id = #{id}")
         void touch(@Param("id") long id);
     }
@@ -42,6 +45,21 @@ public class VisitController {
         Who who = Who.of(userId, req);
         if (!"unknown-visitor".equals(who.visitorId())) visits.upsert(who.visitorId(), Who.today(), userId);
         if (userId != null) visits.touch(userId);
+        return Map.of("ok", true);
+    }
+
+    public record SourceIn(String src, String ref) {}
+
+    /** 처음 온 기기가 어디서 왔는지 (링크의 ?from=이름 · 눌러 온 사이트 주소). 기기마다 처음 한 번만 남아요 */
+    @PostMapping("/visit/source")
+    public Map<String, Object> source(@AuthenticationPrincipal Long userId, @RequestBody SourceIn body, HttpServletRequest req) {
+        Who who = Who.of(userId, req);
+        if (body == null || "unknown-visitor".equals(who.visitorId())) return Map.of("ok", true);
+        String src = body.src() == null ? "" : body.src().toLowerCase().replaceAll("[^a-z0-9_-]", "");
+        String ref = body.ref() == null ? "" : body.ref().toLowerCase().replaceAll("[^a-z0-9.-]", "");
+        src = src.isEmpty() ? null : src.substring(0, Math.min(30, src.length()));
+        ref = ref.isEmpty() || ref.endsWith("oracyblock.com") ? null : ref.substring(0, Math.min(80, ref.length()));
+        visits.source(who.visitorId(), src, ref);
         return Map.of("ok", true);
     }
 
