@@ -113,7 +113,7 @@ function IntroRow({ s, i }) {
         {seen > 0 && <div key={seen} style={{ lineHeight: 0 }} dangerouslySetInnerHTML={{ __html: s.art }} />}
       </div>
       <div className="lp-intro-txt">
-        <h3>{s.t}</h3>
+        <h2>{s.t}</h2>
         <p>{s.b}</p>
       </div>
     </div>

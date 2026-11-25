@@ -490,7 +490,7 @@ textarea.input { height: 120px; padding: 10px 12px; resize: vertical; line-heigh
 .lp-intro-row.flip { flex-direction: row-reverse; }
 .lp-intro-art { flex: 0 0 auto; width: 320px; height: 260px; display: flex; align-items: center; justify-content: center; border-radius: 22px; background: #fff; border: 2px solid var(--card-line); }
 .lp-intro-txt { flex: 1; min-width: 0; }
-.lp-intro-txt h3 { font-size: clamp(24px, 2.6vw, 32px); line-height: 1.2; }
+.lp-intro-txt h2 { font-size: clamp(24px, 2.6vw, 32px); line-height: 1.2; }
 .lp-intro-txt p { margin-top: 8px; font-size: 17px; line-height: 1.6; color: var(--ink2); max-width: 460px; }
 @media (max-width: 700px) {
   .lp-intro-row, .lp-intro-row.flip { flex-direction: column; align-items: stretch; gap: 12px; }
