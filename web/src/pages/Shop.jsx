@@ -10,7 +10,7 @@ import Brick from '../components/Brick.jsx';
 import { BrickCoin, ItemArt } from '../components/Looks.jsx';
 
 const N = '#24324A';
-const TONE = { talk: '#FF7967', review: '#FFC857', straight: '#29B6A5', newplace: '#A792E0', fix: '#F49AC1', week5: '#6BB8E8' };
+const TONE = { talk: '#FF7967', review: '#FFC857', straight: '#29B6A5', newplace: '#A792E0', fix: '#F49AC1', meet: '#7FC46A', week5: '#6BB8E8' };
 const WEEK_NAME = ['일', '월', '화', '수', '목', '금', '토'];
 
 /** 진행 표시: 막대 대신 작은 브릭이 채워져요 */

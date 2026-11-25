@@ -74,6 +74,13 @@ public interface ShopMapper {
         """)
     int newPlaces(@Param("owner") String owner, @Param("day") LocalDate day);
 
+    /** 다시 만난 사람: 오늘 끝낸 대화 중 예전 날에도 끝낸 적 있는 대화 (concept 11-23 · 11-39) */
+    @Select("""
+        SELECT COUNT(DISTINCT p.talk_id) FROM play p WHERE p.owner = #{owner} AND p.finished_at IS NOT NULL AND p.day = #{day}
+          AND EXISTS (SELECT 1 FROM play q WHERE q.owner = p.owner AND q.talk_id = p.talk_id AND q.finished_at IS NOT NULL AND q.day < #{day})
+        """)
+    int metAgain(@Param("owner") String owner, @Param("day") LocalDate day);
+
     @Select("SELECT COUNT(*) FROM fix_item WHERE owner = #{owner} AND fixed_at IS NOT NULL AND (fixed_at AT TIME ZONE 'Asia/Seoul')::date = #{day}")
     int fixedOn(@Param("owner") String owner, @Param("day") LocalDate day);
 

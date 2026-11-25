@@ -36,7 +36,8 @@ public class ShopService {
             new Mission("review", "단어 5개 복습하기", 5, 10),
             new Mission("straight", "비뚤어진 브릭 없이 탑 쌓기", 1, 15),
             new Mission("newplace", "처음 가 보는 장소에서 대화하기", 1, 15),
-            new Mission("fix", "고칠 곳 1곳 고치기", 1, 10));
+            new Mission("fix", "고칠 곳 1곳 고치기", 1, 10),
+            new Mission("meet", "다시 만날 사람 1명 만나기", 1, 15));
     static final Mission WEEK = new Mission("week5", "이번 주 공부한 날 5일 채우기", 5, 50);
 
     public static final List<Item> ITEMS = List.of(
@@ -86,6 +87,7 @@ public class ShopService {
             case "straight" -> shop.finishedStraight(owner, day);
             case "newplace" -> shop.newPlaces(owner, day);
             case "fix" -> shop.fixedOn(owner, day);
+            case "meet" -> shop.metAgain(owner, day);
             case "week5" -> shop.daysSince(owner, monday(day));
             default -> 0;
         };
