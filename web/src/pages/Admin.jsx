@@ -150,6 +150,35 @@ export default function Admin() {
             </>
           )}
 
+          {d.shop && (
+            <>
+              <h2 style={{ fontSize: 20 }}>상점</h2>
+              <p className="small muted" style={{ marginTop: -4 }}>
+                최근 30일 브릭: 모음 <b>{d.shop.bricks.earned}</b> · 씀 <b>{d.shop.bricks.spent}</b> · 지금 지갑에 남은 것 <b>{d.shop.bricks.left}</b>
+              </p>
+              <div className="card adm-scroll" style={{ padding: '4px 12px' }}>
+                <table className="adm-table">
+                  <thead><tr><th>물건</th><th>가격</th><th>팔림</th><th>산 사람</th><th>쓰는 중</th></tr></thead>
+                  <tbody>
+                    {d.shop.items.map((x) => (
+                      <tr key={x.id}><td>{x.name}</td><td>{x.price}</td><td>{x.sold}</td><td>{x.buyers}</td><td>{x.using ?? '-'}</td></tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="card adm-scroll" style={{ padding: '4px 12px', marginTop: 10 }}>
+                <table className="adm-table">
+                  <thead><tr><th>미션 (최근 30일)</th><th>보상</th><th>받은 수</th></tr></thead>
+                  <tbody>
+                    {d.shop.missions.map((x) => (
+                      <tr key={x.id}><td>{x.title}</td><td>+{x.reward}</td><td>{x.claimed}</td></tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+
           <h2 style={{ fontSize: 20 }}>대화별</h2>
           <div className="card adm-scroll" style={{ padding: '4px 12px' }}>
             <table className="adm-table">

@@ -1,6 +1,7 @@
 package com.oracyblock.admin;
 
 import com.oracyblock.common.Who;
+import com.oracyblock.shop.ShopService;
 import com.oracyblock.report.ReportController.ReportMapper;
 import com.oracyblock.user.UserMapper;
 import org.springframework.web.bind.annotation.*;
@@ -41,10 +42,42 @@ public class AdminController {
         m.put("stuck", admin.stuck(today));
         m.put("sources", admin.sources(today));
         m.put("talks", admin.talks());
+        m.put("shop", shop());
         m.put("openFeedback", admin.openFeedback());
         m.put("openReports", reports.openCount());
         m.put("openErrors", errors.openCount());
         return m;
+    }
+
+    /** 상점 통계: 물건(이름 · 가격 · 팔린 수 · 산 사람 · 쓰는 중) · 미션 받은 수 · 브릭 흐름 */
+    private Map<String, Object> shop() {
+        Map<String, Map<String, Object>> sold = new java.util.HashMap<>();
+        for (Map<String, Object> r : admin.shopSold()) sold.put(String.valueOf(r.get("item")), r);
+        Map<String, Object> using = new java.util.HashMap<>();
+        for (Map<String, Object> r : admin.shopUsing()) using.put(String.valueOf(r.get("item")), r.get("using"));
+        List<Map<String, Object>> items = new java.util.ArrayList<>();
+        for (ShopService.Item it : ShopService.ITEMS) {
+            Map<String, Object> s = sold.getOrDefault(it.id(), Map.of());
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("id", it.id());
+            row.put("name", it.name());
+            row.put("price", it.price());
+            row.put("sold", s.getOrDefault("sold", 0));
+            row.put("buyers", s.getOrDefault("buyers", 0));
+            row.put("using", it.look() ? using.getOrDefault(it.id(), 0) : null);
+            items.add(row);
+        }
+        Map<String, Object> claimed = new java.util.HashMap<>();
+        for (Map<String, Object> r : admin.shopMissions()) claimed.put(String.valueOf(r.get("id")), r.get("claimed"));
+        List<Map<String, Object>> missions = new java.util.ArrayList<>();
+        for (ShopService.Mission ms : ShopService.ALL_MISSIONS) {
+            missions.add(Map.of("id", ms.id(), "title", ms.title(), "reward", ms.reward(), "claimed", claimed.getOrDefault(ms.id(), 0)));
+        }
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("items", items);
+        out.put("missions", missions);
+        out.put("bricks", admin.shopBricks(AdminMapper.NOT_ADMIN));
+        return out;
     }
 
     /** 어려운 차례 (min = 최소 몇 번 한 대사부터) */

@@ -39,6 +39,8 @@ public class ShopService {
             new Mission("fix", "고칠 곳 1곳 고치기", 1, 10),
             new Mission("meet", "다시 만날 사람 1명 만나기", 1, 15));
     static final Mission WEEK = new Mission("week5", "이번 주 공부한 날 5일 채우기", 5, 50);
+    /** 모든 미션 (관리자 통계용) */
+    public static final List<Mission> ALL_MISSIONS = java.util.stream.Stream.concat(java.util.stream.Stream.concat(java.util.stream.Stream.of(TALK), ROTATE.stream()), java.util.stream.Stream.of(WEEK)).toList();
 
     public static final List<Item> ITEMS = List.of(
             new Item("shield", "브릭 방어권", "쉬다가 탑에 금이 가려는 날, 저절로 1번 막아 줘요", 30, null),

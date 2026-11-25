@@ -138,4 +138,27 @@ public interface AdminMapper {
 
     @Select("SELECT COUNT(*) FROM feedback WHERE NOT is_done")
     long openFeedback();
+
+    /** 관리자(운영자 본인) 기록 주인: 상점 통계에서 빼요 */
+    String NOT_ADMIN = "owner NOT IN (SELECT 'v:' || visitor_id FROM admin_visitor UNION SELECT 'u:' || id FROM users WHERE role = 'ADMIN')";
+
+    /** 상점 물건별: 팔린 수 · 산 사람 수 (wallet_log의 buy:물건) */
+    @Select("SELECT substring(reason from 5) AS item, COUNT(*) AS sold, COUNT(DISTINCT owner) AS buyers FROM wallet_log WHERE reason LIKE 'buy:%' AND " + NOT_ADMIN + " GROUP BY 1")
+    List<Map<String, Object>> shopSold();
+
+    /** 꾸미기를 지금 쓰는 사람 수 */
+    @Select("SELECT item, COUNT(*) AS using FROM inventory WHERE equipped AND qty > 0 AND " + NOT_ADMIN + " GROUP BY item")
+    List<Map<String, Object>> shopUsing();
+
+    /** 미션별 받은 수 (최근 30일) */
+    @Select("SELECT split_part(reason, ':', 2) AS id, COUNT(*) AS claimed FROM wallet_log WHERE reason LIKE 'm:%' AND created_at > now() - interval '30 days' AND " + NOT_ADMIN + " GROUP BY 1")
+    List<Map<String, Object>> shopMissions();
+
+    /** 브릭: 최근 30일 모은 것 · 쓴 것, 지금 지갑에 남은 것 */
+    @Select("""
+        SELECT COALESCE((SELECT SUM(delta) FROM wallet_log WHERE delta > 0 AND created_at > now() - interval '30 days' AND ${notAdmin}), 0) AS earned,
+               COALESCE((SELECT -SUM(delta) FROM wallet_log WHERE delta < 0 AND created_at > now() - interval '30 days' AND ${notAdmin}), 0) AS spent,
+               COALESCE((SELECT SUM(bricks) FROM wallet WHERE ${notAdmin}), 0) AS left
+        """)
+    Map<String, Object> shopBricks(@Param("notAdmin") String notAdmin);
 }
