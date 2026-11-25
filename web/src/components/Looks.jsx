@@ -31,6 +31,101 @@ export function LanternTop({ size = 34 }) {
   );
 }
 
+const v = (name) => ({ fill: `var(--${name})` });
+
+export function SakuraTop({ size = 44 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 44 44" aria-hidden="true">
+      <path d="M22 43V24M22 30l-9-8M22 26l8-9" style={{ stroke: 'var(--wood)' }} strokeWidth="2.6" strokeLinecap="round" fill="none" />
+      {[[12, 20], [31, 15], [22, 12], [16, 9], [29, 25]].map(([x, y], i) => (
+        <g key={i} transform={`translate(${x} ${y})`}>
+          {[0, 72, 144, 216, 288].map((r) => <ellipse key={r} cx="0" cy="-3.6" rx="2.6" ry="3.6" style={v('sakura')} stroke={N} strokeWidth="1" transform={`rotate(${r})`} />)}
+          <circle r="1.4" style={v('yellow')} />
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+export function UmbrellaTop({ size = 46 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 46 46" aria-hidden="true">
+      <path d="M23 45V14" style={{ stroke: 'var(--wood)' }} strokeWidth="2.6" strokeLinecap="round" />
+      <path d="M3 20C6 9 14 3 23 3s17 6 20 17c-3-2-6-2-8 0-2-2-6-2-8 0-2-2-6-2-8 0-2-2-6-2-8 0-2-2-5-2-8 0z" style={v('red')} stroke={N} strokeWidth="2.2" strokeLinejoin="round" />
+      <path d="M23 3v17M13 6l-2 14M33 6l2 14" style={{ stroke: 'var(--coral-ink)' }} strokeWidth="1.4" />
+      <circle cx="23" cy="3" r="2" style={v('yellow')} stroke={N} strokeWidth="1.4" />
+    </svg>
+  );
+}
+
+export function DarumaTop({ size = 40 }) {
+  return (
+    <svg width={size} height={size * 1.05} viewBox="0 0 40 42" aria-hidden="true">
+      <path d="M20 3c10 0 17 8 17 19 0 11-7 18-17 18S3 33 3 22C3 11 10 3 20 3z" style={v('red')} stroke={N} strokeWidth="2.2" />
+      <ellipse cx="20" cy="18" rx="10" ry="8.5" style={v('star')} stroke={N} strokeWidth="1.8" />
+      <circle cx="16" cy="17" r="2.2" style={v('star')} stroke={N} strokeWidth="1.4" />
+      <circle cx="24" cy="17" r="2.2" style={v('navy')} />
+      <path d="M17 22.5c2 1.4 4 1.4 6 0" stroke={N} strokeWidth="1.6" fill="none" strokeLinecap="round" />
+      <path d="M12 32c4 3 12 3 16 0" style={{ stroke: 'var(--yellow)' }} strokeWidth="2.4" fill="none" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/** 꾸미기가 끼워지는 자리 (서버 ShopService.ITEMS의 slot과 같아요). 자리마다 하나만 */
+export const SLOT_OF = {
+  flag: 'top', lantern: 'top', sakura: 'top', umbrella: 'top', daruma: 'top',
+  tatami: 'base', sakuraplate: 'base', gold: 'base',
+  petals: 'bg', sunset: 'bg', night: 'bg',
+};
+export const LOOK_COUNT = Object.keys(SLOT_OF).length;
+
+/** 쓰는 꾸미기 목록 → 자리마다 하나 ({ top, base, bg }). 둘이 겹치면 나중 것 (로그인 때 합쳐진 경우) */
+export function pickLooks(looks = []) {
+  const out = {};
+  for (const id of looks) if (SLOT_OF[id]) out[SLOT_OF[id]] = id;
+  return out;
+}
+
+/** 꼭대기 장식: 그림 · 크기 · 브릭 윗면에서 얼마나 올라오는지(h) · 가운데에서 왼쪽으로 얼마나(dx) */
+const TOPS = {
+  flag: { Art: FlagTop, size: 40, h: 40, dx: -6 },
+  lantern: { Art: LanternTop, size: 28, h: 44, dx: -14 },
+  sakura: { Art: SakuraTop, size: 44, h: 44, dx: -22 },
+  umbrella: { Art: UmbrellaTop, size: 46, h: 46, dx: -23 },
+  daruma: { Art: DarumaTop, size: 38, h: 40, dx: -19 },
+};
+/** 꼭대기 장식이 차지하는 높이 (탑 칸 크기 계산용) */
+export const topHeight = (id) => TOPS[id]?.h || 0;
+
+/** 꼭대기 장식. bottom = 탑 맨 위(브릭 윗면)의 아래에서부터 위치 */
+export function TopDecor({ id, bottom, scale = 1 }) {
+  const t = TOPS[id];
+  if (!t) return null;
+  return (
+    <div className="tw-top" style={{ position: 'absolute', left: '50%', bottom, marginLeft: t.dx * scale }}>
+      <t.Art size={t.size * scale} />
+    </div>
+  );
+}
+
+/** 받침판 색 */
+export function plateStyle(id) {
+  if (id === 'gold') return { background: 'var(--gold)' };
+  if (id === 'sakuraplate') return { background: 'var(--sakura-plate)' };
+  if (id === 'tatami') return { background: 'repeating-linear-gradient(90deg, var(--tatami) 0 6px, var(--tatami-line) 6px 7px)', borderTopColor: 'var(--tatami-edge)', borderTopWidth: 3 };
+  return { background: 'var(--plate-base)' };
+}
+
+const PETALS = [[6, 14, 20], [26, 34, -30], [48, 8, 40], [72, 28, 10], [12, 66, -10], [84, 70, 50], [60, 56, -40], [34, 80, 15]];
+const STARS = [[8, 12], [22, 30], [38, 9], [62, 22], [18, 52], [80, 56], [50, 40]];
+/** 탑 뒤 배경 (부모 칸을 꽉 채워요) */
+export function Backdrop({ id }) {
+  if (id === 'petals') return <div className="lk-bg petals" aria-hidden="true">{PETALS.map(([x, y, r], i) => <span key={i} className="lk-petal" style={{ left: `${x}%`, top: `${y}%`, transform: `rotate(${r}deg)` }} />)}</div>;
+  if (id === 'sunset') return <div className="lk-bg sunset" aria-hidden="true"><span className="lk-sun" /></div>;
+  if (id === 'night') return <div className="lk-bg night" aria-hidden="true"><span className="lk-moon" />{STARS.map(([x, y], i) => <span key={i} className="lk-star" style={{ left: `${x}%`, top: `${y}%` }} />)}</div>;
+  return null;
+}
+
 /** 상점 물건 그림 */
 export function ItemArt({ id }) {
   const B = { studs: 4, pitch: 16, h: 18, depth: 8, studH: 4 };
@@ -51,11 +146,16 @@ export function ItemArt({ id }) {
       </div>
     );
   }
-  if (id === 'flag') return <div className="it-art">{base('yellow')}<div style={{ position: 'absolute', left: 30, top: -8 }}><FlagTop size={38} /></div></div>;
-  if (id === 'lantern') return <div className="it-art">{base('mint')}<div style={{ position: 'absolute', left: 30, top: -14 }}><LanternTop size={30} /></div></div>;
+  if (SLOT_OF[id] === 'top') {
+    const tt = TOPS[id];
+    return <div className="it-art">{base(id === 'flag' ? 'yellow' : id === 'umbrella' ? 'sky' : 'mint')}<div style={{ position: 'absolute', left: 40 + tt.dx, top: 24 - tt.h + 4 }}><tt.Art size={tt.size * 0.8} /></div></div>;
+  }
+  if (SLOT_OF[id] === 'bg') {
+    return <div className="it-art it-art-bg"><Backdrop id={id} /><div style={{ position: 'absolute', left: 16, top: 22 }}><Brick tone="coral" {...B} /></div></div>;
+  }
   return (
     <div className="it-art">
-      <div style={{ position: 'absolute', left: 4, top: 40, width: 88, height: 12, borderRadius: 3, background: '#E9B949', border: '2px solid #24324A' }} />
+      <div style={{ position: 'absolute', left: 4, top: 40, width: 88, height: 12, borderRadius: 3, border: '2px solid #24324A', ...plateStyle(id) }} />
       <div style={{ position: 'absolute', left: 16, top: 6 }}><Brick tone="sky" {...B} /></div>
     </div>
   );

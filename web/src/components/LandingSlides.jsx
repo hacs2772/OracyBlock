@@ -319,15 +319,15 @@ function ArtGuard() {
 function ArtDecor() {
   return (
     <div className="sl-art">
-      {['flag', 'lantern', 'gold'].map((id, i) => (
+      {['sakura', 'tatami', 'night'].map((id, i) => (
         <div key={id} className="sl-item small sl-pop" style={{ ...at(4 + i * 104, 40), ...delay(0.15 + i * 0.3) }}><ItemArt id={id} /></div>
       ))}
-      <span className="sl-say sl-fade" style={{ ...at(0, 200, { width: 310, textAlign: 'center' }), ...delay(1.2) }}>내 탑 맨 위와 받침판을 꾸며요</span>
+      <span className="sl-say sl-fade" style={{ ...at(0, 200, { width: 310, textAlign: 'center' }), ...delay(1.2) }}>꼭대기 · 받침판 · 배경을 하나씩 골라요</span>
     </div>
   );
 }
 export const SHOP_SLIDES = [
   { t: '미션을 하면 브릭을 받아요', b: '날마다 바뀌는 오늘의 미션과 이번 주 미션이 있어요. 다 하면 [받기]를 눌러 브릭을 모아요.', art: ArtMission },
   { t: '브릭으로 탑을 지켜요', b: '방어권은 쉬다가 금이 가려는 날 저절로 한 번 막아 줘요. 쉬어가기권은 미리 고른 하루를 쉬어도 탑이 그대로예요.', art: ArtGuard },
-  { t: '탑을 꾸며도 돼요', b: '깃발, 초롱, 금빛 받침판으로 내 탑을 꾸며요. 공유 카드에도 같이 나와요.', art: ArtDecor },
+  { t: '탑을 꾸며도 돼요', b: '꼭대기 장식, 받침판, 배경을 하나씩 골라 내 탑을 꾸며요. 자랑 카드에도 같이 나와요.', art: ArtDecor },
 ];

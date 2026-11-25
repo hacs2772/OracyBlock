@@ -24,7 +24,11 @@ public class ShopService {
     public record Mission(String id, String title, int target, int reward) {
     }
 
-    public record Item(String id, String name, String desc, int price, boolean look) {
+    /** slot: 꾸미기가 끼워지는 자리 (top 꼭대기 · base 받침판 · bg 배경). 자리마다 하나만 쓸 수 있어요. 쓰는 물건(방어권 등)은 null */
+    public record Item(String id, String name, String desc, int price, String slot) {
+        public boolean look() {
+            return slot != null;
+        }
     }
 
     static final Mission TALK = new Mission("talk", "대화 1개 끝내기", 1, 10);
@@ -36,11 +40,22 @@ public class ShopService {
     static final Mission WEEK = new Mission("week5", "이번 주 공부한 날 5일 채우기", 5, 50);
 
     public static final List<Item> ITEMS = List.of(
-            new Item("shield", "브릭 방어권", "쉬다가 탑에 금이 가려는 날, 저절로 1번 막아 줘요", 30, false),
-            new Item("rest", "쉬어가기권", "고른 하루는 금도 안 가고 떨어지지도 않아요", 40, false),
-            new Item("flag", "꼭대기 깃발", "내 탑 맨 위에 깃발을 꽂아요", 60, true),
-            new Item("lantern", "꼭대기 초롱", "내 탑 맨 위에 빨간 초롱을 달아요", 80, true),
-            new Item("gold", "금빛 받침판", "내 탑 받침판이 금빛으로 바뀌어요", 100, true));
+            new Item("shield", "브릭 방어권", "쉬다가 탑에 금이 가려는 날, 저절로 1번 막아 줘요", 30, null),
+            new Item("rest", "쉬어가기권", "고른 하루는 금도 안 가고 떨어지지도 않아요", 40, null),
+            // 꼭대기 장식 (concept 11-38)
+            new Item("flag", "꼭대기 깃발", "내 탑 맨 위에 깃발을 꽂아요", 60, "top"),
+            new Item("lantern", "꼭대기 초롱", "내 탑 맨 위에 빨간 초롱을 달아요", 80, "top"),
+            new Item("sakura", "벚꽃 가지", "내 탑 맨 위에 벚꽃 가지를 꽂아요", 90, "top"),
+            new Item("umbrella", "종이우산", "내 탑 맨 위에 빨간 종이우산을 펼쳐요", 120, "top"),
+            new Item("daruma", "다루마", "내 탑 맨 위에 다루마 인형을 올려요", 150, "top"),
+            // 받침판
+            new Item("tatami", "다다미 받침판", "내 탑 받침판이 다다미로 바뀌어요", 70, "base"),
+            new Item("sakuraplate", "벚꽃 받침판", "내 탑 받침판이 벚꽃색으로 바뀌어요", 90, "base"),
+            new Item("gold", "금빛 받침판", "내 탑 받침판이 금빛으로 바뀌어요", 100, "base"),
+            // 배경
+            new Item("petals", "꽃잎 배경", "내 탑 뒤로 벚꽃잎이 날려요", 150, "bg"),
+            new Item("sunset", "노을 배경", "내 탑 뒤로 노을이 져요", 200, "bg"),
+            new Item("night", "밤하늘 배경", "내 탑 뒤로 달과 별이 떠요", 250, "bg"));
     static final Map<String, Integer> CRACK_AFTER = Map.of("slow", 3, "normal", 2, "fast", 1);
 
     private final ShopMapper shop;
@@ -98,6 +113,7 @@ public class ShopService {
             m.put("desc", it.desc());
             m.put("price", it.price());
             m.put("look", it.look());
+            m.put("slot", it.slot());
             m.put("qty", r == null ? 0 : ((Number) r.get("qty")).intValue());
             m.put("equipped", r != null && Boolean.TRUE.equals(r.get("equipped")));
             items.add(m);
@@ -145,8 +161,15 @@ public class ShopService {
         if (bricks < it.price()) throw new ApiException(HttpStatus.BAD_REQUEST, "브릭이 모자라요.");
         shop.addBricks(owner, -it.price());
         shop.log(owner, -it.price(), "buy:" + it.id());
+        if (it.look()) offSlot(owner, it);
         shop.addItem(owner, it.id(), 1, it.look());
         return state(owner);
+    }
+
+    /** 같은 자리(꼭대기·받침판·배경)에 쓰던 꾸미기를 빼요 */
+    private void offSlot(String owner, Item it) {
+        List<String> same = ITEMS.stream().filter(x -> it.slot().equals(x.slot()) && !x.id().equals(it.id())).map(Item::id).toList();
+        shop.unequip(owner, same);
     }
 
     /** 쉬어가기권 쓰기: 오늘부터 14일 안의 하루 */
@@ -162,7 +185,12 @@ public class ShopService {
 
     @Transactional
     public Map<String, Object> equip(String owner, String id, boolean on) {
-        if (ITEMS.stream().noneMatch(x -> x.id().equals(id) && x.look())) throw new ApiException(HttpStatus.BAD_REQUEST, "꾸미기 물건이 아니에요.");
+        Item it = ITEMS.stream().filter(x -> x.id().equals(id) && x.look()).findFirst()
+                .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, "꾸미기 물건이 아니에요."));
+        if (on && shop.inventory(owner).stream().noneMatch(r -> id.equals(r.get("item")) && ((Number) r.get("qty")).intValue() > 0)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "가지고 있지 않아요.");
+        }
+        if (on) offSlot(owner, it); // 같은 자리에 있던 꾸미기는 빼요
         if (shop.equip(owner, id, on) == 0) throw new ApiException(HttpStatus.BAD_REQUEST, "가지고 있지 않아요.");
         return state(owner);
     }

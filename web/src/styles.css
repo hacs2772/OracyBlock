@@ -22,6 +22,22 @@
   --yellow-line: #e9c77e;
   --pink-bg: #ffe1db;
   --sky-bg: #e4eef8;
+  /* 탑 꾸미기 (concept 11-38) */
+  --plate-base: #e2cb9c;
+  --gold: #e9b949;
+  --wood: #7a4b35;
+  --sakura: #f6a6bd;
+  --sakura-bg: #fff1f4;
+  --sakura-plate: #f6c3d2;
+  --tatami: #c9d18f;
+  --tatami-line: #b8c27a;
+  --tatami-edge: #3e5a3a;
+  --sunset-1: #f59e7b;
+  --sunset-2: #f7be7a;
+  --sunset-3: #fbdfa0;
+  --moon: #ffe9a8;
+  --night: #2f3e5c;
+  --star: #fff6ea;
   --display: 'Do Hyeon', sans-serif;
   --body: 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', system-ui, sans-serif;
 }
@@ -527,6 +543,8 @@ textarea.input { height: 120px; padding: 10px 12px; resize: vertical; line-heigh
 .sp-num { font-family: var(--display); font-size: 28px; line-height: 1; }
 .sp-h { display: flex; align-items: baseline; justify-content: space-between; margin-top: 6px; }
 .sp-h h2 { font-size: 21px; }
+.sp-h.sm { margin: 14px 0 8px; }
+.sp-h.sm h3 { font-size: 17px; }
 .sp-list { padding: 4px 12px; }
 .sp-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1.5px dashed var(--line); }
 .sp-row:first-child { border-top: 0; }
@@ -549,6 +567,7 @@ textarea.input { height: 120px; padding: 10px 12px; resize: vertical; line-heigh
 .sp-buy.on { background: var(--mint-bg); }
 .sp-days { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 6px; }
 .it-art { position: relative; width: 96px; height: 70px; }
+.it-art-bg { border-radius: 10px; overflow: hidden; }
 .hm-line a.hm-ready { color: var(--coral-ink); font-weight: 700; }
 
 /* 다시 만나기 (concept 11-23): 홈 "다시 만날 사람" 줄 · 만난 횟수 브릭 · 대화 끝 알림 */
@@ -624,3 +643,15 @@ textarea.input { height: 120px; padding: 10px 12px; resize: vertical; line-heigh
 .sl-item { box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: 4px; width: 136px; padding: 10px 6px; border: 2px solid var(--navy); border-radius: 10px; background: #fff; text-align: center; font-size: 12px; line-height: 1.35; }
 .sl-item b { font-size: 14px; }
 .sl-item.small { width: 98px; }
+
+/* 탑 꾸미기: 배경 (내 탑 · 자랑 카드 · 상점 그림, concept 11-38) */
+.lk-bg { position: absolute; inset: 0; overflow: hidden; border-radius: inherit; }
+.lk-bg.petals { background: var(--sakura-bg); }
+.lk-bg.sunset { background: linear-gradient(var(--sunset-1) 0 35%, var(--sunset-2) 35% 65%, var(--sunset-3) 65%); }
+.lk-bg.night { background: var(--night); }
+.lk-petal { position: absolute; width: 10px; height: 7px; border-radius: 60% 60% 60% 0; background: var(--sakura); }
+.lk-star { position: absolute; width: 4px; height: 4px; border-radius: 2px; background: var(--star); }
+.lk-sun { position: absolute; right: 12%; top: 14%; width: 46px; height: 46px; border-radius: 23px; background: var(--moon); border: 2px solid var(--gold); }
+.lk-moon { position: absolute; right: 11%; top: 10%; width: 34px; height: 34px; border-radius: 17px; background: var(--moon); box-shadow: inset -9px 4px 0 0 var(--night); }
+.tw-plate { overflow: hidden; }
+.tw-plate > .lk-bg ~ * { position: relative; }

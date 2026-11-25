@@ -45,6 +45,12 @@ public interface ShopMapper {
     @Update("UPDATE inventory SET equipped = #{on} WHERE owner = #{owner} AND item = #{item} AND qty > 0")
     int equip(@Param("owner") String owner, @Param("item") String item, @Param("on") boolean on);
 
+    @Update("""
+        <script>UPDATE inventory SET equipped = false WHERE owner = #{owner} AND equipped AND item IN
+        <foreach item="i" collection="items" open="(" separator="," close=")">#{i}</foreach></script>
+        """)
+    void unequip(@Param("owner") String owner, @Param("items") List<String> items);
+
     @Select("SELECT to_char(day, 'YYYY-MM-DD') AS day, kind FROM guard_day WHERE owner = #{owner} ORDER BY day")
     List<Map<String, Object>> guardDays(@Param("owner") String owner);
 

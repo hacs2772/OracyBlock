@@ -22,6 +22,14 @@ function Fill({ n, of, tone }) {
   );
 }
 
+/** 상점 칸: 쓰는 물건 · 꼭대기 · 받침판 · 배경 (꾸미기는 자리마다 하나만, concept 11-38) */
+const SECTIONS = [
+  [null, '쓰는 물건', '탑을 지켜 줘요'],
+  ['top', '꼭대기 장식', '하나만 달 수 있어요'],
+  ['base', '받침판', '하나만 깔 수 있어요'],
+  ['bg', '배경', '하나만 깔 수 있어요'],
+];
+
 function MissionRow({ m, onClaim, busy }) {
   const done = m.n >= m.target;
   const tone = TONE[m.id] || '#FFC857';
@@ -129,29 +137,38 @@ export default function Shop() {
         </>
       ) : (
         <>
-          <div className="sp-h"><h2>상점</h2><span className="small muted">브릭으로 사요</span></div>
-          <div className="sp-grid">
-            {items.map((it) => (
-              <div key={it.id} className="card sp-item">
-                <div className="sp-art"><ItemArt id={it.id} /></div>
-                <b>{it.name}</b>
-                <span className="small muted">{it.desc}</span>
-                {!it.look && it.qty > 0 && <span className="chip done" style={{ alignSelf: 'flex-start' }}>가지고 있어요 {it.qty}개</span>}
-                {it.id === 'rest' && it.qty > 0 && <button className="link-btn" style={{ alignSelf: 'flex-start' }} onClick={() => setResting(true)}>쉬는 날 고르기</button>}
-                {it.id === 'rest' && restDays.length > 0 && <span className="small">쉬는 날: {restDays.map((g) => g.day.slice(5).replace('-', '/')).join(', ')}</span>}
-                {it.id === 'shield' && shieldDays.length > 0 && <span className="small">지켜 준 날 {shieldDays.length}일</span>}
-                {it.look && it.qty > 0 ? (
-                  <button className={'ob-btn sm sp-buy' + (it.equipped ? ' on' : '')} disabled={busy} onClick={() => run('equip', { id: it.id, on: !it.equipped }, it.equipped ? '내 탑에서 뺐어요' : '내 탑에 달았어요')}>
-                    <span className="t">{it.equipped ? '쓰는 중' : '달기'}</span>
-                  </button>
-                ) : (
-                  <button className="ob-btn sm sp-buy" disabled={busy || (d && d.bricks < it.price)} onClick={() => setBuying(it)} aria-label={`${it.name}, 브릭 ${it.price}개로 사기`}>
-                    <span className="t"><BrickCoin size={14} /> {it.price}</span>
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
+          <div className="sp-h"><h2>상점</h2><span className="small muted">모은 꾸미기 {items.filter((x) => x.look && x.qty > 0).length}/{items.filter((x) => x.look).length}</span></div>
+          {SECTIONS.map(([slot, title, hint]) => {
+            const list = items.filter((it) => (it.slot || null) === slot);
+            if (!list.length) return null;
+            return (
+              <section key={slot || 'use'} className="sp-sec">
+                <div className="sp-h sm"><h3>{title}</h3><span className="small muted">{hint}</span></div>
+                <div className="sp-grid">
+                  {list.map((it) => (
+                    <div key={it.id} className="card sp-item">
+                      <div className="sp-art"><ItemArt id={it.id} /></div>
+                      <b>{it.name}</b>
+                      <span className="small muted">{it.desc}</span>
+                      {!it.look && it.qty > 0 && <span className="chip done" style={{ alignSelf: 'flex-start' }}>가지고 있어요 {it.qty}개</span>}
+                      {it.id === 'rest' && it.qty > 0 && <button className="link-btn" style={{ alignSelf: 'flex-start' }} onClick={() => setResting(true)}>쉬는 날 고르기</button>}
+                      {it.id === 'rest' && restDays.length > 0 && <span className="small">쉬는 날: {restDays.map((g) => g.day.slice(5).replace('-', '/')).join(', ')}</span>}
+                      {it.id === 'shield' && shieldDays.length > 0 && <span className="small">지켜 준 날 {shieldDays.length}일</span>}
+                      {it.look && it.qty > 0 ? (
+                        <button className={'ob-btn sm sp-buy' + (it.equipped ? ' on' : '')} disabled={busy} onClick={() => run('equip', { id: it.id, on: !it.equipped }, it.equipped ? '내 탑에서 뺐어요' : it.slot === 'top' ? '내 탑에 달았어요' : '내 탑에 깔았어요')}>
+                          <span className="t">{it.equipped ? '쓰는 중' : it.slot === 'top' ? '달기' : '깔기'}</span>
+                        </button>
+                      ) : (
+                        <button className="ob-btn sm sp-buy" disabled={busy || (d && d.bricks < it.price)} onClick={() => setBuying(it)} aria-label={`${it.name}, 브릭 ${it.price}개로 사기`}>
+                          <span className="t"><BrickCoin size={14} /> {it.price}</span>
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </section>
+            );
+          })}
           <p className="small muted">베타 동안 가격은 바뀔 수 있어요.</p>
         </>
       )}

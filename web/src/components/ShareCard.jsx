@@ -3,7 +3,7 @@
 import { useRef, useState } from 'react';
 import Brick from './Brick.jsx';
 import { LogoMark, Sheet, toast } from './ui.jsx';
-import { FlagTop, LanternTop, GOLD_PLATE } from './Looks.jsx';
+import { pickLooks, TopDecor, topHeight, plateStyle, Backdrop } from './Looks.jsx';
 import { LEVEL_SCALE } from '../content/build.js';
 import { dayTone } from '../lib/progress.js';
 
@@ -19,18 +19,16 @@ function CardTower({ stack, looks = [] }) {
     y += sz.h;
     return out;
   });
-  const top = looks.includes('lantern') ? 44 : looks.includes('flag') ? 40 : 14;
+  const lk = pickLooks(looks);
+  const top = lk.top ? topHeight(lk.top) + 4 : 14;
   const fit = Math.min(1, (PLATE_H - 24) / Math.max(1, y + top + 20));
   const height = y + top + 20;
   return (
     <div className="sc-tower">
+      <Backdrop id={lk.bg} />
       <div style={{ position: 'absolute', left: '50%', bottom: 8, width: 120, height, marginLeft: -60, transform: `scale(${fit})`, transformOrigin: 'bottom center' }}>
-        <div style={{ position: 'absolute', left: -10, right: -10, bottom: 0, height: 9, borderRadius: 3, background: looks.includes('gold') ? GOLD_PLATE : '#E2CB9C', border: '2px solid #24324A' }} />
-        {(looks.includes('flag') || looks.includes('lantern')) && (
-          <div style={{ position: 'absolute', left: '50%', bottom: 9 + y + 4, marginLeft: looks.includes('flag') ? -6 : -14 }}>
-            {looks.includes('lantern') ? <LanternTop size={28} /> : <FlagTop size={40} />}
-          </div>
-        )}
+        <div style={{ position: 'absolute', left: -10, right: -10, bottom: 0, height: 9, borderRadius: 3, border: '2px solid #24324A', ...plateStyle(lk.base) }} />
+        {lk.top && <TopDecor id={lk.top} bottom={9 + y + 4} />}
         {placed.map((b) => {
           const w = 4 * b.sz.pitch;
           return (
@@ -109,7 +107,7 @@ export default function ShareSheet({ onClose, ...card }) {
   };
   return (
     <Sheet title="내 탑 자랑하기" onClose={onClose} labelId="share-title">
-      <p className="small muted" style={{ marginTop: 2 }}>사진으로 만들어 카톡·인스타에 보낼 수 있어요.</p>
+      <p className="small muted" style={{ marginTop: 2 }}>사진으로 만들어 친구에게 보내거나 올릴 수 있어요.</p>
       <div className="sc-preview">
         <div className="sc-scale"><div ref={ref}><ShareCardB {...card} /></div></div>
       </div>

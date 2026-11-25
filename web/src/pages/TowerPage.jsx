@@ -11,7 +11,7 @@ import { LEVEL_SCALE } from '../content/build.js';
 import { dayTone, WEEK_TONE, WEEK_NAME } from '../lib/progress.js';
 import Brick from '../components/Brick.jsx';
 import { TopBar, Sheet, Tabs, Question } from '../components/ui.jsx';
-import { FlagTop, LanternTop, GOLD_PLATE } from '../components/Looks.jsx';
+import { pickLooks, TopDecor, topHeight, plateStyle, Backdrop } from '../components/Looks.jsx';
 import { Guide } from '../components/Guides.jsx';
 import { TOWER_SLIDES } from '../components/LandingSlides.jsx';
 import ShareSheet from '../components/ShareCard.jsx';
@@ -71,15 +71,12 @@ function Pyramid({ stack, cracks, looks = [] }) {
     y += sz.h;
     return out;
   });
-  const height = Math.max(120, y + 40);
+  const lk = pickLooks(looks);
+  const height = Math.max(120, y + 10 + Math.max(30, topHeight(lk.top) + 8));
   return (
     <div style={{ position: 'relative', height, width: '100%' }} role="img" aria-label={`내 탑, ${stack.length}층${cracks ? `, 브릭 ${cracks}개에 금이 갔어요` : ''}`}>
-      <div style={{ position: 'absolute', left: '50%', bottom: 0, width: 180, height: 10, marginLeft: -90, borderRadius: 3, background: looks.includes('gold') ? GOLD_PLATE : '#E2CB9C', border: '2px solid #24324A' }} />
-      {(looks.includes('flag') || looks.includes('lantern')) && (
-        <div className="tw-top" style={{ position: 'absolute', left: '50%', top: height - 10 - y - (looks.includes('lantern') ? 44 : 40), marginLeft: looks.includes('flag') ? -6 : -14 }}>
-          {looks.includes('lantern') ? <LanternTop size={28} /> : <FlagTop size={40} />}
-        </div>
-      )}
+      <div style={{ position: 'absolute', left: '50%', bottom: 0, width: 180, height: 10, marginLeft: -90, borderRadius: 3, border: '2px solid #24324A', ...plateStyle(lk.base) }} />
+      {lk.top && <TopDecor id={lk.top} bottom={10 + y + 4} />}
       {placed.map((b) => {
         const w = 4 * b.sz.pitch;
         const lift = 5 + b.sz.studH + b.sz.depth + b.sz.h;
@@ -149,7 +146,8 @@ export default function TowerPage() {
       {t.cracks > 0 && (
         <p className="note warn">{t.rest}일 쉬어서 브릭 {t.cracks}개에 금이 갔어요. {t.fallIn === 1 ? '오늘 밤' : t.fallIn === 2 ? '내일 밤' : `${t.fallIn - 1}일 뒤 밤`}까지 공부하지 않으면 떨어져요. 대화나 복습 하나만 하면 다시 단단해져요.</p>
       )}
-      <div className="plate" style={{ boxShadow: 'none' }}>
+      <div className="plate tw-plate" style={{ boxShadow: 'none' }}>
+        <Backdrop id={pickLooks(tower?.looks || []).bg} />
         {t.stack.length ? <Pyramid stack={t.stack} cracks={t.cracks} looks={tower?.looks || []} /> : <p className="small" style={{ padding: '30px 0', textAlign: 'center' }}>대화를 하나 끝내면 첫 브릭이 쌓여요.</p>}
       </div>
       {t.stack.length > 0 && (
