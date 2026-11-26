@@ -105,7 +105,7 @@ jobs:
       - name: 브라우저 준비
         working-directory: web
         run: |
-          npm i --no-save playwright@1.49.1
+          npm i --no-save playwright@1.63.0
           npx playwright install --with-deps chromium webkit
       - name: 대화 하나 끝까지 해 보기 (크롬 엔진)
         working-directory: web
