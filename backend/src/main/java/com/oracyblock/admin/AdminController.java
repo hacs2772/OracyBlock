@@ -76,7 +76,7 @@ public class AdminController {
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("items", items);
         out.put("missions", missions);
-        out.put("bricks", admin.shopBricks(AdminMapper.NOT_ADMIN));
+        out.put("bricks", admin.shopBricks());
         return out;
     }
 

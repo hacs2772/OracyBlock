@@ -77,7 +77,9 @@ public class AuthController {
     }
 
     private Map<String, Object> done(long userId, HttpServletRequest req) {
-        service.claim(Who.of(null, req).visitorId(), userId);
+        // 방문자 번호가 없는 요청(스크립트 등)은 "unknown-visitor" 한 곳에 모여요. 그 기록을 아무 계정으로나 옮기지 않게
+        String visitor = Who.of(null, req).visitorId();
+        if (!Who.UNKNOWN.equals(visitor)) service.claim(visitor, userId);
         users.touch(userId);
         Map<String, Object> u = service.get(userId);
         return Map.of("token", jwt.create(userId, (String) u.get("role")), "user", UserService.view(u));

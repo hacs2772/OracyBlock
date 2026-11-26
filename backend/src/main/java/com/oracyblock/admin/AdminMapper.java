@@ -155,10 +155,8 @@ public interface AdminMapper {
     List<Map<String, Object>> shopMissions();
 
     /** 브릭: 최근 30일 모은 것 · 쓴 것, 지금 지갑에 남은 것 */
-    @Select("""
-        SELECT COALESCE((SELECT SUM(delta) FROM wallet_log WHERE delta > 0 AND created_at > now() - interval '30 days' AND ${notAdmin}), 0) AS earned,
-               COALESCE((SELECT -SUM(delta) FROM wallet_log WHERE delta < 0 AND created_at > now() - interval '30 days' AND ${notAdmin}), 0) AS spent,
-               COALESCE((SELECT SUM(bricks) FROM wallet WHERE ${notAdmin}), 0) AS left
-        """)
-    Map<String, Object> shopBricks(@Param("notAdmin") String notAdmin);
+    @Select("SELECT COALESCE((SELECT SUM(delta) FROM wallet_log WHERE delta > 0 AND created_at > now() - interval '30 days' AND " + NOT_ADMIN + "), 0) AS earned,"
+            + " COALESCE((SELECT -SUM(delta) FROM wallet_log WHERE delta < 0 AND created_at > now() - interval '30 days' AND " + NOT_ADMIN + "), 0) AS spent,"
+            + " COALESCE((SELECT SUM(bricks) FROM wallet WHERE " + NOT_ADMIN + "), 0) AS left")
+    Map<String, Object> shopBricks();
 }

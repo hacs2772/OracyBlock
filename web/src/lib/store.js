@@ -36,6 +36,8 @@ function load() {
 
 function newId() {
   if (crypto?.randomUUID) return crypto.randomUUID();
+  // 오래된 휴대폰(randomUUID 없음): 그래도 추측하기 어려운 무작위 숫자로 (방문자 번호가 곧 기록 열쇠예요)
+  if (crypto?.getRandomValues) return 'v' + Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, '0')).join('');
   return 'v' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
 }
 

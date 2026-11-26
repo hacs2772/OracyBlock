@@ -11,10 +11,12 @@ public record Who(Long userId, String visitorId) {
 
     public static final ZoneId KST = ZoneId.of("Asia/Seoul");
     private static final Pattern VISITOR = Pattern.compile("[A-Za-z0-9-]{8,64}");
+    /** 방문자 번호 없이 온 요청 */
+    public static final String UNKNOWN = "unknown-visitor";
 
     public static Who of(Long userId, HttpServletRequest req) {
         String v = req.getHeader("X-Visitor-Id");
-        if (v == null || !VISITOR.matcher(v).matches()) v = "unknown-visitor";
+        if (v == null || !VISITOR.matcher(v).matches()) v = UNKNOWN;
         return new Who(userId, v);
     }
 
