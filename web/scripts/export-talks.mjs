@@ -73,6 +73,28 @@ parts.forEach((part, i) => {
 });
 console.log(`AI 검수용: ${aiDir} (${parts.length}개 파일)`);
 
+// 마지막 AI 검수(2026-11-24, 대화 43개) 뒤에 새로 넣은 대화만: new-1ofN.txt (이것만 보내면 돼요)
+const REVIEWED_UNTIL = 43;
+const fresh = ai.filter((g) => GAME_TALKS.indexOf(g.t) >= REVIEWED_UNTIL);
+const freshParts = [];
+let fcur = [];
+for (const g of fresh) {
+  if (fcur.length && fcur.reduce((m, x) => m + x.rows.length, 0) + g.rows.length > 110) {
+    freshParts.push(fcur);
+    fcur = [];
+  }
+  fcur.push(g);
+}
+if (fcur.length) freshParts.push(fcur);
+freshParts.forEach((part, i) => {
+  const body = part.map((g) => {
+    const head = `\n### ${g.t.place} (Lv${g.t.level}) · 상대: ${g.t.partner}, ${g.t.partnerDesc} · 상황: ${g.t.scene || ''}`;
+    return [head, ...g.rows.map((r) => [r[0], r[4], r[5] + (r[9] ? ` (가지:${r[9]})` : ''), r[6], r[7], r[8]].join(' | '))].join('\n');
+  }).join('\n');
+  writeFileSync(resolve(aiDir, `new-${i + 1}of${freshParts.length}.txt`), PROMPT + body + '\n');
+});
+console.log(`새 대화만: ${fresh.length}개 대화 → new-1of${freshParts.length}.txt …`);
+
 // 파일을 올리는 AI(Gemini 등)용: 대화 단위로 3개 CSV + 질문 글 (링크를 못 읽는 AI용)
 const CSV_HEAD = ['번호', '장소', '상황', '누가', '종류', '일본어', '한글 발음', '한국어 뜻', '문제 (일본어/뜻/대답/발음)', '고칠 말', '이유'];
 const per = Math.ceil(rows.length / 3);
