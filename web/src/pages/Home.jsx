@@ -95,10 +95,10 @@ export default function Home() {
           {meets.map((m) => {
             const mw = missedWord(m.talk, words);
             return (
-              <button key={m.talk.id} className="mt-row" onClick={() => start(m.talk.id, m.meets + 1)} aria-label={`${m.talk.place} 다시 만나기, ${m.ago}일 만`}>
+              <button key={m.talk.id} className="mt-row" onClick={() => start(m.talk.id, m.meets + 1)}>
                 <Face kind={FACE_OF[m.talk.id]} size={36} />
                 <span className="mt-row-t">
-                  <b>{m.talk.place}</b>
+                  <b>{m.talk.place}</b><span className="sr-only">다시 만나기</span>
                   <span className="small muted">{m.ago}일 만{mw.w ? ` · ${mw.missed ? '놓친 단어' : '단어'} ${mw.w.ko}` : ''}</span>
                 </span>
                 <Meets n={m.meets} />
@@ -126,7 +126,7 @@ export default function Home() {
         )}
       </div>
 
-      <Link to="/tower" className="card hm-tower" aria-label={`내 탑 ${floors}층, 오늘 ${left}개 더 쌓을 수 있어요`}>
+      <Link to="/tower" className="card hm-tower">
         <Stack bricks={mini.length ? mini : [{ tone: 'mint', ghost: true }]} size={MINI} x0={22} baseY={Math.max(70, mini.length * MINI.h + 22)} height={Math.max(76, mini.length * MINI.h + 26)} width={86} plate={6} />
         <div style={{ minWidth: 0 }}>
           <div className="hm-tower-t">내 탑 {floors}층</div>

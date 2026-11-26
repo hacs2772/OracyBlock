@@ -122,7 +122,7 @@ export default function Learn() {
             const color = saved ? '#B9473A' : p ? (p.crooked ? '#8A5A1A' : '#1B776C') : now ? '#B9473A' : '#4A566B';
             const show = bricks.slice(-8);
             return (
-              <button key={t.id} className={'spot' + (now ? ' now' : '')} onClick={() => tapSpot(t.id)} aria-label={`${t.place}, ${status}${fixCount.get(t.id) ? `, 고칠 곳 ${fixCount.get(t.id)}개` : ''}`}>
+              <button key={t.id} className={'spot' + (now ? ' now' : '')} onClick={() => tapSpot(t.id)}>
                 <Stack bricks={show} size={MINI} x0={28} baseY={Math.max(60, show.length * MINI.h + 16)} height={Math.max(64, show.length * MINI.h + 20)} width={98} />
                 <span className="spot-name">{t.place}</span>
                 <span className="spot-st" style={{ color, fontWeight: p || now ? 700 : 400 }}>{status}</span>

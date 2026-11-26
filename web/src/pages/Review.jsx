@@ -119,7 +119,7 @@ export default function Review() {
           <span style={{ fontFamily: 'var(--display)', fontSize: 17 }}>내 단어</span>
           <span className="small">{(words || []).length}개 · 눌러서 모두 보기</span>
         </button>
-        <button className="mini-card" onClick={() => { unlock(); speak(cog.say, 0.85); }} aria-label={`오늘의 닮은 단어, ${cog.ko}, ${cog.like}, 들어 보기`}>
+        <button className="mini-card" onClick={() => { unlock(); speak(cog.say, 0.85); }} >
           <span style={{ fontFamily: 'var(--display)', fontSize: 17 }}>오늘의 닮은 단어</span>
           <span style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
             <span style={{ flex: 1, minWidth: 0 }}>
@@ -127,6 +127,7 @@ export default function Review() {
               <span className="small">≈ {cog.like}</span>
             </span>
             <span className="play-dot"><Play size={13} /></span>
+            <span className="sr-only">들어 보기</span>
           </span>
         </button>
       </div>
@@ -136,12 +137,13 @@ export default function Review() {
         <Sheet title={`내 단어 ${(words || []).length}개`} onClose={() => setList(false)} labelId="words-title">
           <div className="word-row" style={{ marginTop: 14 }}>
             {(words || []).map((w) => (
-              <button key={w.key} className="word-chip" onClick={() => speak(w.say, 0.85)} aria-label={`${w.ko}, ${w.mean}, 들어 보기`}>
+              <button key={w.key} className="word-chip" onClick={() => speak(w.say, 0.85)} >
                 <span className="play-dot sm"><Play size={10} /></span>
                 <span style={{ minWidth: 0 }}>
                   <span className="w">{w.ko}</span>
                   <span className="m">{w.mean}{w.dueDay <= today ? ' · 오늘' : ''}</span>
                 </span>
+                <span className="sr-only">들어 보기</span>
               </button>
             ))}
           </div>

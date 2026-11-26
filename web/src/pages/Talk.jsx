@@ -44,12 +44,13 @@ function sizeFor(level, n, room = 160) {
 
 function WordChip({ w, missed }) {
   return (
-    <button className="word-chip" onClick={() => speak(w.say, 0.85)} aria-label={`${w.ko}, ${w.mean}, 들어 보기`}>
+    <button className="word-chip" onClick={() => speak(w.say, 0.85)}>
       <span className="play-dot sm"><Play size={10} /></span>
       <span style={{ minWidth: 0 }}>
         <span className="w">{w.ko}</span>
         <span className="m">{w.mean}</span>
       </span>
+      <span className="sr-only">들어 보기</span>
       {missed && <span className="miss-tag">놓친 단어</span>}
     </button>
   );
@@ -243,7 +244,10 @@ export default function Talk() {
     if (small) later(450, settle);
     if (step.type === 'them') {
       setPh({ set: 0, wrong: 0, hint: false, solved: false, fb: '', shake: -1, n: 0 });
-      later(350, () => say(step.line.ja, rate));
+      // 링크로 바로 들어와 아직 한 번도 누르지 않았으면 브라우저가 소리를 막아요 (크롬은 곧 아예 못 하게 해요). 그땐 바로 재생 버튼을 반짝
+      const ua = typeof navigator !== 'undefined' ? navigator.userActivation : null;
+      if (ua && !ua.hasBeenActive) later(350, () => setNeedTap(true));
+      else later(350, () => say(step.line.ja, rate));
       // 아이폰은 누르지 않으면 소리가 안 날 때가 있어요 → 듣기 버튼을 반짝
       later(900, () => {
         const sy = window.speechSynthesis;
