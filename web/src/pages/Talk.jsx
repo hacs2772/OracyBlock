@@ -191,9 +191,29 @@ export default function Talk() {
   }, [si]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 새 차례: 맨 위(탑)부터 보이게. 낮은 화면은 머리줄을 넘겨 탑을 맨 위로 (탑 → 말풍선 → 문제 → 보기 5개가 한 화면에)
+  const autoY = useRef(-1); // 마지막으로 앱이 맞춘 스크롤 위치 (사람이 움직였는지 보려고)
   const toTop = () => {
     const el = document.querySelector('.stage');
     window.scrollTo(0, small && el ? Math.max(0, el.getBoundingClientRect().top + window.scrollY - 6) : 0);
+    autoY.current = window.scrollY;
+  };
+  // 낮은 화면: 탑부터 맞춘 뒤에도 마지막 보기가 화면 밖이면 (글꼴이 큰 휴대폰, 긴 질문) 그만큼 더 내려가요.
+  // 탑은 조금 가려져도 되지만 상대 말풍선은 가리지 않아요
+  const fitOpts = () => {
+    const all = document.querySelectorAll('.opts > *');
+    const last = all[all.length - 1];
+    if (!small || !last) return;
+    const gap = last.getBoundingClientRect().bottom - (window.innerHeight - 8);
+    const chat = document.querySelector('.tk-chat');
+    const room = chat ? chat.getBoundingClientRect().top - 4 : 0;
+    if (gap > 0 && room > 0) window.scrollBy(0, Math.min(gap, room));
+    autoY.current = window.scrollY;
+  };
+  /** 새 차례 화면 맞추기. 사람이 그새 직접 움직였으면 그대로 둬요 */
+  const settle = () => {
+    if (autoY.current >= 0 && Math.abs(window.scrollY - autoY.current) > 40) return;
+    toTop();
+    fitOpts();
   };
   // 알아듣거나 대답한 뒤: 브릭이 탑에 떨어지는 걸 먼저 보고, 다음 버튼이 화면 밖이면 그 버튼까지 살살 내려가요 (아이폰 SE, concept 11-53)
   const resultKey = ph.solved ? 'them' : ph.result && ph.result.kind !== 'near' ? ph.result.kind + (ph.reacted ? 'r' : '') : '';
@@ -209,7 +229,7 @@ export default function Talk() {
   }, [resultKey]); // eslint-disable-line react-hooks/exhaustive-deps
   // "소리가 안 나면…" 안내가 나오면 그만큼 보기가 밀려 내려가요. 낮은 화면은 다시 맞춰요
   useEffect(() => {
-    if (small && needTap && window.scrollY < 80) toTop();
+    if (small && needTap && !resultKey) settle();
   }, [needTap]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 새 차례가 되면 상대 말을 들려줘요
@@ -217,9 +237,10 @@ export default function Talk() {
     if (!step || done || resumeAsk) return;
     setNeedTap(false);
     if (!(stats.current.path || []).includes(si)) stats.current.path = [...(stats.current.path || []), si];
+    autoY.current = -1;
     later(30, toTop);
     // 낮은 화면: 처음엔 보기가 아직 안 그려져 페이지가 짧아서 끝까지 못 내려가요. 보기가 나온 뒤 한 번 더 (사용자가 그새 움직였으면 그대로)
-    if (small) later(450, () => window.scrollY < 80 && toTop());
+    if (small) later(450, settle);
     if (step.type === 'them') {
       setPh({ set: 0, wrong: 0, hint: false, solved: false, fb: '', shake: -1, n: 0 });
       later(350, () => say(step.line.ja, rate));
