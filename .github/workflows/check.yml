@@ -31,6 +31,8 @@ jobs:
       - run: npm ci
       - name: 대사 검사
         run: npm run check
+      - name: 속도 검사 (앱을 열 때 멈추지 않게)
+        run: npm run perf
       - name: 빌드
         run: npm run build
       - name: 서버 테스트 답 파일이 웹 규칙과 같은지
