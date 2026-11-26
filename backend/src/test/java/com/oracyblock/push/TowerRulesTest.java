@@ -2,6 +2,8 @@ package com.oracyblock.push;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import com.oracyblock.pref.PrefController;
+import com.oracyblock.shop.ShopService;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -79,5 +81,22 @@ class TowerRulesTest {
         TowerCalc.Speed fast = TowerCalc.speedOf("fast");
         assertNull(TowerCalc.tonight(5, fast, 0));
         assertEquals("fall", TowerCalc.tonight(1, fast, 1));
+    }
+
+    @Test
+    void 상점_꾸미기_자리가_웹과_같아요() {
+        Map<String, String> web = new TreeMap<>();
+        fx.get("slots").properties().forEach(e -> web.put(e.getKey(), e.getValue().asString()));
+        Map<String, String> server = new TreeMap<>();
+        for (ShopService.Item it : ShopService.ITEMS) if (it.look()) server.put(it.id(), it.slot());
+        assertEquals(web, server, "웹 lib/looks.js SLOT_OF 와 서버 ShopService.ITEMS 의 slot");
+    }
+
+    @Test
+    void 쌓는_속도별_하루_최대_층이_웹과_같아요() {
+        Map<String, Integer> web = new TreeMap<>();
+        fx.get("caps").properties().forEach(e -> web.put(e.getKey(), e.getValue().asInt()));
+        assertEquals(web, new TreeMap<>(PrefController.DAY_CAP), "웹 speed.js SPEEDS.bricks 와 서버 PrefController.DAY_CAP");
+        for (Map.Entry<String, Integer> e : web.entrySet()) assertEquals(e.getValue(), TowerCalc.speedOf(e.getKey()).cap(), "TowerCalc " + e.getKey());
     }
 }

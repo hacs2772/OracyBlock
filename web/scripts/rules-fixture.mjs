@@ -6,6 +6,7 @@ import { SPEEDS, SPEED_KEYS, speedOf, restEffect, tonight } from '../src/lib/spe
 import { buildTower } from '../src/lib/tower.js';
 import { dueMeets } from '../src/lib/progress.js';
 import { GAME_TALKS } from '../src/content/build.js';
+import { SLOT_OF } from '../src/lib/looks.js';
 
 // 늘 같은 "무작위" (파일이 매번 똑같이 나오게)
 let seed = 20261126;
@@ -62,5 +63,8 @@ for (let i = 0; i < 250; i++) {
 }
 
 const out = new URL('../../backend/src/test/resources/rules-fixture.json', import.meta.url);
-writeFileSync(out, JSON.stringify({ rest, towers, meets }, null, 0) + '\n');
+// 상점 꾸미기 자리 · 쌓는 속도별 하루 최대 층 (서버 ShopService.ITEMS · PrefController.DAY_CAP과 같아야 해요)
+const slots = SLOT_OF;
+const caps = Object.fromEntries(SPEED_KEYS.map((k) => [k, SPEEDS[k].bricks]));
+writeFileSync(out, JSON.stringify({ rest, towers, meets, slots, caps }, null, 0) + '\n');
 console.log(`rest ${rest.length} · towers ${towers.length} (tonight: ${towers.filter((t) => t.tonight).length}) · meets ${meets.length}`);
