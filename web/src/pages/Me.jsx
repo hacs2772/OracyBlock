@@ -134,7 +134,7 @@ export default function Me() {
       <div className="set-card">
         <div className="set-row">
           <span className="set-name">지금 레벨 Lv{st.level}<small>학습 화면의 레벨 카드에서 바꿔요</small></span>
-          <Link className="ob-btn sm" to="/learn"><span style={{ fontSize: 13, fontWeight: 700 }}>Lv 변경</span></Link>
+          <Link className="ob-btn sm" to="/learn"><span style={{ fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap' }}>Lv 변경</span></Link>
         </div>
       </div>
 
@@ -148,9 +148,9 @@ export default function Me() {
             const locked = !on && !!pref?.nextChangeAt;
             return (
               <button key={k} className={'speed-opt' + (on ? ' on' : '')} role="radio" aria-checked={on} disabled={locked} onClick={() => changeSpeed(k)}>
-                <span style={{ fontFamily: 'var(--display)', fontSize: 19, minWidth: 64 }}>{o.label}</span>
-                <span className="small" style={{ flex: 1 }}>하루 브릭 {o.bricks}개 · 복습 단어 {o.review}개<br /><span className="muted">{crackRule(o)}</span></span>
+                <span className="speed-name">{o.label}</span>
                 {on && <span className="chip dark">지금</span>}
+                <span className="small speed-desc">하루 브릭 {o.bricks}개 · 복습 단어 {o.review}개<br /><span className="muted">{crackRule(o)}</span></span>
               </button>
             );
           })}

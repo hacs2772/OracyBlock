@@ -88,8 +88,8 @@ export default function Auth() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {SPEED_KEYS.map((k) => (
                 <button type="button" key={k} className={'speed-opt' + (f.speed === k ? ' on' : '')} aria-pressed={f.speed === k} onClick={() => setF({ ...f, speed: k })}>
-                  <span style={{ fontFamily: 'var(--display)', fontSize: 18, minWidth: 64 }}>{SPEEDS[k].label}</span>
-                  <span className="small" style={{ flex: 1 }}>하루 브릭 {SPEEDS[k].bricks}개 · 복습 {SPEEDS[k].review}개<br /><span className="muted">{crackRule(SPEEDS[k])}</span></span>
+                  <span className="speed-name">{SPEEDS[k].label}</span>
+                  <span className="small speed-desc">하루 브릭 {SPEEDS[k].bricks}개 · 복습 {SPEEDS[k].review}개<br /><span className="muted">{crackRule(SPEEDS[k])}</span></span>
                 </button>
               ))}
             </div>
