@@ -39,6 +39,7 @@ export const FACE_OF = {
   highway: 'youngM', aquarium: 'office', sauna: 'host', ferry: 'grandma',
   rain: 'auntie3', catcafe: 'youngW2', summit: 'grandpa', ekiben: 'office',
   elevator: 'auntie2', train: 'youngW', kitchen: 'student', yatai: 'office2',
+  tenbo: 'youngW2', hanabi: 'auntie', sado: 'auntie3', sakagura: 'master',
 };
 
 function hairBack(f) {
