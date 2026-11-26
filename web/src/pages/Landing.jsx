@@ -2,7 +2,6 @@
 // 휴대폰과 PC 둘 다. "무료로 시작하기"를 누르면 학습으로 들어가요
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { GAME_TALKS } from '../content/build.js';
 import { unlock } from '../lib/speech.js';
 import { store, useStore } from '../lib/store.js';
 import { LogoMark, Tabs } from '../components/ui.jsx';
@@ -134,6 +133,15 @@ export function HelpBricks({ onOpen }) {
 const TOPICS = ['#자기소개', '#여행', '#음식·술', '#고향', '#일', '#가족', '#연애', '#취미', '#고민'];
 
 export default function Landing() {
+  // 장소 이름은 대사 묶음에서 와요. 첫 화면을 빨리 띄우려고 그림이 뜬 다음 받아요 (아래쪽이라 안 보일 때 채워져요)
+  const [places, setPlaces] = useState([]);
+  useEffect(() => {
+    let alive = true;
+    import('../content/build.js').then((m) => alive && setPlaces([...new Set(m.GAME_TALKS.map((x) => x.place))]));
+    return () => {
+      alive = false;
+    };
+  }, []);
   const nav = useNavigate();
   const [pop, setPop] = useState(null); // 'talk' | 'review' | 'tower'
   const st = useStore();
@@ -192,7 +200,7 @@ export default function Landing() {
           <h2 className="lp-h2">옆자리에서 시작하는 이야기</h2>
           <p className="lp-p">메뉴판은 사진 번역 앱이나 AI에 맡기고, 우리는 옆에 앉은 사람과의 대화를 연습해요. 글자를 외우거나 읽는 시험은 없어요. 상대 말은 한글 발음으로 보여 드려요.</p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px 12px', marginTop: 24 }}>
-            {[...new Set(GAME_TALKS.map((t) => t.place))].map((place, i) => <span key={place} className="lp-chip" style={{ background: ['#29B6A5', '#FF7967', '#FFC857', '#FFFFFF'][i % 4] }}>{place}</span>)}
+            {places.map((place, i) => <span key={place} className="lp-chip" style={{ background: ['#29B6A5', '#FF7967', '#FFC857', '#FFFFFF'][i % 4] }}>{place}</span>)}
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 18 }}>
             {TOPICS.map((t) => <span key={t} className="lp-tag">{t}</span>)}

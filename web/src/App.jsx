@@ -1,12 +1,13 @@
 import { lazy, Suspense, useEffect } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
-import Home from './pages/Home.jsx';
+// 홈·대화·내 탑은 첫 화면(소개 웹)에 필요 없는 대사 묶음을 쓰니까 따로 받아요. 소개 웹이 아니면 main.jsx에서 바로 받기 시작해요
+const Home = lazy(() => import('./pages/Home.jsx'));
 const Learn = lazy(() => import('./pages/Learn.jsx'));
 const Shop = lazy(() => import('./pages/Shop.jsx'));
-import Talk from './pages/Talk.jsx';
+const Talk = lazy(() => import('./pages/Talk.jsx'));
 const Fix = lazy(() => import('./pages/Fix.jsx'));
 const Review = lazy(() => import('./pages/Review.jsx'));
-import TowerPage from './pages/TowerPage.jsx';
+const TowerPage = lazy(() => import('./pages/TowerPage.jsx'));
 const Me = lazy(() => import('./pages/Me.jsx'));
 const Auth = lazy(() => import('./pages/Auth.jsx'));
 const Admin = lazy(() => import('./pages/Admin.jsx'));

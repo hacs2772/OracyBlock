@@ -10,6 +10,11 @@ import { catchSource } from './lib/source.js';
 
 watchErrors();
 catchSource();
+// 소개 웹이 아니면(다시 온 사람) 홈·대화 화면을 기다리지 않게 바로 받기 시작해요
+if (window.location.pathname !== '/about') {
+  import('./pages/Home.jsx');
+  import('./pages/Talk.jsx');
+}
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
