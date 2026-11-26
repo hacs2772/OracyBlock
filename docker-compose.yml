@@ -72,10 +72,14 @@ services:
       PGDATABASE: oracyblock
       PGPASSWORD: ${DB_PASSWORD:?.env 에 DB_PASSWORD 가 없어요}
       BACKUP_KEEP_DAYS: 14
+      # (선택) PC 밖에 한 부 더: 구글 드라이브·OneDrive처럼 저절로 올라가는 폴더 (.env 의 BACKUP_COPY_DIR, docs/deploy.md)
+      BACKUP_COPY: ${BACKUP_COPY_DIR:-}
+      BACKUP_COPY_KEEP: 7
       TZ: Asia/Seoul
     volumes:
       - ./scripts/backup-loop.sh:/backup-loop.sh:ro
       - ./backups:/backups
+      - ${BACKUP_COPY_DIR:-./backups/copy}:/backup-copy
     depends_on:
       backend:
         condition: service_healthy

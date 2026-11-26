@@ -760,6 +760,12 @@
 - 먼저 "기록만" 모드로 모든 화면(소개 웹·홈·학습·복습·내 탑·상점·내 정보·고치기·약관·대화·자랑 카드 저장·관리자)을 돌려 막힐 것이 없는 걸 확인하고 켰어요. 일부러 끼워 넣은 바깥 스크립트와 글 속 코드는 막혀요
 - 바깥에서 무언가(글꼴·분석 도구 등)를 새로 불러오게 되면 이 줄에 그 주소를 더해야 해요
 
+## 11-46. 규칙 짝 테스트 · 백업 PC 밖에도 (2026-11-26)
+
+- 사용자: "좋아 다음작업 진행해줘"
+- 상점 꾸미기 자리(`web/src/lib/looks.js` SLOT_OF ↔ 서버 ShopService.ITEMS)와 쌓는 속도별 하루 최대 층(speed.js ↔ PrefController.DAY_CAP)도 서버 테스트가 웹과 같은지 확인 (TowerRulesTest 6개)
+- 백업 사본을 PC 밖에도: `.env`의 `BACKUP_COPY_DIR`(구글 드라이브·OneDrive 폴더)에 새 백업마다 한 부, 최근 7개. 비워 두면 예전과 같아요 (`docs/deploy.md` "백업을 PC 밖에도 한 부")
+
 ## 12. 시안
 
 - 브릭 모양·동작, 앱 화면, 웹 화면 시안: https://claude.ai/artifact/THGtU5cnuJgLRbmbrZVVNe

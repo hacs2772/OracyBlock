@@ -130,6 +130,19 @@ docker compose --profile public --env-file .env logs --tail 30 tunnel
 - 파일 크기가 몇 KB 이상이면 정상이에요. 1KB도 안 되는 파일은 실패한 것이라 다음 성공 때 저절로 지워져요
 - 잘 되는지 보기: `docker compose --env-file .env logs --tail 5 backup` → `DB 백업: ... (204KB)`처럼 크기가 나오면 정상
 
+### 백업을 PC 밖에도 한 부 (추천)
+
+PC 디스크가 고장 나면 기록과 백업이 같이 사라져요. 구글 드라이브나 OneDrive 앱을 깔면 생기는 폴더에 사본을 두면, 그 앱이 저절로 클라우드에 올려 줘요 (무료 용량이면 충분해요. 백업 하나가 몇백 KB).
+
+1. 구글 드라이브(또는 OneDrive) 폴더 안에 `OracyBlock 백업` 폴더를 만들어요
+2. 그 폴더의 주소를 복사해요 (탐색기 주소창 클릭 → 복사). 예: `C:\Users\내이름\Google Drive\OracyBlock 백업`
+3. `.env` 맨 아래 `BACKUP_COPY_DIR=` 뒤에 붙여 넣고, `\` 를 `/` 로 바꿔요
+   예: `BACKUP_COPY_DIR=C:/Users/내이름/Google Drive/OracyBlock 백업`
+4. `start.bat` 다시 실행 → 그 폴더에 `oracyblock-날짜.sql.gz`가 생기면 성공 (최근 7개만 남겨요)
+   - 안 생기면: `docker compose --env-file .env logs --tail 5 backup` 에서 "바깥 폴더에 복사하지 못했어요"가 보이는지 확인. 폴더 이름에 띄어쓰기가 있으면 `OracyBlock-backup`처럼 바꿔 보세요
+
+PC가 망가졌을 때는 새 PC에 설치한 뒤, 그 폴더의 파일을 `backups\db` 에 넣고 `restore.bat` 을 실행하면 돼요.
+
 ### 백업에서 되살리기
 
 DB가 망가졌거나 기록이 사라졌을 때만 써요. 그 백업 뒤에 생긴 기록은 없어져요.
