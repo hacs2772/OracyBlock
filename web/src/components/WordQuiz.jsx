@@ -1,6 +1,6 @@
 // 단어 맞히기: 소리를 듣고 뜻 4개 중 고르기. 맞히면 복습 탑에 그 단어 브릭이 쌓여요
 // 복습 탭과 "대화 전에 단어 3개"에서 같이 써요
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { wordChoices } from '../content/build.js';
 import { quiet } from '../lib/api.js';
 import { speak, sfx } from '../lib/speech.js';
@@ -41,6 +41,32 @@ export default function WordQuiz({ words, onDone, lastLabel = '복습 마치기'
     const t = setTimeout(() => speak(w.say, 0.85), 250);
     return () => clearTimeout(t);
   }, [w]);
+  // 고른 뒤: 결과가 보기 아래에 붙어서 "다음 단어" 버튼이 화면 밖일 수 있어요 (아이폰 SE). 버튼이 보일 만큼 살살 내려가요
+  // (대화 전 단어 맞히기는 아래에서 올라오는 창 안이라 그 창을 움직여요)
+  const nextRef = useRef(null);
+  const topRef = useRef(null);
+  const box = (el) => el?.closest('.sheet');
+  useEffect(() => {
+    if (!st.picked) return undefined;
+    const sheet = box(nextRef.current);
+    const posY = () => (sheet ? sheet.scrollTop : window.scrollY);
+    const y0 = posY();
+    const t = setTimeout(() => {
+      const btn = nextRef.current;
+      if (!btn || Math.abs(posY() - y0) > 40) return; // 그새 직접 움직였으면 그대로
+      const floor = sheet ? sheet.getBoundingClientRect().bottom - 12 : window.innerHeight - 12;
+      const gap = btn.getBoundingClientRect().bottom - floor;
+      if (gap > 0) (sheet || window).scrollBy({ top: gap, behavior: 'smooth' });
+    }, 600);
+    return () => clearTimeout(t);
+  }, [st.picked]);
+  // 다음 단어: 다시 맨 위(단어 카드)부터
+  useEffect(() => {
+    if (i === 0) return;
+    const sheet = box(topRef.current);
+    if (sheet) sheet.scrollTo(0, 0);
+    else window.scrollTo(0, 0);
+  }, [i]);
   if (!w) return null;
 
   const pick = (m) => {
@@ -64,7 +90,7 @@ export default function WordQuiz({ words, onDone, lastLabel = '복습 마치기'
   const today = new Date().toLocaleDateString('sv-SE');
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+    <div ref={topRef} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       <div className="small muted" style={{ textAlign: 'right', fontWeight: 700 }}>{i + 1}/{words.length}</div>
       <div className="card strong" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 14 }}>
         <button className="icon-btn" style={{ width: 56, height: 56 }} onClick={() => speak(w.say, 0.85)} aria-label="다시 듣기">
@@ -101,7 +127,7 @@ export default function WordQuiz({ words, onDone, lastLabel = '복습 마치기'
           </div>
           <BigWordRow w={w} />
           {shadow && <Shadow key={w.key} w={w} />}
-          <button className="ob-btn coral" onClick={next}><span className="t">{i + 1 < words.length ? '다음 단어' : lastLabel}</span></button>
+          <button ref={nextRef} className="ob-btn coral" onClick={next}><span className="t">{i + 1 < words.length ? '다음 단어' : lastLabel}</span></button>
         </div>
       )}
     </div>
