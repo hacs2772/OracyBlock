@@ -87,6 +87,36 @@ function Remake({ group, onExit }) {
   }, [k]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => () => stopSpeaking(), []); // 고치기에서 나가면 읽던 소리를 멈춰요
 
+  // 아이폰 SE처럼 낮은 화면: 탑 상자를 줄이고, 새 고칠 곳이면 탑부터 · 보기 5개가 다 보이게, 고친 뒤엔 다음 버튼이 보이게 (대화 화면과 같게, concept 11-53)
+  const stageH = typeof window === 'undefined' ? 200 : window.innerHeight < 600 ? 120 : window.innerHeight < 700 ? 150 : 200;
+  const small = stageH < 200;
+  useEffect(() => {
+    if (!small) return undefined;
+    const t = setTimeout(() => {
+      const st = document.querySelector('.fx-stage');
+      if (st) window.scrollTo(0, Math.max(0, st.getBoundingClientRect().top + window.scrollY - 6));
+      const all = document.querySelectorAll('.opts > *');
+      const last = all[all.length - 1];
+      const bub = document.querySelector('.fx-bubble');
+      if (!last || !bub) return;
+      const gap = last.getBoundingClientRect().bottom - (window.innerHeight - 8);
+      const room = bub.getBoundingClientRect().top - 4; // 상대 말풍선은 가리지 않아요
+      if (gap > 0 && room > 0) window.scrollBy(0, Math.min(gap, room));
+    }, 60);
+    return () => clearTimeout(t);
+  }, [k]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!ph.solved) return undefined;
+    const y0 = window.scrollY;
+    const t = setTimeout(() => {
+      const btn = document.querySelector('.result .ob-btn.coral');
+      if (!btn || Math.abs(window.scrollY - y0) > 40) return;
+      const gap = btn.getBoundingClientRect().bottom - (window.innerHeight - 12);
+      if (gap > 0) window.scrollBy({ top: gap, behavior: 'smooth' });
+    }, 900);
+    return () => clearTimeout(t);
+  }, [ph.solved]);
+
   if (!item) {
     return (
       <div className="page">
@@ -143,10 +173,10 @@ function Remake({ group, onExit }) {
   const optWords = asMean ? step.keys : step.options[0].words;
   // 브릭이 많으면 무대(높이 200)에 다 들어가게 얇게
   const vis = bricks.filter((b) => !b.gone).length;
-  const h = Math.max(9, Math.min(BIG.h, Math.floor(168 / Math.max(1, vis))));
+  const h = Math.max(9, Math.min(BIG.h, Math.floor((stageH - 32) / Math.max(1, vis))));
   const SZ = h === BIG.h ? BIG : { studs: 4, pitch: Math.round(h * 0.9), h, depth: Math.round(h * 0.5), studH: Math.max(3, Math.round(h * 0.25)) };
   const markLeft = 'calc(50% + ' + (SZ.pitch * 2 + 20) + 'px)';
-  const baseY = 180;
+  const baseY = stageH - 20;
   const below = bricks.slice(0, item.turnIdx).filter((b) => !b.gone).length; // 빠진 자리는 안 그려서 그 아래 브릭 수로
   const ptrTop = baseY - below * SZ.h - SZ.h / 2 - 22;
 
@@ -157,16 +187,16 @@ function Remake({ group, onExit }) {
         <div className="ttl">{talk.place}<div className="small muted" style={{ fontFamily: 'var(--body)' }}>{talk.partner} · Lv{group.level}</div></div>
         <span style={{ width: 44, textAlign: 'center', fontSize: 13, fontWeight: 700 }}>{k + 1}/{items.length}</span>
       </div>
-      <div className="stage plate" style={{ boxShadow: 'none', padding: 0, height: 200 }}>
+      <div className="stage plate fx-stage" style={{ boxShadow: 'none', padding: 0, height: stageH }}>
         <div style={{ position: 'absolute', left: '50%', top: 0, marginLeft: -(SZ.pitch * 2 + 14) }}>
-          <Stack bricks={bricks} size={SZ} x0={20} baseY={baseY} height={200} width={120} plate={6} />
+          <Stack bricks={bricks} size={SZ} x0={20} baseY={baseY} height={stageH} width={120} plate={6} />
         </div>
         <div className="ptr" style={{ left: markLeft, top: Math.max(4, ptrTop), color: ph.solved ? '#1B776C' : '#E0533F' }}>
           <svg width="22" height="14" viewBox="0 0 22 14" aria-hidden="true"><path d="M21 7H3M8 2L3 7l5 5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
           <span>{ph.solved ? { hole: '채워졌어요', tilt: '바로 섰어요', skip: '끼워졌어요' }[item.kind] : (asMean && item.kind === 'skip' ? '빠진 뜻' : { hole: '놓친 단어', tilt: '어긋난 대답', skip: '빠진 대답' }[item.kind])}</span>
         </div>
       </div>
-      <div className="bubble">
+      <div className="bubble fx-bubble">
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className="small muted">{talk.partner}</div>
           <div className="ko">{them.line.ko}{them.casual && <span className="tag-casual">반말</span>}</div>

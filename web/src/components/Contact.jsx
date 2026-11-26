@@ -36,7 +36,7 @@ export default function Contact() {
   // 대화하는 중·관리자 화면에서는 버튼을 숨겨요 (대화에 집중)
   // 머리줄이 있는 화면(홈·학습·복습·내 탑·상점·내 정보)은 머리줄의 말풍선 아이콘으로 열어요
   const topBar = ['/', '/learn', '/review', '/tower', '/shop', '/me'].includes(pathname);
-  const hideFab = topBar || pathname.startsWith('/talk') || pathname.startsWith('/admin') || pathname.startsWith('/login');
+  const hideFab = topBar || pathname.startsWith('/talk') || pathname.startsWith('/fix') || pathname.startsWith('/admin') || pathname.startsWith('/login');
   const withTabs = ['/', '/learn', '/about', '/review', '/tower', '/shop', '/me'].includes(pathname);
 
   const send = async () => {
