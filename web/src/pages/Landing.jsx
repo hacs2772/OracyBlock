@@ -220,7 +220,7 @@ export default function Landing() {
 
         <footer className="lp-foot">
           <span><b style={{ color: '#24324A' }}>OracyBlock</b> oracyblock.com</span>
-          <span style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}><Link to="/terms">이용약관</Link><Link to="/privacy">개인정보 처리방침</Link><button className="link-btn" style={{ padding: 0, minHeight: 0, fontSize: 13, color: '#4A566B' }} onClick={openContact}>문의하기</button></span>
+          <span style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}><a href="/places/">장소별 일본어 회화</a><Link to="/terms">이용약관</Link><Link to="/privacy">개인정보 처리방침</Link><button className="link-btn" style={{ padding: 0, minHeight: 0, fontSize: 13, color: '#4A566B' }} onClick={openContact}>문의하기</button></span>
           <span>같은 브릭 가족 <a href="https://asmrblock.com">ASMR Block</a></span>
         </footer>
       </div>

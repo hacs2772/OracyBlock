@@ -57,6 +57,8 @@ self.addEventListener('fetch', (e) => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin !== location.origin || url.pathname.startsWith('/api/')) return;
+  // 장소 소개 페이지(/places/)는 앱이 아니라서 받아 둔 앱 화면으로 바꿔치기하지 않아요 (그냥 인터넷에서)
+  if (req.mode === 'navigate' && url.pathname.startsWith('/places')) return;
   if (req.mode === 'navigate') return e.respondWith(page(req));
   if (url.pathname.startsWith('/assets/') || url.pathname.startsWith('/icons/')) return e.respondWith(asset(req));
 });
