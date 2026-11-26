@@ -54,7 +54,9 @@ p { margin: 0; }
 /* 앱 틀: 휴대폰 폭. PC에서는 가운데 */
 .app { max-width: 480px; margin: 0 auto; min-height: 100dvh; position: relative; display: flex; flex-direction: column; background: var(--cream); }
 .page { flex: 1; padding: 10px 20px 24px; display: flex; flex-direction: column; gap: 12px; }
-.page.has-tabs { padding-bottom: 96px; }
+/* 홈 바가 있는 아이폰(X 이후): 아래 탭이 그만큼 길어져요. 탭이 없는 화면(대화·고치기)도 마지막 버튼이 홈 바에 붙지 않게 */
+.page:not(.has-tabs) { padding-bottom: calc(24px + env(safe-area-inset-bottom)); }
+.page.has-tabs { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
 @media (min-width: 481px) { .app { box-shadow: 0 0 0 2px var(--line); } }
 
 .top-row { display: flex; align-items: center; justify-content: space-between; min-height: 48px; }
@@ -116,7 +118,7 @@ p { margin: 0; }
 
 /* 아래에서 올라오는 창 */
 .dim { position: fixed; inset: 0; background: rgba(36, 50, 74, 0.55); z-index: 40; }
-.sheet { position: fixed; left: 50%; bottom: 12px; transform: translateX(-50%); width: calc(100% - 24px); max-width: 456px; max-height: calc(100dvh - 24px); overflow-y: auto; z-index: 41; padding: 16px; border-radius: 18px; background: var(--cream); border: 2px solid var(--navy); box-shadow: 0 6px 0 var(--navy); animation: sheetIn 0.28s both ease-out; }
+.sheet { position: fixed; left: 50%; bottom: calc(12px + env(safe-area-inset-bottom)); transform: translateX(-50%); width: calc(100% - 24px); max-width: 456px; max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); overflow-y: auto; z-index: 41; padding: 16px; border-radius: 18px; background: var(--cream); border: 2px solid var(--navy); box-shadow: 0 6px 0 var(--navy); animation: sheetIn 0.28s both ease-out; }
 .sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .sheet-head h2 { font-size: 23px; }
 @keyframes sheetIn { from { transform: translate(-50%, 40px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
@@ -313,7 +315,7 @@ textarea.input { height: 120px; padding: 10px 12px; resize: vertical; line-heigh
 .adm-scroll { overflow-x: auto; }
 .bar { height: 8px; border-radius: 4px; background: var(--mint); }
 
-.toast { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); z-index: 60; max-width: calc(100% - 32px); padding: 10px 16px; border-radius: 12px; background: var(--navy); color: #fff; font-size: 14px; line-height: 1.45; animation: fadeUp 0.25s both; }
+.toast { position: fixed; left: 50%; bottom: calc(96px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 60; max-width: calc(100% - 32px); padding: 10px 16px; border-radius: 12px; background: var(--navy); color: #fff; font-size: 14px; line-height: 1.45; animation: fadeUp 0.25s both; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; animation-delay: 0s !important; transition-duration: 1ms !important; }
@@ -321,7 +323,7 @@ textarea.input { height: 120px; padding: 10px 12px; resize: vertical; line-heigh
 
 /* 소개 페이지 (웹 시안 그대로, 휴대폰·PC) */
 .app-wide { min-height: 100dvh; background: var(--cream); }
-.lp { background: var(--cream); color: var(--navy); overflow: hidden; padding-bottom: 96px; }
+.lp { background: var(--cream); color: var(--navy); overflow: hidden; padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
 @media (min-width: 900px) { .lp { padding-bottom: 0; } .lp-tabs { display: none; } }
 .lp-wrap { max-width: 1180px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 40px); }
 .lp a { color: var(--navy); }
