@@ -45,7 +45,8 @@ for (let i = 0; i < 250; i++) {
   towers.push({ bricks, activeDays, today, nowSpeed, guardDays: guardDays.map((g) => g.day), floors: t.stack.length, rest: t.rest, cracks: t.cracks, capped: t.capped, tonight: w ? w.kind : null });
 }
 
-const ids = GAME_TALKS.map((t) => t.id);
+// 대화가 늘어도 답 파일이 바뀌지 않게, 오래된 Lv1 대화 10개로만 만들어요
+const ids = ['plane', 'guesthouse', 'izakaya', 'onsen', 'park', 'taxi', 'konbini', 'photo', 'gate', 'cafe'].filter((id) => GAME_TALKS.some((t) => t.id === id));
 const meets = [];
 for (let i = 0; i < 250; i++) {
   const plays = [];
