@@ -80,6 +80,34 @@ for (const t of GAME_TALKS) {
 }
 for (const [k, m] of spell) if (m.size > 1) warns.push(`${k} 한글 발음이 여러 가지예요: ${[...m].map(([ko, ids]) => `${ko}(${[...new Set(ids)].join(',')})`).join(' / ')}`);
 
+// 같은 한자 단어는 어느 줄에서나 같은 한글 발음으로 (핵심 단어로 쓴 발음이 그 단어가 든 다른 줄에도 있어야 해요)
+// 한 글자 한자(方·今·道 등)는 다른 단어 안에 들어 있거나 읽는 법이 여러 개라 빼요. 읽는 법이 다른 말은 SPELL_OK에 적어요
+const SPELL_OK = new Set([
+  '両親|はい、両親とです', // 료-신또 (ん 뒤 と)
+  '好き|娘が魚好きで、もう三回目なんですよ。', // 사까나즈끼 (붙으면 즈끼)
+  '下り|わしは先に下りるよ。また山で会おう。', // 下りる = 오리루 (내려가다), 下り = 쿠다리 (내리막)
+  '気をつけて|お疲れさまでした。お気をつけて！', '気をつけて|お気をつけて、いってらっしゃいませ。', // 오끼오 (お가 붙어서)
+]);
+const kanjiWords = new Map();
+const allLines = [];
+for (const t of GAME_TALKS) for (const s of t.steps) {
+  const ws = s.type === 'them' ? [...s.keys, ...s.alts.flatMap((a) => a.keys)] : s.options.flatMap((o) => o.words);
+  for (const w of ws) {
+    const kanji = (w.variants || []).find((v) => /[\u4e00-\u9fff]/.test(v));
+    if (kanji && [...kanji].length > 1) kanjiWords.set(kanji, new Set([...(kanjiWords.get(kanji) || []), w.ko]));
+  }
+  if (s.type === 'them') allLines.push(...[s.line, ...s.alts].map((l) => ({ ja: l.ja, ko: l.ko, at: `${t.id}:${s.idx}` })));
+  else allLines.push(...s.options.map((o) => ({ ja: o.natural.ja, ko: o.natural.ko, at: `${t.id}:${s.idx}` })));
+}
+const kw = [...kanjiWords.entries()];
+for (const l of allLines) {
+  for (const [kanji, kos] of kw) {
+    if (!l.ja.includes(kanji) || SPELL_OK.has(`${kanji}|${l.ja}`)) continue;
+    if (kw.some(([k2]) => k2 !== kanji && k2.includes(kanji) && l.ja.includes(k2))) continue; // 더 긴 단어 안 (日本 ⊂ 日本語)
+    if (![...kos].some((ko) => has(l.ko, ko))) errors.push(`${l.at} "${kanji}"를 다른 줄에서는 ${[...kos].join('/')}(으)로 썼는데 여기는 "${l.ko}"예요`);
+  }
+}
+
 // 복습에서 빼는 단어 (조사처럼 혼자서는 뜻이 약한 것)
 const skipped = new Set();
 for (const t of GAME_TALKS) for (const w of talkWords(t)) if (!isReviewWord(w)) skipped.add(`${w.ko}(${w.mean})`);
