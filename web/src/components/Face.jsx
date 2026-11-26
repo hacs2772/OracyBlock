@@ -38,6 +38,7 @@ export const FACE_OF = {
   okonomiyaki: 'youngM', omiyage: 'auntie2', arcade: 'clerk', ashiyu: 'master',
   highway: 'youngM', aquarium: 'office', sauna: 'host', ferry: 'grandma',
   rain: 'auntie3', catcafe: 'youngW2', summit: 'grandpa', ekiben: 'office',
+  elevator: 'auntie2', train: 'youngW', kitchen: 'student', yatai: 'office2',
 };
 
 function hairBack(f) {
