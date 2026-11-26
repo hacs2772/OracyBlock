@@ -73,6 +73,8 @@ if (!(await shows('내 탑 1층'))) fail.push('대화를 끝냈는데 내 탑이
 // 3. 미션 보상: 받을 수 있는 걸 다 받고, 모은 브릭이 그 합과 같은지
 await p.goto(BASE + '/shop');
 await shows('오늘의 미션');
+// 제목은 먼저 뜨고 미션 줄(받기 버튼)은 서버 답을 받은 뒤에 떠요
+await p.locator('button.sp-get').first().waitFor({ timeout: 10000 }).catch(() => {});
 let got = 0;
 for (let k = 0; k < 6; k++) {
   const btn = p.locator('button.sp-get:not([disabled])').first();
