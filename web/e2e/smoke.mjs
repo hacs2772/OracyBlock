@@ -102,7 +102,9 @@ await p.goto(BASE + '/tower');
 if (!(await shows('내 탑 1층'))) fail.push('가입했더니 탑이 1층이 아님 (기록이 계정으로 안 옮겨짐)');
 await p.goto(BASE + '/shop');
 await shows('오늘의 미션');
-if ((await bricks()) !== got) fail.push(`가입했더니 브릭이 ${await bricks()}개 (원래 ${got}개)`);
+// 모은 브릭 수는 서버 답이 온 뒤에 바뀌어요 (처음엔 0). 10초까지 기다려요
+const settled = await p.waitForFunction((n) => Number(document.querySelector('.sp-num')?.innerText.trim()) === n, got, { timeout: 10000 }).then(() => true, () => false);
+if (!settled) fail.push(`가입했더니 브릭이 ${await bricks()}개 (원래 ${got}개)`);
 
 // 5. 다른 기기에서 로그인: 같은 탑이 보이는지
 const ctx2 = await b.newContext(SCREEN);
