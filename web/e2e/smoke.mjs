@@ -1,4 +1,5 @@
-// 실제로 켜서 해 보기 (GitHub 자동 검사 e2e): 대화 하나를 끝까지 하고, 홈 · 복습 · 상점 · 내 탑 · 학습 · 장소 페이지가 열리는지
+// 실제로 켜서 해 보기 (GitHub 자동 검사 e2e): 대화 하나를 끝까지 하고, 홈 · 복습 · 상점 · 내 탑 · 학습 · 장소 페이지가 열리는지,
+// 미션 보상이 들어오는지, 가입하면 둘러보며 쌓은 탑·브릭이 계정으로 옮겨지는지, 다른 기기에서 로그인해도 보이는지
 // 로컬: BASE=http://localhost:8090 PW=/opt/node-tools/node_modules/playwright/index.js node e2e/smoke.mjs
 import { GAME_TALKS } from '../src/content/build.js';
 
@@ -66,7 +67,53 @@ for (const [path, text] of pages) {
 await p.goto(BASE + '/tower');
 if (!(await shows('내 탑 1층'))) fail.push('대화를 끝냈는데 내 탑이 1층이 아님: ' + (await p.locator('body').innerText()).match(/내 탑 \d+층/)?.[0]);
 
+// 3. 미션 보상: 받을 수 있는 걸 다 받고, 모은 브릭이 그 합과 같은지
+await p.goto(BASE + '/shop');
+await shows('오늘의 미션');
+let got = 0;
+for (let k = 0; k < 6; k++) {
+  const btn = p.locator('button.sp-get:not([disabled])').first();
+  if (!(await btn.count())) break;
+  got += Number(((await btn.innerText()).match(/\+(\d+)/) || [])[1] || 0);
+  await btn.click();
+  await p.waitForTimeout(900);
+}
+if (!got) fail.push('대화를 끝냈는데 받을 미션 보상이 없음');
+const bricks = async () => Number((await p.locator('.sp-num').innerText()).trim());
+if ((await bricks()) !== got) fail.push(`미션 보상 ${got}개를 받았는데 모은 브릭이 ${await bricks()}개`);
+
+// 4. 가입: 둘러보며 쌓은 탑과 브릭이 계정으로 옮겨지는지
+const mail = `e2e${Date.now()}@example.com`;
+const pass = 'e2e-pass-1234';
+await p.goto(BASE + '/login');
+await p.getByRole('tab', { name: '회원가입' }).click();
+await p.fill('#au-nick', 'e2e' + String(Date.now()).slice(-6));
+await p.fill('#au-mail', mail);
+await p.fill('#au-pw', pass);
+await p.locator('label.check input[type=checkbox]').check();
+await p.getByRole('button', { name: '가입하고 시작하기' }).click();
+await p.waitForTimeout(2000);
+await p.goto(BASE + '/tower');
+if (!(await shows('내 탑 1층'))) fail.push('가입했더니 탑이 1층이 아님 (기록이 계정으로 안 옮겨짐)');
+await p.goto(BASE + '/shop');
+await shows('오늘의 미션');
+if ((await bricks()) !== got) fail.push(`가입했더니 브릭이 ${await bricks()}개 (원래 ${got}개)`);
+
+// 5. 다른 기기에서 로그인: 같은 탑이 보이는지
+const ctx2 = await b.newContext({ viewport: { width: 390, height: 844 } });
+await ctx2.addInitScript(() => localStorage.getItem('oracy.v1') || localStorage.setItem('oracy.v1', JSON.stringify({ visitorId: 'e2e-other-' + Date.now(), seenTour: true, seenGame: true, seenCheck: true, seenIntro: true, introDay: new Date().toLocaleDateString('sv-SE'), seenHelp: { learn: true, review: true, tower: true, shop: true } })));
+const q = await ctx2.newPage();
+q.on('pageerror', (e) => errs.push(e.message));
+await q.goto(BASE + '/login');
+await q.getByRole('tab', { name: '로그인' }).click();
+await q.fill('#au-mail', mail);
+await q.fill('#au-pw', pass);
+await q.getByRole('button', { name: '로그인', exact: true }).click();
+await q.waitForTimeout(2000);
+await q.goto(BASE + '/tower');
+if (!(await q.waitForFunction(() => document.body.innerText.includes('내 탑 1층'), null, { timeout: 10000 }).then(() => true, () => false))) fail.push('다른 기기에서 로그인했더니 탑이 1층이 아님');
+
 await b.close();
 if (errs.length) fail.push('화면 오류: ' + errs.join(' / '));
-console.log(fail.length ? '✗ ' + fail.join('\n✗ ') : '대화 하나 완성 · 화면 7개 확인 · 오류 없음');
+console.log(fail.length ? '✗ ' + fail.join('\n✗ ') : `대화 하나 완성 · 화면 7개 · 미션 보상 ${got}브릭 · 가입하면 탑·브릭이 옮겨짐 · 다른 기기 로그인 · 오류 없음`);
 process.exit(fail.length ? 1 : 0);

@@ -284,8 +284,21 @@ const ALL_ME = TALKS.flatMap((t) => t.turns.flatMap((x, j) => {
  *   같은 장면의 다른 말, 소리·모양이 비슷한 대답
  */
 const STEM_SKIP = new Set(['그럼', '그래', '좋네', '아니', '이거', '여기', '저기', '그쪽', '정말', '진짜', '요즘', '조금', '오늘', '근데', '아이', '오오', '우와', '어서', '자,']);
-const words = (ko) => String(ko || '').replace(/[?!.,~…()·]/g, ' ').split(/\s+/).filter((w) => w.length >= 1);
-const heads = (ko) => new Set(words(ko).filter((w) => !STEM_SKIP.has(w.slice(0, 2)) && w.length >= 2).map((w) => w[0]));
+/** 같은 글자에 대한 계산은 한 번만 (대사가 늘수록 같은 말을 수만 번 비교해서, 앱을 열 때 몇 초씩 멈췄어요) */
+const memo = (fn) => {
+  const m = new Map();
+  return (k) => {
+    const key = String(k ?? '');
+    let v = m.get(key);
+    if (v === undefined) {
+      v = fn(key);
+      m.set(key, v);
+    }
+    return v;
+  };
+};
+const words = memo((ko) => String(ko || '').replace(/[?!.,~…()·]/g, ' ').split(/\s+/).filter((w) => w.length >= 1));
+const heads = memo((ko) => new Set(words(ko).filter((w) => !STEM_SKIP.has(w.slice(0, 2)) && w.length >= 2).map((w) => w[0])));
 const kanaOf = (line) => new Set((line?.keys || []).map((k) => (k.key || k[0] || '').split('|')[0]).filter((k) => !['から', 'まで', 'の', 'は', 'も', 'で', 'に'].includes(k)));
 const jac = (a, b) => {
   if (!a.size || !b.size) return 0;
@@ -311,10 +324,24 @@ const ALSO_SIMILAR = [
   ['그럼 편히 지내세요', '부디 편히 쉬세요'],
 ];
 /** 뜻이 사실상 같아서 틀린 보기로 쓰면 안 되는 말 */
+const GROUP_OF = new Map();
+ALSO_SIMILAR.forEach((g, i) => g.forEach((m) => GROUP_OF.set(m, [...(GROUP_OF.get(m) || []), i])));
+const sameGroup = (x, y) => (GROUP_OF.get(x) || []).some((i) => (GROUP_OF.get(y) || []).includes(i));
+const similarCache = new Map();
 export function similar(a, b) {
   if (!a || !b) return false;
+  const key = a.mean < b.mean ? a.mean + '\u0001' + b.mean : b.mean + '\u0001' + a.mean; // 양쪽이 같은 답이라 한 번만
+  let v = similarCache.get(key);
+  if (v === undefined) {
+    v = similarMeans(a.mean, b.mean);
+    similarCache.set(key, v);
+  }
+  return v;
+}
+function similarMeans(am, bm) {
+  const a = { mean: am }, b = { mean: bm };
   if (a.mean === b.mean) return true;
-  if (ALSO_SIMILAR.some((g) => g.includes(a.mean) && g.includes(b.mean))) return true;
+  if (sameGroup(a.mean, b.mean)) return true;
   if (jac(heads(a.mean), heads(b.mean)) >= 0.6) return true;
   // 한쪽 뜻이 다른 쪽에 거의 다 들어 있으면("그럼 좋은 여행 하세요!" ⊂ "곧 나고야네. 그럼 좋은 여행 해요!") 같은 말
   const x = bigrams(a.mean), y = bigrams(b.mean);
@@ -335,18 +362,18 @@ function confusable(line, x, sameTalk) {
   return n;
 }
 /** 두 한글 발음이 얼마나 비슷하게 생겼는지 (두 글자씩 겹침) */
-const bigrams = (s) => {
+const bigrams = memo((s) => {
   const t = String(s || '').replace(/[\s,.!?~\-…]/g, '');
   const out = new Set();
   for (let i = 0; i < t.length - 1; i++) out.add(t.slice(i, i + 2));
   return out;
-};
+});
 
 /**
  * 모양 맞추기 (사용자 의견: "딱 봐도 아닌" 보기는 안 돼요. 길이·물음·말투가 다르면 바로 티가 나요)
  * 정답과 같은 모양인 말만 틀린 보기로: 물음표/느낌표/평서문, 문장 수, 길이(0.65~1.5배), 존댓말/반말(한국어 뜻 끝)
  */
-const shapeOf = (ko) => {
+const shapeOf = memo((ko) => {
   const t = String(ko || '').trim();
   const parts = t.match(/[^.?!~]+[.?!~]*/g) || [];
   const sentences = parts.map((x) => x.trim()).filter((x) => /[가-힣A-Za-z0-9]/.test(x));
@@ -360,7 +387,7 @@ const shapeOf = (ko) => {
     polite: sentences.some(politeOf),
     casual: sentences.some((x) => !politeOf(x)),
   };
-};
+});
 /** 모양이 얼마나 맞는지. 단계마다 하나씩 풀어 줘요: 0 다 맞음 → 1 길이 조금 → 2 문장 수 → 3 말투 */
 function shapeGap(a, b) {
   const x = shapeOf(a), y = shapeOf(b);
@@ -497,6 +524,30 @@ function chooseSets(talk, idx, options, near, q) {
   return { choose: shuffle([...picked, ...offs].slice(0, Math.max(5, picked.length + 1)), rnd), spares };
 }
 
+/**
+ * 보기(틀린 뜻 · 틀린 대답)는 그 차례를 처음 쓸 때 만들어요 (대화 59개를 앱을 열 때마다 다 만들면 휴대폰이 몇 초 멈춰요).
+ * 차례마다 씨앗(seeded)이 따로라서 언제 만들어도 같은 보기가 나와요
+ */
+function lazy(obj, keys, make) {
+  let done = null;
+  const get = () => (done = done || make());
+  for (const k of keys) {
+    Object.defineProperty(obj, k, {
+      enumerable: true,
+      configurable: true,
+      get() {
+        const v = get()[k];
+        Object.defineProperty(obj, k, { value: v, enumerable: true, writable: true, configurable: true });
+        return v;
+      },
+      set(v) {
+        Object.defineProperty(obj, k, { value: v, enumerable: true, writable: true, configurable: true });
+      },
+    });
+  }
+  return obj;
+}
+
 function buildTalk(t) {
   const level = LEVEL_OF[t.id] || 1;
   const steps = [];
@@ -506,11 +557,11 @@ function buildTalk(t) {
       steps.push({
         type: 'them', idx, line, when: turn.when || null,
         // 다른 말투가 자기 뜻을 가지면 뜻 보기도 따로 만들어요 (concept 11-31)
-        alts: (line.alt || []).map((a) => (a.ownMean ? { ...a, ...meaningSets(t, idx, { ...line, ja: a.ja, ko: a.ko, mean: a.mean, keys: a.keys }, [line.mean, ...(line.alt || []).map((b) => b.mean)]) } : a)),
+        alts: (line.alt || []).map((a) => (a.ownMean ? lazy({ ...a }, ['meanings', 'spareMeanings'], () => meaningSets(t, idx, { ...line, ja: a.ja, ko: a.ko, mean: a.mean, keys: a.keys }, [line.mean, ...(line.alt || []).map((b) => b.mean)])) : a)),
         casual: isCasual(line.ja),
         keys: line.keys,
-        ...meaningSets(t, idx, line),
       });
+      lazy(steps[steps.length - 1], ['meanings', 'spareMeanings'], () => meaningSets(t, idx, line));
     } else if (turn.me) {
       const near = (NEAR[t.id + ':' + idx] || []).map((n) => ({ ...n, words: n.words.map(word), fix: n.fix.map(word) }));
       const yes = YES[t.id + ':' + idx];
@@ -518,8 +569,8 @@ function buildTalk(t) {
       steps.push({
         type: 'me', idx, options, near, yes: yes != null, when: turn.when || null,
         hintWords: options.flatMap((o) => o.words.slice(0, 1)),
-        ...chooseSets(t, idx, options, near, [...t.turns.slice(0, idx)].reverse().find((y) => y.them)?.them),
       });
+      lazy(steps[steps.length - 1], ['choose', 'spares'], () => chooseSets(t, idx, options, near, [...t.turns.slice(0, idx)].reverse().find((y) => y.them)?.them));
     }
   });
   return { ...t, level, steps, casualTalk: !t.polite };
