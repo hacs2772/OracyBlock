@@ -655,3 +655,9 @@ textarea.input { height: 120px; padding: 10px 12px; resize: vertical; line-heigh
 .lk-moon { position: absolute; right: 11%; top: 10%; width: 34px; height: 34px; border-radius: 17px; background: var(--moon); box-shadow: inset -9px 4px 0 0 var(--night); }
 .tw-plate { overflow: hidden; }
 .tw-plate > .lk-bg ~ * { position: relative; }
+/* 소리 안 날 때 안내 (대화 화면). 아이폰 SE처럼 아주 낮은 화면은 작게 (뜻 보기 5개가 한 화면에 들어오게) */
+.tk-tap-note { color: var(--coral-ink); font-weight: 700; margin-top: -4px; }
+@media (max-height: 599px) {
+  .tk-tap-note { font-size: 12px; margin: -8px 0 -4px; }
+  .opts { gap: 8px; }
+}

@@ -168,7 +168,7 @@ export default function Talk() {
   const step = eff(talk?.steps[si]);
   const steps = talk?.steps || [];
   // 화면이 낮은 휴대폰(아이폰 SE 등)은 무대를 조금 낮게
-  const stageH = typeof window === 'undefined' ? 200 : window.innerHeight < 600 ? 100 : window.innerHeight < 700 ? 118 : 200; // 아주 낮은 화면(SE 1세대)은 탑 무대를 더 낮게
+  const stageH = typeof window === 'undefined' ? 200 : window.innerHeight < 600 ? 88 : window.innerHeight < 700 ? 118 : 200; // 아주 낮은 화면(SE 1세대)은 탑 무대를 더 낮게
   const small = stageH < 200;
   // 탑 높이는 실제로 지나갈 차례 수로 (가지는 가장 긴 쪽 하나만)
   const branchLen = {};
@@ -190,16 +190,24 @@ export default function Talk() {
     });
   }, [si]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // 새 차례: 맨 위(탑)부터 보이게. 낮은 화면은 머리줄을 넘겨 탑을 맨 위로 (탑 → 말풍선 → 문제 → 보기 5개가 한 화면에)
+  const toTop = () => {
+    const el = document.querySelector('.stage');
+    window.scrollTo(0, small && el ? Math.max(0, el.getBoundingClientRect().top + window.scrollY - 6) : 0);
+  };
+  // "소리가 안 나면…" 안내가 나오면 그만큼 보기가 밀려 내려가요. 낮은 화면은 다시 맞춰요
+  useEffect(() => {
+    if (small && needTap && window.scrollY < 80) toTop();
+  }, [needTap]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // 새 차례가 되면 상대 말을 들려줘요
   useEffect(() => {
     if (!step || done || resumeAsk) return;
     setNeedTap(false);
     if (!(stats.current.path || []).includes(si)) stats.current.path = [...(stats.current.path || []), si];
-    // 새 차례: 맨 위(탑)부터 보이게. 낮은 화면은 머리줄을 넘겨 탑을 맨 위로 (탑 → 말풍선 → 문제 → 보기 5개가 한 화면에)
-    later(30, () => {
-      const el = document.querySelector('.stage');
-      window.scrollTo(0, small && el ? Math.max(0, el.getBoundingClientRect().top + window.scrollY - 6) : 0);
-    });
+    later(30, toTop);
+    // 낮은 화면: 처음엔 보기가 아직 안 그려져 페이지가 짧아서 끝까지 못 내려가요. 보기가 나온 뒤 한 번 더 (사용자가 그새 움직였으면 그대로)
+    if (small) later(450, () => window.scrollY < 80 && toTop());
     if (step.type === 'them') {
       setPh({ set: 0, wrong: 0, hint: false, solved: false, fb: '', shake: -1, n: 0 });
       later(350, () => say(step.line.ja, rate));
@@ -484,7 +492,7 @@ export default function Talk() {
         </div>
       )}
 
-      {!done && needTap && <p className="small" style={{ color: '#B9473A', fontWeight: 700, marginTop: -4 }}>소리가 안 나면 말풍선의 재생 버튼을 눌러요.</p>}
+      {!done && needTap && <p className="small tk-tap-note">소리가 안 나면 말풍선의 재생 버튼을 눌러요.</p>}
       {resumeAsk && (
         <Sheet title="이어서 할까요?" onClose={restart} labelId="resume-title">
           <p style={{ fontSize: 14, lineHeight: 1.6, marginTop: 6 }}>지난번에 {partner}{josa(partner, '과', '와')} 하던 대화가 있어요. 브릭 {resumeAsk.bricks.length}개를 쌓았어요.</p>
