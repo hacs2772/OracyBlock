@@ -106,10 +106,13 @@ jobs:
         working-directory: web
         run: |
           npm i --no-save playwright@1.49.1
-          npx playwright install --with-deps chromium
-      - name: 대화 하나 끝까지 해 보기
+          npx playwright install --with-deps chromium webkit
+      - name: 대화 하나 끝까지 해 보기 (크롬 엔진)
         working-directory: web
         run: BASE=http://localhost:4173 node e2e/smoke.mjs
+      - name: 대화 하나 끝까지 해 보기 (아이폰 사파리 엔진 WebKit)
+        working-directory: web
+        run: BASE=http://localhost:4173 BROWSER=webkit node e2e/smoke.mjs
       - name: 실패하면 서버 기록 보기
         if: failure()
         run: tail -n 80 server.log; tail -n 20 web.log

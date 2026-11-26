@@ -4,12 +4,15 @@
 import { GAME_TALKS } from '../src/content/build.js';
 
 const pw = await import(process.env.PW || 'playwright');
-const { chromium } = pw.default || pw;
+const lib = pw.default || pw;
+// BROWSER=webkit 이면 아이폰 사파리와 같은 엔진(WebKit) + 아이폰 화면으로 해 봐요
+const ENGINE = process.env.BROWSER || 'chromium';
+const SCREEN = ENGINE === 'webkit' ? { ...lib.devices['iPhone 13'] } : { viewport: { width: 390, height: 844 } };
 const BASE = process.env.BASE || 'http://localhost:4173';
 const fail = [];
 const errs = [];
-const b = await chromium.launch();
-const ctx = await b.newContext({ viewport: { width: 390, height: 844 } });
+const b = await lib[ENGINE].launch();
+const ctx = await b.newContext(SCREEN);
 await ctx.addInitScript(() => {
   if (!localStorage.getItem('oracy.v1')) localStorage.setItem('oracy.v1', JSON.stringify({ visitorId: 'e2e-' + Date.now(), seenTour: true, seenGame: true, seenCheck: true, seenIntro: true, introDay: new Date().toLocaleDateString('sv-SE'), seenHelp: { learn: true, review: true, tower: true, shop: true }, settings: { preWords: 0 } }));
 });
@@ -100,7 +103,7 @@ await shows('오늘의 미션');
 if ((await bricks()) !== got) fail.push(`가입했더니 브릭이 ${await bricks()}개 (원래 ${got}개)`);
 
 // 5. 다른 기기에서 로그인: 같은 탑이 보이는지
-const ctx2 = await b.newContext({ viewport: { width: 390, height: 844 } });
+const ctx2 = await b.newContext(SCREEN);
 await ctx2.addInitScript(() => localStorage.getItem('oracy.v1') || localStorage.setItem('oracy.v1', JSON.stringify({ visitorId: 'e2e-other-' + Date.now(), seenTour: true, seenGame: true, seenCheck: true, seenIntro: true, introDay: new Date().toLocaleDateString('sv-SE'), seenHelp: { learn: true, review: true, tower: true, shop: true } })));
 const q = await ctx2.newPage();
 q.on('pageerror', (e) => errs.push(e.message));
@@ -115,5 +118,5 @@ if (!(await q.waitForFunction(() => document.body.innerText.includes('내 탑 1�
 
 await b.close();
 if (errs.length) fail.push('화면 오류: ' + errs.join(' / '));
-console.log(fail.length ? '✗ ' + fail.join('\n✗ ') : `대화 하나 완성 · 화면 7개 · 미션 보상 ${got}브릭 · 가입하면 탑·브릭이 옮겨짐 · 다른 기기 로그인 · 오류 없음`);
+console.log(`[${ENGINE}] ` + (fail.length ? '✗ ' + fail.join('\n✗ ') : `대화 하나 완성 · 화면 7개 · 미션 보상 ${got}브릭 · 가입하면 탑·브릭이 옮겨짐 · 다른 기기 로그인 · 오류 없음`));
 process.exit(fail.length ? 1 : 0);
