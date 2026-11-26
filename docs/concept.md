@@ -781,6 +781,14 @@
 - 서비스 워커는 /places/ 페이지를 앱 화면으로 받아 두지 않아요 (끊겼을 때 앱 대신 장소 페이지가 뜨지 않게)
 - nginx `absolute_redirect off`: /places/sado → /places/sado/ 로 고칠 때 잘못된 http 주소를 만들지 않게
 
+## 11-49. 자동 검사가 실제로 켜서 해 봐요 (2026-11-26)
+
+- 사용자: "좋아 다음작업 진행해줘"
+- 집 PC의 start.bat이 main을 바로 받으니까, main에 올라가기 전에 앱이 실제로 돌아가는지 봐요
+- GitHub 자동 검사 `e2e`: PostgreSQL · 서버 · 웹(미리보기)을 띄우고 브라우저로 편의점 대화를 끝까지 → 홈 · 복습 · 상점 · 내 탑 · 학습 · 장소 페이지가 뜨는지, 가로로 넘치지 않는지, 내 탑이 1층 쌓였는지 (`web/e2e/smoke.mjs`, 약 3분)
+- 로컬: `BASE=http://localhost:8090 PW=<playwright 경로> node e2e/smoke.mjs`
+- 같은 때 정리: 대사 검사에 "같은 한자 단어는 같은 한글 발음" 규칙, 새 대화만 담은 AI 검수 파일(`docs/review/ai/new-*.txt`)
+
 ## 12. 시안
 
 - 브릭 모양·동작, 앱 화면, 웹 화면 시안: https://claude.ai/artifact/THGtU5cnuJgLRbmbrZVVNe
