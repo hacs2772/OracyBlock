@@ -195,6 +195,18 @@ export default function Talk() {
     const el = document.querySelector('.stage');
     window.scrollTo(0, small && el ? Math.max(0, el.getBoundingClientRect().top + window.scrollY - 6) : 0);
   };
+  // 알아듣거나 대답한 뒤: 브릭이 탑에 떨어지는 걸 먼저 보고, 다음 버튼이 화면 밖이면 그 버튼까지 살살 내려가요 (아이폰 SE, concept 11-53)
+  const resultKey = ph.solved ? 'them' : ph.result && ph.result.kind !== 'near' ? ph.result.kind + (ph.reacted ? 'r' : '') : '';
+  useEffect(() => {
+    if (!resultKey) return;
+    const y0 = window.scrollY;
+    later(ph.reacted ? 350 : 900, () => {
+      const btn = document.querySelector('.result .ob-btn.coral');
+      if (!btn || Math.abs(window.scrollY - y0) > 40) return; // 그새 직접 움직였으면 그대로
+      const gap = btn.getBoundingClientRect().bottom - (window.innerHeight - 12);
+      if (gap > 0) window.scrollBy({ top: gap, behavior: 'smooth' });
+    });
+  }, [resultKey]); // eslint-disable-line react-hooks/exhaustive-deps
   // "소리가 안 나면…" 안내가 나오면 그만큼 보기가 밀려 내려가요. 낮은 화면은 다시 맞춰요
   useEffect(() => {
     if (small && needTap && window.scrollY < 80) toTop();
@@ -677,8 +689,8 @@ function MePanel({ talkId, step, ph, partner, pickAnswer, goNext, isLast, nextIs
         </div>
       ) : (
         <>
-          <h2 style={{ fontSize: 22 }}>{partner}에게 뭐라고 대답할까요?</h2>
-          <p className="small muted">하고 싶은 말을 골라요. 맞는 대답이 여러 개일 수 있어요. 두 번 튕기면 답을 보고 넘어가요.</p>
+          <h2 className="tk-me-q">{partner}에게 뭐라고 대답할까요?</h2>
+          <p className="small muted tk-me-help">하고 싶은 말을 골라요. 맞는 대답이 여러 개일 수 있어요. 두 번 튕기면 답을 보고 넘어가요.</p>
         </>
       )}
       {ph.fb && <p className="fb" aria-live="polite">{ph.fb}</p>}

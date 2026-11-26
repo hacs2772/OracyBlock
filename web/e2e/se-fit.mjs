@@ -1,5 +1,5 @@
 // 아이폰 SE(320×568)에서 상대 말 + 뜻 보기 5개가 한 화면에 들어오는지 (CLAUDE.md "휴대폰 먼저")
-// 대사가 긴 차례까지 대화를 해 나가서, 마지막 뜻 보기가 화면 아래를 넘지 않는지 봐요. BROWSER=webkit 이면 아이폰 SE 사파리 엔진
+// 대사가 긴 차례까지 대화를 해 나가서, 마지막 뜻 보기 · 내 차례 다섯째 대답 · 맞힌 뒤 다음 버튼이 화면 아래를 넘지 않는지 봐요. BROWSER=webkit 이면 아이폰 SE 사파리 엔진
 import { talkById } from '../src/content/build.js';
 
 const pw = await import(process.env.PW || 'playwright');
@@ -7,15 +7,23 @@ const lib = pw.default || pw;
 const ENGINE = process.env.BROWSER || 'chromium';
 const BASE = process.env.BASE || 'http://localhost:4173';
 // 대사·뜻 보기가 가장 긴 차례들 (대화 id, 차례 번호)
-const CASES = [['onsen2', 6], ['shrine', 2], ['bar2', 4], ['sado', 4], ['nomikai', 0], ['yatai', 2], ['sakagura', 0]];
+const CASES = [['onsen2', 6], ['shrine', 2], ['bar2', 4], ['sado', 4], ['nomikai', 0], ['yatai', 2], ['sakagura', 0], ['nomikai', 2], ['sado', 6]]; // 뒤 둘: 내 차례 대답이 긴 곳 (nomikai:1 · sado:5)
 const SCREEN = ENGINE === 'webkit' ? { ...lib.devices['iPhone SE'] } : { viewport: { width: 320, height: 568 }, deviceScaleFactor: 2 };
 const fail = [];
+let p;
+const bottomOf = (sel) => p.evaluate((s) => Math.round(Math.max(-1, ...[...document.querySelectorAll(s)].map((o) => o.getBoundingClientRect().bottom))), sel);
+/** 맞힌 뒤: 브릭이 떨어지고 화면이 내려간 다음, 다음 버튼이 화면 안에 있는지 */
+async function btnShows(where) {
+  await p.waitForTimeout(1900);
+  const bb = await bottomOf('.result .ob-btn.coral');
+  if (bb > (await p.evaluate(() => window.innerHeight))) fail.push(`${where} 다음 버튼이 화면 밖 (${bb})`);
+}
 const b = await lib[ENGINE].launch();
 for (const [id, stop] of CASES) {
   const talk = talkById(id);
   const ctx = await b.newContext(SCREEN);
   await ctx.addInitScript(() => localStorage.getItem('oracy.v1') || localStorage.setItem('oracy.v1', JSON.stringify({ visitorId: 'sefit-' + Date.now(), seenTour: true, seenGame: true, seenCheck: true, seenIntro: true, introDay: new Date().toLocaleDateString('sv-SE'), seenHelp: { learn: true, review: true, tower: true, shop: true }, settings: { preWords: 0 } })));
-  const p = await ctx.newPage();
+  p = await ctx.newPage();
   await p.goto(BASE + '/talk/' + id);
   await p.waitForTimeout(1500);
   let last = -1;
@@ -43,7 +51,7 @@ for (const [id, stop] of CASES) {
       const M = ((s.line.ko === said ? null : s.alts.find((a) => a.ko === said)) || s.line).mean;
       const texts = (await p.locator('.opt.mint').allInnerTexts()).map((t) => t.trim());
       await p.locator('.opt.mint').nth(texts.indexOf(M)).click();
-      await p.waitForTimeout(500);
+      await btnShows(`${id}:${s.idx} 뜻 맞힌 뒤`);
       await p.getByRole('button', { name: '대답하러 가기' }).click();
       await p.waitForTimeout(350);
       continue;
@@ -51,11 +59,14 @@ for (const [id, stop] of CASES) {
     const me = talk.steps[last + 1];
     if (!me || me.type !== 'me') break;
     last = me.idx;
+    await p.waitForTimeout(400);
+    const mb = await bottomOf('.opt');
+    if (mb > (await p.evaluate(() => window.innerHeight))) fail.push(`${id}:${me.idx} 내 차례 다섯째 대답이 화면 밖 (${mb})`);
     const shown = (await p.locator('.opt').allInnerTexts()).map((t) => t.trim());
     const ok = me.options.find((o) => shown.includes(o.natural.ko));
     if (!ok) { fail.push(`${id}: 맞는 대답이 보기에 없음`); break; }
     await p.locator('.opt').nth(shown.indexOf(ok.natural.ko)).click();
-    await p.waitForTimeout(600);
+    await btnShows(`${id}:${me.idx} 대답한 뒤`);
     for (let k = 0; k < 2; k++) {
       const n = p.locator('.result .ob-btn.coral');
       if (await n.count()) { await n.first().click(); await p.waitForTimeout(350); }
