@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "check": "node scripts/check-talks.mjs",
-    "export:review": "node scripts/export-talks.mjs"
+    "export:review": "node scripts/export-talks.mjs",
+    "fixture": "node scripts/rules-fixture.mjs"
   },
   "dependencies": {
     "@fontsource/do-hyeon": "5.2.5",

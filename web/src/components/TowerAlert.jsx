@@ -2,7 +2,7 @@
 // 나중에 휴대폰 알림(웹 푸시)으로도 보낼 예정 (docs/concept.md)
 import { Link } from 'react-router-dom';
 import { speedOf, tonight } from '../lib/speed.js';
-import { buildTower } from '../pages/TowerPage.jsx';
+import { buildTower } from '../lib/tower.js';
 
 export default function TowerAlert({ tower, speed }) {
   if (!tower) return null;

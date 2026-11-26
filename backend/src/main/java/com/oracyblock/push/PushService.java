@@ -35,11 +35,6 @@ import java.util.*;
 public class PushService {
     private static final Logger log = LoggerFactory.getLogger(PushService.class);
 
-    /** speed.js SPEEDS와 같아야 해요 */
-    record Speed(int crackAfter, int maxCracks, int fallAfter) {}
-    static final Map<String, Speed> SPEEDS = Map.of(
-            "slow", new Speed(3, 1, 4), "normal", new Speed(2, 2, 2), "fast", new Speed(1, 2, 1));
-    static final int MAX_FALL = 5;
     static final int[] MEET_GAP = {1, 3, 7};
     static final int MAX_FAIL_DAYS = 7;
 
@@ -82,42 +77,38 @@ public class PushService {
 
     // ---------- 무엇을 보낼지 ----------
 
-    record Rest(int fallen, int cracks) {}
-    static Rest restEffect(int g, Speed sp) {
-        Deque<Integer> cracked = new ArrayDeque<>();
-        int fallen = 0;
-        for (int d = 1; d <= g; d++) {
-            while (!cracked.isEmpty() && d - cracked.peekFirst() >= sp.fallAfter()) {
-                cracked.pollFirst();
-                fallen++;
-            }
-            if (fallen >= MAX_FALL) return new Rest(MAX_FALL, 0);
-            if (d >= sp.crackAfter() && cracked.size() < sp.maxCracks()) cracked.addLast(d);
-        }
-        return new Rest(fallen, cracked.size());
-    }
-
-    /** 오늘 밤까지 안 하면 생기는 일: "fall" · "crack" · null (speed.js tonight와 같은 규칙, 방어권이 있으면 금은 막아 줘요) */
+    /**
+     * 오늘 밤까지 안 하면 생기는 일: "fall" · "crack" · null. 앱의 내 탑 경고(TowerAlert)와 같은 규칙 (TowerCalc).
+     * 오늘을 쉬어가기권으로 골랐으면 아무 일도 없고, 방어권이 있으면 금은 막아 줘요
+     */
     String tonight(String owner, List<String> active, LocalDate today) {
         if (active.isEmpty()) return null;
-        TreeSet<LocalDate> covered = new TreeSet<>();
-        for (String d : active) covered.add(LocalDate.parse(d));
-        for (Map<String, Object> gd : shop.guardDays(owner)) covered.add(LocalDate.parse(String.valueOf(gd.get("day"))));
-        LocalDate last = covered.floor(today.minusDays(1));
-        if (last == null) return null;
-        int rest = (int) ChronoUnit.DAYS.between(last, today) - 1;
-        Speed sp = SPEEDS.getOrDefault(PrefController.speedOf(prefs, owner), SPEEDS.get("normal"));
-        Rest now = restEffect(rest, sp), next = restEffect(rest + 1, sp);
-        if (next.fallen() > now.fallen()) return "fall";
-        boolean shield = shop.inventory(owner).stream().anyMatch(r -> "shield".equals(r.get("item")) && ((Number) r.get("qty")).intValue() > 0);
-        if (next.cracks() > now.cracks() && !shield) return "crack";
-        return null;
+        List<String> guards = new ArrayList<>();
+        for (Map<String, Object> gd : shop.guardDays(owner)) guards.add(String.valueOf(gd.get("day")));
+        if (guards.contains(today.toString())) return null;
+        List<TowerCalc.Brick> bricks = new ArrayList<>();
+        for (Map<String, Object> b : tower.bricks(owner)) {
+            Object cap = b.get("cap");
+            bricks.add(new TowerCalc.Brick(String.valueOf(b.get("day")), cap == null ? null : ((Number) cap).intValue()));
+        }
+        String speed = PrefController.speedOf(prefs, owner);
+        TowerCalc.Now t = TowerCalc.build(bricks, active, today, speed, guards);
+        if (t.capped()) return null;
+        String w = TowerCalc.tonight(t.rest(), TowerCalc.speedOf(speed), t.floors());
+        if ("crack".equals(w) && shop.inventory(owner).stream().anyMatch(r -> "shield".equals(r.get("item")) && ((Number) r.get("qty")).intValue() > 0)) return null;
+        return w;
     }
 
-    /** 오늘 다시 만날 사람 수 (progress.js meetPlan과 같은 규칙) */
+    /** 오늘 다시 만날 사람 수 (progress.js meetPlan · dueMeets와 같은 규칙) */
     int meetsDue(String owner, LocalDate today) {
+        return countDueMeets(push.plays(owner), today);
+    }
+
+    /** plays: talkId · day · crooked. 대화마다 1·3·7일 뒤에 다시 만나요. 바르게 끝내지 못한 날은 다음 날 다시 */
+    static int countDueMeets(List<Map<String, Object>> plays, LocalDate today) {
         Map<String, TreeMap<String, Boolean>> byTalk = new HashMap<>();
-        for (Map<String, Object> p : push.plays(owner)) {
+        for (Map<String, Object> p : plays) {
+            if (p.get("day") == null) continue;
             TreeMap<String, Boolean> days = byTalk.computeIfAbsent(String.valueOf(p.get("talkId")), k -> new TreeMap<>());
             days.merge(String.valueOf(p.get("day")), !Boolean.TRUE.equals(p.get("crooked")), Boolean::logicalOr);
         }

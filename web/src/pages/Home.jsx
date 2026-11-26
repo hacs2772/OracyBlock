@@ -15,7 +15,7 @@ import TowerAlert from '../components/TowerAlert.jsx';
 import { Guide } from '../components/Guides.jsx';
 import { TALK_SLIDES, TOWER_SLIDES, REVIEW_SLIDES } from '../components/LandingSlides.jsx';
 import { HelpBricks } from './Landing.jsx';
-import { buildTower } from './TowerPage.jsx';
+import { buildTower } from '../lib/tower.js';
 import { josa } from './Talk.jsx';
 
 const MINI = { studs: 4, pitch: 9, h: 11, depth: 6, studH: 3 };

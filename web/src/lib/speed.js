@@ -29,12 +29,13 @@ export function restEffect(g, sp) {
   }
   return { fallen, cracks: cracked.length, fallIn: cracked.length ? cracked[0] + sp.fallAfter - g : null, capped: false };
 }
-/** 오늘 밤까지 공부하지 않으면 무슨 일이 생기는지 (rest = 어제까지 통째로 쉰 날, 오늘 공부했으면 -1) */
+/** 오늘 밤까지 공부하지 않으면 무슨 일이 생기는지 (rest = 어제까지 통째로 쉰 날, 오늘 공부했으면 -1, floors = 지금 남아 있는 층) */
 export function tonight(rest, sp, floors) {
   if (rest < 0 || floors <= 0) return null;
   const now = restEffect(rest, sp);
   const next = restEffect(rest + 1, sp);
-  const fall = Math.min(next.fallen - now.fallen, floors - now.fallen);
+  // floors는 이미 떨어진 만큼 빠진 수예요 (예전에는 한 번 더 빼서, 몇 층 안 남았을 때 경고를 놓쳤어요)
+  const fall = Math.min(next.fallen - now.fallen, floors);
   if (fall > 0) return { kind: 'fall', n: fall };
   if (next.cracks > now.cracks) return { kind: 'crack', n: next.cracks - now.cracks };
   return null;
