@@ -40,6 +40,7 @@ export const FACE_OF = {
   rain: 'auntie3', catcafe: 'youngW2', summit: 'grandpa', ekiben: 'office',
   elevator: 'auntie2', train: 'youngW', kitchen: 'student', yatai: 'office2',
   tenbo: 'youngW2', hanabi: 'auntie', sado: 'auntie3', sakagura: 'master',
+  nara: 'auntie2', udon: 'master', themepark: 'youngW', yukata: 'staff', beach: 'host', momiji: 'student', yuki: 'youngW2', hatsumode: 'auntie',
 };
 
 function hairBack(f) {

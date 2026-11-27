@@ -7,7 +7,7 @@ const lib = pw.default || pw;
 const ENGINE = process.env.BROWSER || 'chromium';
 const BASE = process.env.BASE || 'http://localhost:4173';
 // 대사·뜻 보기가 가장 긴 차례들 (대화 id, 차례 번호)
-const CASES = [['onsen2', 6], ['shrine', 2], ['bar2', 4], ['sado', 4], ['nomikai', 0], ['yatai', 2], ['sakagura', 0], ['nomikai', 2], ['sado', 6]]; // 뒤 둘: 내 차례 대답이 긴 곳 (nomikai:1 · sado:5)
+const CASES = [['onsen2', 6], ['shrine', 2], ['bar2', 4], ['sado', 4], ['nomikai', 0], ['yatai', 2], ['sakagura', 0], ['nomikai', 2], ['sado', 6], ['hatsumode', 0]]; // 뒤 둘: 내 차례 대답이 긴 곳 (nomikai:1 · sado:5)
 const SCREEN = ENGINE === 'webkit' ? { ...lib.devices['iPhone SE'] } : { viewport: { width: 320, height: 568 }, deviceScaleFactor: 2 };
 const fail = [];
 let p;
