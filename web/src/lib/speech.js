@@ -113,6 +113,7 @@ export const READ_AS = {
   一時間: 'いちじかん', 十分上手: 'じゅうぶんじょうず', そういう方: 'そういうかた', 柄: 'がら', 桜色: 'さくらいろ', 夕方: 'ゆうがた', 何て: 'なんて', 雪像: 'せつぞう',
   // 계절 대화 10개 (concept 11-62)
   八百円: 'はっぴゃくえん', 海鮮丼: 'かいせんどん', イクラ丼: 'イクラどん', 二人で: 'ふたりで', 牛串: 'ぎゅうくし',
+  市場: 'いちば', 一切れ: 'ひときれ', 二十歳: 'はたち', 二十八歳: 'にじゅうはっさい', 土が: 'つちが', ここの土: 'ここのつち',
 };
 const READ_KEYS = Object.keys(READ_AS).sort((a, b) => b.length - a.length);
 export const toReading = (text) => READ_KEYS.reduce((t, k) => (t.includes(k) ? t.split(k).join(READ_AS[k]) : t), String(text || ''));

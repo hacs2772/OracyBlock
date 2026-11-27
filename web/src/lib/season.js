@@ -8,6 +8,7 @@ export const SEASON_TALKS = {
   kakigori: [6, 7, 8, 9], yukata: [6, 7, 8], beach: [6, 7, 8, 9], festival: [7, 8], hanabi: [7, 8],
   tsukimi: [9, 10], momiji: [10, 11], yakiimo: [10, 11, 12, 1, 2],
   illumi: [11, 12], kotatsu: [12, 1, 2], skilift: [12, 1, 2, 3], yuki: [1, 2], hatsumode: [12, 1],
+  snowbus: [12, 1, 2], skirental: [12, 1, 2, 3], sansou: [7, 8, 9, 10],
 };
 /** 한 번 끝낸 계절 대화는 이만큼 지나야 다시 권해요 (한 계절 ≈ 3달) */
 export const SEASON_DAYS = 90;

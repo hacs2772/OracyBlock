@@ -42,6 +42,7 @@ export const FACE_OF = {
   tenbo: 'youngW2', hanabi: 'auntie', sado: 'auntie3', sakagura: 'master',
   nara: 'auntie2', udon: 'master', themepark: 'youngW', yukata: 'staff', beach: 'host', momiji: 'student', yuki: 'youngW2', hatsumode: 'auntie',
   sakura: 'grandma', kakigori: 'youngW2', yakiimo: 'driver', ichigo: 'youngW', tsukimi: 'auntie3', asaichi: 'auntie', seaside: 'grandpa', illumi: 'youngM', kotatsu: 'grandma', kushikatsu: 'office',
+  snowbus: 'auntie2', skirental: 'clerk', sansou: 'office2', flea: 'grandpa', birthday: 'youngW', shukubo: 'host', pottery: 'master', kodo: 'auntie3',
 };
 
 function hairBack(f) {
