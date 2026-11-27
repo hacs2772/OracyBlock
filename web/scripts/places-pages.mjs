@@ -18,18 +18,24 @@ main{max-width:640px;margin:0 auto;padding:20px 16px 48px}a{color:inherit}
 h1{font-size:28px;line-height:1.25;margin:22px 0 6px}h2{font-size:20px;margin:28px 0 10px}
 .sub{color:var(--ink2);margin:0}.chip{display:inline-block;padding:2px 10px;border:1.5px solid var(--line);border-radius:999px;font-size:13px;color:var(--ink2);margin-top:8px}
 .say{border:2px solid var(--line);border-radius:14px;background:#fff;padding:12px 14px;margin:10px 0}.say.me{background:var(--mint-bg);border-color:#bfe6de;margin-left:28px}
-.who{font-size:12px;color:var(--faint)}.ko{font-size:19px;font-weight:700}.ja{font-size:13px;color:var(--faint)}.mean{font-size:14px;color:var(--ink2)}
+.who{font-size:12px;color:var(--faint)}.ko{font-size:19px;font-weight:700}.ja{font-size:13px;color:var(--faint)}.say.me .ja{color:var(--ink2)}.mean{font-size:14px;color:var(--ink2)}
 .words{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}.w{background:var(--yellow-bg);border-radius:12px;padding:8px 12px}.w b{display:block;font-size:18px}.w span{font-size:13px;color:var(--ink2)}
 .cta{display:block;text-align:center;margin:28px 0 8px;padding:14px;border:2.5px solid var(--navy);border-radius:14px;background:var(--coral);box-shadow:0 4px 0 var(--navy);font-size:19px;font-weight:800;text-decoration:none}
 .more{display:flex;flex-wrap:wrap;gap:8px}.more a{padding:6px 12px;border:1.5px solid var(--line);border-radius:999px;background:#fff;font-size:14px;text-decoration:none}
-.lv{margin-top:18px}.foot{margin-top:36px;font-size:13px;color:var(--faint)}`;
+.lv{margin-top:18px}.foot{margin-top:36px;font-size:13px;color:var(--ink2)}`;
 
-function page({ title, desc, path, body }) {
+/** 검색 결과에 "홈 › 장소별 일본어 회화 › 장소"로 보이게 (구조화 데이터). 스크립트가 아니라 글자 묶음이라 CSP와 상관없어요 */
+function crumbs(trail) {
+  const items = trail.map(([name, path], i) => ({ '@type': 'ListItem', position: i + 1, name, item: SITE + path }));
+  return `<script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: items }).replace(/</g, '\\u003c')}</script>`;
+}
+
+function page({ title, desc, path, body, trail }) {
   return `<!doctype html>
 <html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title)}</title><meta name="description" content="${esc(desc)}"><link rel="canonical" href="${SITE}${path}">
 <meta property="og:type" content="article"><meta property="og:site_name" content="OracyBlock"><meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(desc)}"><meta property="og:url" content="${SITE}${path}"><meta property="og:image" content="${SITE}/og-image.png">
-<link rel="icon" href="/icons/favicon.svg" type="image/svg+xml"><style>${CSS}</style></head>
+<link rel="icon" href="/icons/favicon.svg" type="image/svg+xml"><style>${CSS}</style>${trail ? crumbs(trail) : ''}</head>
 <body><main><a class="top" href="/">Oracy<b>Block</b></a>${body}
 <p class="foot">OracyBlock · 일본 여행 옆자리 스몰토크를 듣고 대답하는 연습. 읽기 공부 없이 한글 발음으로, 무료.<br><a href="/places/">장소 전체 보기</a> · <a href="/about">소개</a></p></main></body></html>
 `;
@@ -78,7 +84,7 @@ ${others.length ? `<h2>같은 레벨의 다른 대화</h2><div class="more">${ot
   const desc = `${t.place}에서 ${t.partner}와 나누는 일본어 스몰토크. 일본어 글자를 몰라도 한글 발음으로 듣고 대답해요. 꼭 들어야 할 단어 ${words.length}개와 대화 미리보기.`;
   const dir = new URL(`places/${t.id}/`, dist);
   mkdirSync(dir, { recursive: true });
-  writeFileSync(new URL('index.html', dir), page({ title: `${t.place} 일본어 회화 Lv${t.level} · ${t.partner}와 스몰토크 | OracyBlock`, desc, path, body }));
+  writeFileSync(new URL('index.html', dir), page({ title: `${t.place} 일본어 회화 Lv${t.level} · ${t.partner}와 스몰토크 | OracyBlock`, desc, path, body, trail: [['OracyBlock', '/'], ['장소별 일본어 회화', '/places/'], [t.place, path]] }));
   urls.push(path);
 }
 
@@ -89,6 +95,7 @@ writeFileSync(new URL('places/index.html', dist), page({
   title: '일본 여행 장소별 일본어 회화 | OracyBlock',
   desc: `비행기 옆자리, 이자카야, 온천, 신칸센까지 ${GAME_TALKS.length}가지 장소에서 옆자리 사람과 나누는 일본어 스몰토크. 한글 발음으로 듣고 대답해요.`,
   path: '/places/',
+  trail: [['OracyBlock', '/'], ['장소별 일본어 회화', '/places/']],
   body: `<h1>장소별 일본어 회화</h1><p class="sub">일본 여행에서 옆자리 사람이 말을 걸어오는 ${GAME_TALKS.length}가지 장면. 레벨이 오를수록 길고 빨라져요.</p>${list}<a class="cta" href="/?from=places">처음부터 해 보기</a>`,
 }));
 urls.unshift('/places/');
