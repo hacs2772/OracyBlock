@@ -19,6 +19,7 @@
 - 휴대폰 아래 탭: **홈 · 학습 · 복습 · 내 탑 · 상점·미션** ("여행 판"·"소개" 탭은 쓰지 않아요). 재화 이름은 **브릭**, 탑 숫자는 "층" (concept 11-21), 내 정보·문의는 오른쪽 위 머리줄 (concept 11-37). 처음 온 사람만 소개 웹(`/about`), 그 뒤에는 홈(`/`). 홈 = 다음 대화 큰 버튼 하나 + "다시 만날 사람" 줄(1·3·7일 반복, concept 11-23) + 한 줄 상태 + 작은 내 탑 (concept 11-16). 학습(`/learn`) = 레벨("Lv 변경") + 장소 판. 고치기는 `/fix`. 내 차례는 **고르기만** (말하기·글자 입력은 뺌, concept 11-5). 대화 화면 순서는 탑 → 얼굴+말풍선 → 문제 → 보기 (concept 11-16). 쌓는 속도 `web/src/lib/speed.js` + 서버 `PrefController.DAY_CAP`. 로그인은 asmrBlock처럼 이메일 + 비밀번호, 가입 없이 둘러보기도 가능
 - 코드: `web/`(React + Vite, 색은 `web/src/styles.css`의 `:root`에만), `backend/`(Spring Boot 4 + MyBatis 어노테이션 매퍼 + Flyway), `docker-compose.yml`, 켜는 법 `docs/deploy.md` (되살리기 `restore.bat`, 감시 주소 `/api/v1/ping`), 휴대폰 점검표 `docs/phone-check.md`
   - 대사 `web/src/content/talks.js`(EarToMouth에서 옮김), 레벨·어긋남(NEAR)·5지선다·판정 `web/src/content/build.js`
+  - 대화를 더할 때는 `docs/add-talk.md` 순서대로 (대사 → 레벨·얼굴 → 검사 · 읽기 고정 · 보기 예외 → 로봇 · SE 확인 → 공유 그림 · AI 검수 파일)
   - 기록 주인(owner) = 로그인 `u:아이디` / 둘러보기 `v:방문자번호`(헤더 `X-Visitor-Id`). 가입·로그인하면 `UserService.claim`이 옮겨요
   - 관리자 통계는 `s_visit`·`s_play` 보기(관리자 기기 뺌)로 세요
   - 고친 탑은 `play.crooked`를 바꾸지 않아요 (올바른 탑으로 세지 않음)
