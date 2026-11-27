@@ -2,7 +2,7 @@
 // dist/places/index.html (장소 목록) + dist/places/<대화 id>/index.html (대화 미리보기 · 꼭 들어야 할 단어 · 직접 해 보기)
 // 앱은 자바스크립트로 그려서 검색 로봇이 잘 못 읽어요. 이 페이지들은 글자만 있는 가벼운 HTML이에요 (스크립트 없음, CSP에 맞게)
 // 사이트맵(dist/sitemap.xml)에도 더해요
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { GAME_TALKS, talkWords, isReviewWord } from '../src/content/build.js';
 
 const SITE = 'https://oracyblock.com';
@@ -30,11 +30,11 @@ function crumbs(trail) {
   return `<script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: items }).replace(/</g, '\\u003c')}</script>`;
 }
 
-function page({ title, desc, path, body, trail }) {
+function page({ title, desc, path, body, trail, image = '/og-image.png' }) {
   return `<!doctype html>
 <html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title)}</title><meta name="description" content="${esc(desc)}"><link rel="canonical" href="${SITE}${path}">
-<meta property="og:type" content="article"><meta property="og:site_name" content="OracyBlock"><meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(desc)}"><meta property="og:url" content="${SITE}${path}"><meta property="og:image" content="${SITE}/og-image.png">
+<meta property="og:type" content="article"><meta property="og:site_name" content="OracyBlock"><meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(desc)}"><meta property="og:url" content="${SITE}${path}"><meta property="og:image" content="${SITE}${image}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml"><style>${CSS}</style>${trail ? crumbs(trail) : ''}</head>
 <body><main><a class="top" href="/">Oracy<b>Block</b></a>${body}
 <p class="foot">OracyBlock · 일본 여행 옆자리 스몰토크를 듣고 대답하는 연습. 읽기 공부 없이 한글 발음으로, 무료.<br><a href="/places/">장소 전체 보기</a> · <a href="/about">소개</a></p></main></body></html>
@@ -84,7 +84,9 @@ ${others.length ? `<h2>같은 레벨의 다른 대화</h2><div class="more">${ot
   const desc = `${t.place}에서 ${t.partner}와 나누는 일본어 스몰토크. 일본어 글자를 몰라도 한글 발음으로 듣고 대답해요. 꼭 들어야 할 단어 ${words.length}개와 대화 미리보기.`;
   const dir = new URL(`places/${t.id}/`, dist);
   mkdirSync(dir, { recursive: true });
-  writeFileSync(new URL('index.html', dir), page({ title: `${t.place} 일본어 회화 Lv${t.level} · ${t.partner}와 스몰토크 | OracyBlock`, desc, path, body, trail: [['OracyBlock', '/'], ['장소별 일본어 회화', '/places/'], [t.place, path]] }));
+  // 장소별 공유 그림 (scripts/og-places.mjs가 만들어요). 없으면 기본 그림
+  const image = existsSync(new URL(`og/places/${t.id}.png`, dist)) ? `/og/places/${t.id}.png` : undefined;
+  writeFileSync(new URL('index.html', dir), page({ image, title: `${t.place} 일본어 회화 Lv${t.level} · ${t.partner}와 스몰토크 | OracyBlock`, desc, path, body, trail: [['OracyBlock', '/'], ['장소별 일본어 회화', '/places/'], [t.place, path]] }));
   urls.push(path);
 }
 
