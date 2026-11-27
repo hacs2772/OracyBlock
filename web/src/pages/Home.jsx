@@ -17,6 +17,7 @@ import { TALK_SLIDES, TOWER_SLIDES, REVIEW_SLIDES } from '../components/LandingS
 import { HelpBricks } from './Landing.jsx';
 import { buildTower } from '../lib/tower.js';
 import { josa } from './Talk.jsx';
+import { seasonPick } from '../lib/season.js';
 
 const MINI = { studs: 4, pitch: 9, h: 11, depth: 6, studH: 3 };
 
@@ -64,6 +65,8 @@ export default function Home() {
   const myRank = rank?.rows?.find((r) => r.me) || rank?.mine;
   const meets = prog ? dueMeets(prog.plays, undefined, next ? [next.id] : []).slice(0, 3) : [];
   const ready = (shop?.missions || []).filter((m) => !m.claimed && m.n >= m.target).length;
+  // 지금 계절 대화 (concept 11-62): 다음 대화 · 다시 만날 사람과 겹치지 않게
+  const season = prog ? seasonPick(level, prog.plays, undefined, [next?.id, ...meets.map((m) => m.talk.id)].filter(Boolean)) : null;
 
   return (
     <div className="page has-tabs">
@@ -85,6 +88,20 @@ export default function Home() {
           </div>
           <button className="ob-btn coral wide" style={{ minHeight: 60, marginTop: 14 }} onClick={() => start(next.id, 0)}>
             <span className="t">{resuming ? '이어서 하기' : '대화 시작'}</span>
+          </button>
+        </div>
+      )}
+
+      {season && (
+        <div className={'card hm-season hm-season-' + season.key}>
+          <div className="hm-season-h"><h2>지금 계절 대화</h2><span className="small muted">{season.month}월</span></div>
+          <button className="hm-season-row" onClick={() => start(season.talk.id, 0)}>
+            <Face kind={FACE_OF[season.talk.id]} size={36} />
+            <span className="hm-season-t">
+              <b>{season.talk.place}</b>
+              <span className="small muted">Lv{season.talk.level} · {season.talk.partnerDesc || season.talk.partner}</span>
+            </span>
+            <span className="hm-season-go">해 보기</span>
           </button>
         </div>
       )}

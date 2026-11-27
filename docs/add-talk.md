@@ -14,6 +14,7 @@
 | `web/src/content/talks.js` | `TALKS` 끝(`];` 앞)에 더해요. 대화마다 10차례쯤, 상대 말마다 `alt`(같은 뜻 다른 말투) 하나, 대답 몇 개에 `react` |
 | `web/src/content/build.js` | 레벨 표(`sakagura: 5,` 아래)에 `id: 레벨` |
 | `web/src/components/Face.jsx` | `FACE_OF`에 `id: '얼굴'` (auntie, youngW, office, grandma, youngM, grandpa, master, driver, auntie2, host, youngW2, bob, office2, clerk, chef, auntie3, staff, student) |
+| `web/src/lib/season.js` | 계절이 있는 장면이면 `SEASON_TALKS`에 `id: [어울리는 달]` (홈 "지금 계절 대화"에 나와요) |
 
 - 한글 발음은 기존 표기를 따라요: 긴 소리 `-`, 말 중간 か·た행은 된소리, つ=쯔, ち=찌, っ는 받침, ん은 뒤 소리에 따라 ㄴ·ㅁ·ㅇ. 단어는 조사 앞에서도 제 모양 그대로 (캉코꾸데스, 지깡데스, 니혼와)
 - 핵심 단어(`keys`·`words`)의 한글 발음은 그 줄의 한글 발음 안에 글자 그대로 들어 있어야 해요

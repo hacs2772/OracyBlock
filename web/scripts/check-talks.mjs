@@ -1,6 +1,7 @@
 // 대사 자동 검사: node scripts/check-talks.mjs (또는 npm run check)
 // 문제(✗)가 있으면 실패, 확인할 것(△)은 알려만 줘요
 import { GAME_TALKS, talkWords, isReviewWord } from '../src/content/build.js';
+import { SEASON_TALKS } from '../src/lib/season.js';
 
 const errors = [];
 const warns = [];
@@ -116,5 +117,10 @@ const words = new Set(GAME_TALKS.flatMap((t) => talkWords(t).map((w) => w.key)))
 console.log(`대화 ${GAME_TALKS.length}개 · 단어 ${words.size}개 · 복습에서 빼는 단어: ${[...skipped].join(', ') || '없음'}`);
 for (const w of warns) console.log('△ ' + w);
 for (const e of errors) console.log('✗ ' + e);
+// 계절 대화 표 (lib/season.js): 있는 대화 · 1~12월만
+for (const [id, months] of Object.entries(SEASON_TALKS)) {
+  if (!GAME_TALKS.some((t) => t.id === id)) errors.push(`계절 대화 "${id}"가 대화 목록에 없어요 (lib/season.js)`);
+  if (!months.length || months.some((m) => !Number.isInteger(m) || m < 1 || m > 12)) errors.push(`계절 대화 "${id}"의 달이 이상해요: ${months}`);
+}
 console.log(errors.length ? `문제 ${errors.length}개` : '문제 없음', warns.length ? `· 확인할 것 ${warns.length}개` : '');
 process.exit(errors.length ? 1 : 0);

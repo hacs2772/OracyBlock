@@ -18,8 +18,13 @@ const LOGO = '<svg width="56" height="50" viewBox="0 0 34 30"><g stroke="#24324A
 /** 첫 상대 말: 너무 길면 첫 문장만 */
 function firstLine(t) {
   const s = t.steps.find((x) => x.type === 'them');
-  const cut = (txt, re) => (txt.length > 24 ? txt.split(re)[0] + (/[?？!！]$/.test(txt.split(re)[0]) ? '' : '…') : txt);
-  return { ko: cut(s.line.ko, /(?<=[?!.])\s/), ja: cut(s.line.ja, /(?<=[。？！])/) };
+  if (s.line.ko.length <= 24) return { ko: s.line.ko, ja: s.line.ja };
+  // 한글 발음이 길면 한글·일본어 모두 첫 문장만. 마침표로 끝나면 떼고 "…"
+  const first = (txt, re) => {
+    const one = txt.split(re)[0].trim();
+    return /[?？!！]$/.test(one) ? one : one.replace(/[.。]$/, '') + '…';
+  };
+  return { ko: first(s.line.ko, /(?<=[?!.])\s/), ja: first(s.line.ja, /(?<=[。？！])/) };
 }
 
 function html(t) {

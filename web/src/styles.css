@@ -595,6 +595,18 @@ textarea.input { height: 120px; padding: 10px 12px; resize: vertical; line-heigh
 .mt-row { appearance: none; display: flex; align-items: center; gap: 10px; width: 100%; min-height: 52px; padding: 8px 2px; border: 0; border-top: 1.5px solid var(--line); background: none; text-align: left; cursor: pointer; font: inherit; color: inherit; }
 .mt-row-t { display: flex; flex-direction: column; min-width: 0; flex: 1; }
 .mt-row-t .small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* 홈 지금 계절 대화 한 줄 (concept 11-62). 계절마다 바탕색만 달라요 */
+.hm-season { padding: 10px 12px; border-width: 2px; }
+.hm-season-spring { background: var(--sakura-bg); border-color: var(--sakura-plate); }
+.hm-season-summer { background: var(--mint-bg); border-color: var(--mint); }
+.hm-season-autumn { background: var(--yellow-bg); border-color: var(--yellow-line); }
+.hm-season-winter { background: var(--sky-bg); border-color: var(--sky); }
+.hm-season-h { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+.hm-season-h h2 { font-size: 17px; }
+.hm-season-row { appearance: none; display: flex; align-items: center; gap: 10px; width: 100%; min-height: 52px; padding: 6px 2px 2px; border: 0; background: none; text-align: left; cursor: pointer; font: inherit; color: inherit; }
+.hm-season-t { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.hm-season-t .small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hm-season-go { flex-shrink: 0; padding: 5px 12px; border: 2px solid var(--navy); border-radius: 8px; background: #fff; box-shadow: 0 2px 0 var(--navy); font-weight: 700; font-size: 14px; }
 .tk-meet { display: flex; align-items: center; gap: 12px; padding: 12px 14px; }
 .tk-meet b { display: block; font-family: var(--display); font-size: 19px; font-weight: 400; }
 .tk-meet .mt-meets { margin: 4px 0 0; }
